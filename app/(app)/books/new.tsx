@@ -115,7 +115,7 @@ export default function NewBookScreen() {
   }
 
   return (
-    <Screen>
+    <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Anadir libro</Text>
         <Text style={styles.subtitle}>
@@ -227,6 +227,9 @@ export default function NewBookScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    paddingTop: 10,
+  },
   content: {
     gap: 12,
     paddingBottom: 24,

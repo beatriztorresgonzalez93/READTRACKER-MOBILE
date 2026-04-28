@@ -67,6 +67,8 @@ export type BookDetail = Book & {
   progressPercent?: number;
   reviewText?: string;
   readCount?: number;
+  readAt?: string;
+  timesRead?: string;
   favoriteQuote?: string;
   recommendation?: string;
 };

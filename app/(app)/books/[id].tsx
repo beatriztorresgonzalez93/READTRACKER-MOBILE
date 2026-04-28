@@ -34,6 +34,23 @@ import { theme } from "@/shared/ui/theme";
 const DETAIL_TABS = ["Informacion", "Mi resena", "Similares"] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
 const STATUS_OPTIONS = ["pendiente", "leyendo", "leido"] as const;
+const TIMES_READ_OPTIONS = [
+  "No leido aun",
+  "1ª vez",
+  "2ª vez",
+  "3ª vez",
+  "4ª vez",
+  "5ª vez o mas",
+] as const;
+
+function toTimesReadLabel(count?: number | null): (typeof TIMES_READ_OPTIONS)[number] {
+  if (!count || count <= 0) return "No leido aun";
+  if (count === 1) return "1ª vez";
+  if (count === 2) return "2ª vez";
+  if (count === 3) return "3ª vez";
+  if (count === 4) return "4ª vez";
+  return "5ª vez o mas";
+}
 
 function Stars({ rating }: { rating?: number | null }) {
   const value = rating ?? 0;
@@ -71,7 +88,12 @@ export default function BookDetailScreen() {
   const [reviewReadAt, setReviewReadAt] = useState("");
   const [reviewReadAtDate, setReviewReadAtDate] = useState<Date>(new Date());
   const [reviewDatePickerOpen, setReviewDatePickerOpen] = useState(false);
-  const [reviewTimesRead, setReviewTimesRead] = useState("1ª vez");
+  const [reviewTimesRead, setReviewTimesRead] = useState<(typeof TIMES_READ_OPTIONS)[number]>("No leido aun");
+  const [timesReadModalOpen, setTimesReadModalOpen] = useState(false);
+  const [reviewReadAtDisplay, setReviewReadAtDisplay] = useState<string | null>(null);
+  const [reviewTimesReadDisplay, setReviewTimesReadDisplay] = useState<string | null>(
+    null,
+  );
   const [reviewFavoriteQuote, setReviewFavoriteQuote] = useState("");
   const [reviewRecommendation, setReviewRecommendation] = useState<
     "si" | "depende" | "no" | undefined
@@ -132,7 +154,7 @@ export default function BookDetailScreen() {
           baseTags.has(tag.toLowerCase().trim()),
         ),
       )
-      .map((candidate) => ({ book: candidate, reason: "Etiquetas en comun" as const }));
+      .map((candidate) => ({ book: candidate, reason: "Misma etiqueta" as const }));
 
     return [...genreCandidates, ...tagCandidates].slice(0, 6);
   }, [book?.genre, book?.tags, bookId, similarByGenreFeed.data?.pages, similarByTagsFeed.data?.pages]);
@@ -150,6 +172,18 @@ export default function BookDetailScreen() {
           ? "👎 No especialmente"
           : "Aun sin recomendacion.";
   const totalPages = Math.max(1, book?.pages ?? 1);
+  const readAtLabel =
+    reviewReadAtDisplay ??
+    (book?.readAt || book?.lastPageMarkedAt
+      ? new Date(book?.readAt ?? book?.lastPageMarkedAt ?? "").toLocaleDateString("es-ES")
+      : "Sin registro");
+  const timesReadLabel =
+    reviewTimesReadDisplay ??
+    (book?.timesRead
+      ? book.timesRead
+      : book?.readCount
+      ? `${book.readCount} vez${book.readCount > 1 ? "es" : ""}`
+      : "No leido aun");
   const completion = Math.max(
     0,
     Math.min(100, Math.round((currentPage / totalPages) * 100)),
@@ -183,12 +217,18 @@ export default function BookDetailScreen() {
     const ratingValue = book?.rating ? Math.max(0, Math.min(5, Math.round(book.rating))) : 0;
     setReviewRating(ratingValue);
     setReviewTags(book?.tags ?? []);
-    const parsedReadAt = book?.lastPageMarkedAt ? new Date(book.lastPageMarkedAt) : null;
+    const normalizedTimesRead =
+      book?.timesRead && TIMES_READ_OPTIONS.includes(book.timesRead as (typeof TIMES_READ_OPTIONS)[number])
+        ? (book.timesRead as (typeof TIMES_READ_OPTIONS)[number])
+        : toTimesReadLabel(book?.readCount);
+    setReviewTimesRead(normalizedTimesRead);
+    const readAtSource = book?.readAt ?? book?.lastPageMarkedAt;
+    const parsedReadAt = readAtSource ? new Date(readAtSource) : null;
     if (parsedReadAt && !Number.isNaN(parsedReadAt.getTime())) {
       setReviewReadAtDate(parsedReadAt);
       setReviewReadAt(toReadAtValue(parsedReadAt));
     }
-  }, [book?.reviewText, book?.favoriteQuote, book?.recommendation, book?.rating, book?.tags, book?.lastPageMarkedAt]);
+  }, [book?.reviewText, book?.favoriteQuote, book?.recommendation, book?.rating, book?.tags, book?.lastPageMarkedAt, book?.readAt, book?.readCount, book?.timesRead]);
 
   function addReviewTag(raw: string) {
     const normalized = raw.trim().replace(/^#/, "");
@@ -425,7 +465,14 @@ export default function BookDetailScreen() {
         <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
           <Card mode="contained" style={styles.block}>
             <Card.Content>
-              <Text style={styles.blockLabel}>Mi resena</Text>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="create-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={styles.blockLabel}>Mi resena</Text>
+              </View>
               <Text style={styles.bodyText}>{reviewText}</Text>
             </Card.Content>
           </Card>
@@ -433,31 +480,42 @@ export default function BookDetailScreen() {
           <View style={styles.twoCols}>
             <Card mode="contained" style={[styles.block, styles.half]}>
               <Card.Content>
-                <Text style={styles.blockLabel}>Leido en</Text>
-                <Text style={styles.detailValue}>
-                  {book?.lastPageMarkedAt
-                    ? new Date(book.lastPageMarkedAt).toLocaleDateString(
-                        "es-ES",
-                      )
-                    : "Sin registro"}
-                </Text>
+                <View style={styles.labelWithIcon}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={15}
+                    color={theme.colors.textSoft}
+                  />
+                  <Text style={styles.blockLabel}>Leido en</Text>
+                </View>
+                <Text style={styles.detailValue}>{readAtLabel}</Text>
               </Card.Content>
             </Card>
             <Card mode="contained" style={[styles.block, styles.half]}>
               <Card.Content>
-                <Text style={styles.blockLabel}>Veces leido</Text>
-                <Text style={styles.detailValue}>
-                  {book?.readCount
-                    ? `${book.readCount} vez${book.readCount > 1 ? "es" : ""}`
-                    : "1 vez"}
-                </Text>
+                <View style={styles.labelWithIcon}>
+                  <Ionicons
+                    name="repeat-outline"
+                    size={15}
+                    color={theme.colors.textSoft}
+                  />
+                  <Text style={styles.blockLabel}>Veces leido</Text>
+                </View>
+                <Text style={styles.detailValue}>{timesReadLabel}</Text>
               </Card.Content>
             </Card>
           </View>
 
           <Card mode="contained" style={styles.block}>
             <Card.Content>
-              <Text style={styles.blockLabel}>Frase o cita favorita</Text>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={styles.blockLabel}>Frase o cita favorita</Text>
+              </View>
               <Text style={styles.bodyText}>
                 {book?.favoriteQuote ?? "Sin cita favorita por ahora."}
               </Text>
@@ -466,7 +524,14 @@ export default function BookDetailScreen() {
 
           <Card mode="contained" style={styles.block}>
             <Card.Content>
-              <Text style={styles.blockLabel}>Recomendacion</Text>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="thumbs-up-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={styles.blockLabel}>Recomendacion</Text>
+              </View>
               <View style={styles.reviewChipsRow}>
                 <Chip compact style={styles.reviewChip}>
                   {recommendationLabel}
@@ -477,7 +542,14 @@ export default function BookDetailScreen() {
 
           <Card mode="contained" style={styles.block}>
             <Card.Content>
-              <Text style={styles.blockLabel}>Etiquetas tematicas</Text>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="pricetags-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={styles.blockLabel}>Etiquetas tematicas</Text>
+              </View>
               {book?.tags && book.tags.length > 0 ? (
                 <View style={styles.reviewChipsRow}>
                   {book.tags.map((tag) => (
@@ -767,12 +839,7 @@ export default function BookDetailScreen() {
                   <Text style={styles.markLabel}>Veces leído</Text>
                   <Pressable
                     style={[styles.markInput, styles.reviewSmallInput, styles.timesReadBtn]}
-                    onPress={() => {
-                      const options = ["1ª vez", "2ª vez", "3ª vez", "4ª vez", "5ª vez o más"] as const;
-                      const currentIdx = options.indexOf(reviewTimesRead as (typeof options)[number]);
-                      const next = options[(currentIdx + 1) % options.length];
-                      setReviewTimesRead(next);
-                    }}
+                    onPress={() => setTimesReadModalOpen(true)}
                   >
                     <Text style={styles.timesReadText}>{reviewTimesRead}</Text>
                     <Ionicons name="chevron-down" size={18} color="#E4BC78" />
@@ -929,6 +996,12 @@ export default function BookDetailScreen() {
                       reviewTags,
                       status: selectedStatus,
                     });
+                    setReviewReadAtDisplay(
+                      reviewReadAt.trim()
+                        ? new Date(reviewReadAt).toLocaleDateString("es-ES")
+                        : "Sin registro",
+                    );
+                    setReviewTimesReadDisplay(reviewTimesRead);
                     setReviewModalOpen(false);
                   } catch (error) {
                     Alert.alert(
@@ -949,6 +1022,53 @@ export default function BookDetailScreen() {
                 <Text style={styles.markBtnGhostText}>Cancelar</Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={timesReadModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTimesReadModalOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setTimesReadModalOpen(false)}
+          />
+          <View style={styles.statusSheet}>
+            {TIMES_READ_OPTIONS.map((option) => {
+              const active = option === reviewTimesRead;
+              return (
+                <Pressable
+                  key={option}
+                  style={styles.statusRow}
+                  onPress={() => {
+                    setReviewTimesRead(option);
+                    setTimesReadModalOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.statusRowText,
+                      active && styles.statusRowTextActive,
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                  {active ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                  ) : (
+                    <View style={{ width: 18 }} />
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       </Modal>

@@ -158,6 +158,18 @@ export function normalizeBookDetail(raw: unknown): BookDetail {
     pickString(r.resena) ??
     pickString(r.reseña);
   const readCount = pickNumber(r.readCount) ?? pickNumber(r.read_count) ?? pickNumber(r.timesRead) ?? pickNumber(r.times_read);
+  const readAt =
+    pickString(r.readAt) ??
+    pickString(r.read_at) ??
+    pickString(r.lastReadAt) ??
+    pickString(r.last_read_at) ??
+    pickString(r.finishedAt) ??
+    pickString(r.finished_at);
+  const timesRead =
+    pickString(r.timesRead) ??
+    pickString(r.times_read) ??
+    pickString(r.readTimes) ??
+    pickString(r.read_times);
   const favoriteQuote =
     pickString(r.favoriteQuote) ??
     pickString(r.favorite_quote) ??
@@ -175,6 +187,8 @@ export function normalizeBookDetail(raw: unknown): BookDetail {
     progressPercent: progressPercent ?? base.progress,
     reviewText,
     readCount,
+    readAt,
+    timesRead,
     favoriteQuote,
     recommendation,
   };
