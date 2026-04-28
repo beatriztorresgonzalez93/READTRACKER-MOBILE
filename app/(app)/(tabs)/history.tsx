@@ -1,16 +1,19 @@
-import { FlatList, StyleSheet, View } from "react-native";
+import { useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 
-import { useMonthlyHistory } from "@/features/readingSessions/use-history";
+import { useMonthlyHistory, useReadingSessionsList } from "@/features/readingSessions/use-history";
 import { AppLoader } from "@/shared/ui/app-loader";
-import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
 export default function HistoryScreen() {
   const history = useMonthlyHistory();
+  const sessionsQuery = useReadingSessionsList();
   const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
   const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const timeFormatter = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   if (history.isLoading && !history.data) {
     return <AppLoader />;
@@ -19,10 +22,7 @@ export default function HistoryScreen() {
   if (history.isError) {
     return (
       <Screen>
-        <EmptyState
-          title="No se pudo cargar el historial"
-          description="Comprueba tu conexion y vuelve a intentarlo."
-        />
+        <Text style={styles.errorText}>No se pudo cargar el historial. Comprueba tu conexion y vuelve a intentarlo.</Text>
       </Screen>
     );
   }
@@ -50,41 +50,78 @@ export default function HistoryScreen() {
     calendarCells.push({ key: `tail-${calendarCells.length}` });
   }
 
+  const sessionsByDay = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{
+        id: string;
+        title: string;
+        author: string;
+        pagesRead: number;
+        previousPage?: number;
+        currentPage: number;
+        recordedAt: string;
+      }>
+    >();
+    const sessions = sessionsQuery.data ?? [];
+    for (const session of sessions) {
+      const at = new Date(session.recordedAt);
+      if (Number.isNaN(at.getTime())) continue;
+      const key = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+      const row = map.get(key) ?? [];
+      row.push({
+        id: session.id,
+        title: session.title,
+        author: session.author,
+        pagesRead: Math.max(0, session.pagesRead ?? 0),
+        previousPage: session.previousPage,
+        currentPage: session.currentPage,
+        recordedAt: session.recordedAt,
+      });
+      map.set(key, row);
+    }
+    return map;
+  }, [sessionsQuery.data]);
+
+  const selectedSessions = selectedDay ? sessionsByDay.get(selectedDay) ?? [] : [];
+
   function intensityColor(pages = 0) {
-    if (pages <= 0) return "#F1F5F9";
-    if (pages <= 10) return "#DBEAFE";
-    if (pages <= 25) return "#93C5FD";
-    if (pages <= 40) return "#60A5FA";
-    return "#2563EB";
+    if (pages <= 0) return "#F3E9D7";
+    if (pages <= 10) return "#E3CFA8";
+    if (pages <= 25) return "#C9A36A";
+    if (pages <= 40) return "#A0713F";
+    return "#6B4528";
   }
 
   return (
-    <Screen>
+    <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
       <FlatList
-        data={history.data?.days ?? []}
-        keyExtractor={(item) => item.date}
+        data={[{ id: "history-header-only" }]}
+        keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             <View style={styles.monthControls}>
-              <Button mode="outlined" style={styles.navBtn} onPress={history.previousMonth}>
+              <Button
+                mode="outlined"
+                style={styles.navBtn}
+                labelStyle={styles.navBtnLabel}
+                onPress={history.previousMonth}
+              >
                 Mes anterior
               </Button>
               <Text style={styles.monthLabel}>
                 {monthFormatter.format(new Date(history.selected.year, history.selected.month - 1, 1))}
               </Text>
-              <Button mode="outlined" style={styles.navBtn} onPress={history.nextMonth}>
+              <Button
+                mode="outlined"
+                style={styles.navBtn}
+                labelStyle={styles.navBtnLabel}
+                onPress={history.nextMonth}
+              >
                 Mes siguiente
               </Button>
             </View>
-
-            <Card mode="outlined" style={styles.summary}>
-              <Card.Content>
-                <Text style={styles.summaryText}>Sesiones: {history.data?.totalSessions ?? 0}</Text>
-                <Text style={styles.summaryText}>Minutos: {history.data?.totalMinutes ?? 0}</Text>
-                <Text style={styles.summaryText}>Paginas: {history.data?.totalPages ?? 0}</Text>
-              </Card.Content>
-            </Card>
-
+ 
             <Card mode="outlined" style={styles.calendarCard}>
               <Card.Content>
               <Text variant="titleMedium" style={styles.calendarTitle}>Calendario de intensidad</Text>
@@ -97,27 +134,74 @@ export default function HistoryScreen() {
               </View>
               <View style={styles.calendarGrid}>
                 {calendarCells.map((cell) => (
-                  <View key={cell.key} style={[styles.dayCell, { backgroundColor: intensityColor(cell.pages) }]}>
-                    <Text style={styles.dayCellText}>{cell.day ?? ""}</Text>
+                  <Pressable
+                    key={cell.key}
+                    disabled={!cell.day || !cell.pages}
+                    onPress={() => setSelectedDay(cell.key)}
+                    style={[
+                      styles.dayCell,
+                      { backgroundColor: intensityColor(cell.pages) },
+                      selectedDay === cell.key ? styles.dayCellSelected : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayCellText,
+                        (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
+                      ]}
+                    >
+                      {cell.day ?? ""}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.legendRow}>
+                {[
+                  { label: "0", color: intensityColor(0) },
+                  { label: "1-10", color: intensityColor(10) },
+                  { label: "11-25", color: intensityColor(25) },
+                  { label: "26-40", color: intensityColor(40) },
+                  { label: "41+", color: intensityColor(50) },
+                ].map((item) => (
+                  <View key={item.label} style={styles.legendItem}>
+                    <View style={[styles.legendSwatch, { backgroundColor: item.color }]} />
+                    <Text style={styles.legendText}>{item.label}</Text>
                   </View>
                 ))}
               </View>
-              <Text style={styles.legendText}>0, 1-10, 11-25, 26-40, 41+ paginas</Text>
+              {selectedDay ? (
+                <View style={styles.sessionsBlock}>
+                  <Text style={styles.sessionsTitle}>
+                    Sesiones del {dateFormatter.format(new Date(selectedDay))}
+                  </Text>
+                  {selectedSessions.length > 0 ? (
+                    selectedSessions.map((session) => (
+                      <View key={session.id} style={styles.sessionMiniCard}>
+                        <Text style={styles.sessionMiniTitle} numberOfLines={1}>
+                          {session.title}
+                        </Text>
+                        <Text style={styles.sessionMiniMeta} numberOfLines={1}>
+                          {session.author || "Autor desconocido"}
+                        </Text>
+                        <Text style={styles.sessionMiniMeta}>
+                          Paginas: {Math.max(0, (session.previousPage ?? session.currentPage - session.pagesRead) + 1)} - {session.currentPage}
+                        </Text>
+                        <Text style={styles.sessionMiniMeta}>
+                          Hora: {timeFormatter.format(new Date(session.recordedAt))}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.sessionEmptyText}>No hay detalle de sesiones para ese día.</Text>
+                  )}
+                </View>
+              ) : null}
               </Card.Content>
             </Card>
           </View>
         }
-        ListEmptyComponent={<EmptyState title="Sin actividad este mes" description="Registra sesiones para ver tu historial diario." />}
-        renderItem={({ item }) => (
-          <Card mode="outlined" style={styles.dayCard}>
-            <Card.Content>
-              <Text style={styles.dayDate}>{dateFormatter.format(new Date(item.date))}</Text>
-              <Text style={styles.dayMeta}>Sesiones: {item.sessionsCount}</Text>
-              <Text style={styles.dayMeta}>Minutos: {item.totalMinutes}</Text>
-              <Text style={styles.dayMeta}>Paginas: {item.pagesRead}</Text>
-            </Card.Content>
-          </Card>
-        )}
+        ListEmptyComponent={null}
+        renderItem={() => null}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}
       />
@@ -126,6 +210,9 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    paddingTop: 10,
+  },
   headerContainer: {
     marginBottom: 12,
   },
@@ -143,18 +230,15 @@ const styles = StyleSheet.create({
   navBtn: {
     flex: 1,
   },
+  navBtnLabel: {
+    fontSize: 12,
+  },
   monthLabel: {
     fontWeight: "700",
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     minWidth: 72,
     textAlign: "center",
     textTransform: "capitalize",
-  },
-  summary: {
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.bgSoft,
-    borderColor: theme.colors.border,
-    marginBottom: 12,
   },
   calendarCard: {
     borderRadius: theme.radius.md,
@@ -191,30 +275,70 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  dayCellSelected: {
+    borderColor: theme.colors.accent,
+    borderWidth: 2,
+  },
   dayCellText: {
     fontSize: 12,
     color: theme.colors.text,
     fontWeight: "600",
   },
+  dayCellTextOnDark: {
+    color: theme.colors.textOnDark,
+  },
+  errorText: {
+    color: theme.colors.textOnDark,
+  },
   legendText: {
     color: theme.colors.textSoft,
     fontSize: 12,
   },
-  summaryText: {
-    color: theme.colors.text,
-    fontWeight: "600",
+  legendRow: {
+    marginTop: 0,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
-  dayCard: {
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.card,
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendSwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: 4,
+    borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  dayDate: {
-    fontWeight: "700",
-    color: theme.colors.text,
+  sessionsBlock: {
+    marginTop: 12,
+    gap: 8,
   },
-  dayMeta: {
+  sessionsTitle: {
+    color: theme.colors.text,
+    fontWeight: "700",
+  },
+  sessionMiniCard: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.cardElevated,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  sessionMiniTitle: {
+    color: theme.colors.text,
+    fontWeight: "700",
+  },
+  sessionMiniMeta: {
     color: theme.colors.textSoft,
+    fontSize: 12,
+  },
+  sessionEmptyText: {
+    color: theme.colors.textSoft,
+    fontSize: 12,
   },
 });
 

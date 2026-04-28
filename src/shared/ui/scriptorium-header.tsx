@@ -25,7 +25,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
           <Text style={styles.subtitle}>BIBLIOTECA PERSONAL</Text>
         </View>
         <View style={styles.right}>
-          <Link href={"/(app)/(tabs)/profile" as never} asChild>
+          <Link href={"/(app)/profile" as never} asChild>
             <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Perfil">
               <Ionicons name="person-circle-outline" size={28} color={theme.colors.accent} />
             </Pressable>

@@ -83,14 +83,6 @@ export default function AppTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Perfil",
-          href: null,
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
         name="purchases"
         options={{
           title: "Compras",

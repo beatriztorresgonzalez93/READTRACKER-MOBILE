@@ -31,6 +31,7 @@ import type {
   Book,
   BooksSortKey,
   LibraryBooksQuery,
+  LibraryShelfFilter,
   LibraryStatusFilter,
 } from "@/shared/types/books";
 import type { PurchaseItem } from "@/shared/types/wishlist";
@@ -63,10 +64,16 @@ const STATUS_OPTIONS: { key: LibraryStatusFilter; label: string }[] = [
   { key: "leido", label: "Leidos" },
 ];
 
+const SHELF_OPTIONS: { key: LibraryShelfFilter; label: string }[] = [
+  { key: "todos", label: "Todos" },
+  { key: "favoritos", label: "Favoritos" },
+];
+
 function isFilteredQuery(q: LibraryBooksQuery): boolean {
   return (
     q.search.trim() !== "" ||
     q.status !== "todos" ||
+    q.shelf !== "todos" ||
     q.genre !== null ||
     q.sort !== "recientes"
   );
@@ -342,6 +349,7 @@ export default function LibraryScreen() {
   const [searchDraft, setSearchDraft] = useState("");
   const debouncedSearch = useDebouncedValue(searchDraft, 400);
   const [status, setStatus] = useState<LibraryStatusFilter>("todos");
+  const [shelf, setShelf] = useState<LibraryShelfFilter>("todos");
   const [genre, setGenre] = useState<string | null>(null);
   const [sort, setSort] = useState<BooksSortKey>("recientes");
   const [genreModalOpen, setGenreModalOpen] = useState(false);
@@ -352,11 +360,11 @@ export default function LibraryScreen() {
     () => ({
       search: debouncedSearch,
       status,
-      shelf: "todos",
+      shelf,
       genre,
       sort,
     }),
-    [debouncedSearch, status, genre, sort],
+    [debouncedSearch, status, shelf, genre, sort],
   );
 
   const booksFeed = useBooksFeed(listQuery);
@@ -365,6 +373,7 @@ export default function LibraryScreen() {
   function clearFilters() {
     setSearchDraft("");
     setStatus("todos");
+    setShelf("todos");
     setGenre(null);
     setSort("recientes");
   }
@@ -480,6 +489,34 @@ export default function LibraryScreen() {
                         ]}
                         textStyle={
                           status === opt.key
+                            ? styles.filterChipTextSelected
+                            : styles.filterChipText
+                        }
+                      >
+                        {opt.label}
+                      </Chip>
+                    ))}
+                  </ScrollView>
+                  <Text variant="labelMedium" style={styles.filterSectionLabel}>
+                    Coleccion
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipRow}
+                  >
+                    {SHELF_OPTIONS.map((opt) => (
+                      <Chip
+                        key={opt.key}
+                        compact
+                        selected={shelf === opt.key}
+                        onPress={() => setShelf(opt.key)}
+                        style={[
+                          styles.filterChip,
+                          shelf === opt.key && styles.filterChipSelected,
+                        ]}
+                        textStyle={
+                          shelf === opt.key
                             ? styles.filterChipTextSelected
                             : styles.filterChipText
                         }
