@@ -40,9 +40,9 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
-const COLLECTION_CARD_WIDTH = 132;
+const COLLECTION_CARD_WIDTH = 146;
 const COLLECTION_COVER_RATIO = 1.42;
-const GRID_COVER_WIDTH = 156;
+const GRID_COVER_WIDTH = 168;
 
 const SORT_LABELS: Record<BooksSortKey, string> = {
   recientes: "Mas recientes",
@@ -149,6 +149,7 @@ function CollectionBookCard({ book }: { book: Book }) {
             uri={book.coverUrl}
             width={COLLECTION_CARD_WIDTH}
             aspectRatio={COLLECTION_COVER_RATIO}
+            borderRadius={4}
           />
           {book.isFavorite ? (
             <View style={styles.collectionHeart}>
@@ -532,7 +533,7 @@ export default function LibraryScreen() {
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
                     <Text variant="titleLarge" style={styles.sectionTitle}>
-                      Ultimos añadidos
+                      Colección
                     </Text>
                   </View>
                   <FlatList
@@ -563,7 +564,7 @@ export default function LibraryScreen() {
 
               <View style={styles.section}>
                 <Text variant="titleLarge" style={styles.sectionTitle}>
-                  Coleccion
+                  Tus libros
                 </Text>
               </View>
             </View>
@@ -763,7 +764,7 @@ const styles = StyleSheet.create({
   acquisitionCard: {
     width: ACQUISITION_CARD_WIDTH,
     padding: 12,
-    borderRadius: theme.radius.lg,
+    borderRadius: 8,
     backgroundColor: theme.colors.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
@@ -793,7 +794,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.md,
+    borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
     overflow: "hidden",
@@ -836,7 +837,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.lg,
+    borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
   },
@@ -940,7 +941,7 @@ const styles = StyleSheet.create({
   },
   collectionCard: {
     width: COLLECTION_CARD_WIDTH,
-    borderRadius: theme.radius.lg,
+    borderRadius: 8,
     overflow: "hidden",
     backgroundColor: theme.colors.card,
     borderWidth: StyleSheet.hairlineWidth,
@@ -983,7 +984,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 14,
     padding: 14,
-    borderRadius: theme.radius.lg,
+    borderRadius: 8,
     backgroundColor: theme.colors.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
@@ -1024,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     overflow: "visible",
-    height: 352,
+    height: 378,
     paddingHorizontal: 2,
     alignItems: "center",
     justifyContent: "flex-start",

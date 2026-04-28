@@ -35,8 +35,11 @@ export type Book = {
   genre?: string;
   rating?: number | null;
   isFavorite?: boolean;
+  publishedYear?: number;
   updatedAt?: string;
   lastPageMarkedAt?: string | null;
+  tags?: string[];
+  publisher?: string;
 };
 
 export type BooksSummary = {
@@ -62,6 +65,10 @@ export type PaginatedBooks = {
 export type BookDetail = Book & {
   description?: string;
   progressPercent?: number;
+  reviewText?: string;
+  readCount?: number;
+  favoriteQuote?: string;
+  recommendation?: string;
 };
 
 export type CreateReadingSessionPayload = {

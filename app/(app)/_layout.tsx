@@ -49,6 +49,16 @@ export default function ProtectedLayout() {
           header: () => <ScriptoriumHeader showBackButton />,
         }}
       />
+      <Stack.Screen
+        name="books/edit"
+        options={{
+          title: "",
+          headerShown: true,
+          headerShadowVisible: false,
+          presentation: "modal",
+          header: () => <ScriptoriumHeader showBackButton />,
+        }}
+      />
     </Stack>
   );
 }

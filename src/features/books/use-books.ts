@@ -1,7 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/use-auth";
-import { createReadingSession, getBookById, getBooksPage, getBooksSummary } from "@/shared/api/books-api";
+import { createBook, createReadingSession, deleteBook, getBookById, getBooksPage, getBooksSummary, type CreateBookPayload, type UpdateBookPayload, updateBook, updateBookStatus } from "@/shared/api/books-api";
 import { defaultLibraryBooksQuery, type Book, type CreateReadingSessionPayload, type LibraryBooksQuery } from "@/shared/types/books";
 
 const LEYENDO_PREVIEW_QUERY: LibraryBooksQuery = {
@@ -75,6 +75,65 @@ export function useCreateReadingSession(bookId: string) {
       await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+    },
+  });
+}
+
+export function useUpdateBookStatus(bookId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (status: NonNullable<Book["status"]>) => updateBookStatus(token ?? "", bookId, status),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+    },
+  });
+}
+
+export function useCreateBook() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateBookPayload) => createBook(token ?? "", payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+    },
+  });
+}
+
+export function useUpdateBook(bookId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateBookPayload) => updateBook(token ?? "", bookId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+    },
+  });
+}
+
+export function useDeleteBook(bookId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteBook(token ?? "", bookId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.removeQueries({ queryKey: ["books", "detail", bookId] });
     },
   });
 }

@@ -1,146 +1,1626 @@
-import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Link, router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
+import { Card, Chip, Text } from "react-native-paper";
 
-import { useBookDetail, useCreateReadingSession } from "@/features/books/use-books";
-import { AppButton } from "@/shared/ui/app-button";
-import { AppInput } from "@/shared/ui/app-input";
+import {
+  useBookDetail,
+  useBooksFeed,
+  useCreateReadingSession,
+  useDeleteBook,
+  useUpdateBook,
+  useUpdateBookStatus,
+} from "@/features/books/use-books";
+import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
+const DETAIL_TABS = ["Informacion", "Mi resena", "Similares"] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
+const STATUS_OPTIONS = ["pendiente", "leyendo", "leido"] as const;
+
+function Stars({ rating }: { rating?: number | null }) {
+  const value = rating ?? 0;
+  const stars = Math.max(
+    0,
+    Math.min(5, Math.round(value > 5 ? value / 2 : value)),
+  );
+  return (
+    <Text style={styles.stars}>
+      {"★".repeat(stars)}
+      {"☆".repeat(5 - stars)}
+    </Text>
+  );
+}
+
 export default function BookDetailScreen() {
+  const { width } = useWindowDimensions();
+  const pagerRef = useRef<ScrollView>(null);
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id;
   const detailQuery = useBookDetail(bookId);
+  const updateStatus = useUpdateBookStatus(bookId);
+  const updateBook = useUpdateBook(bookId);
   const createSession = useCreateReadingSession(bookId);
-  const [page, setPage] = useState("");
+  const deleteBook = useDeleteBook(bookId);
+  const [activeTab, setActiveTab] = useState<DetailTab>("Informacion");
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [markPageModalOpen, setMarkPageModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] =
+    useState<(typeof STATUS_OPTIONS)[number]>("pendiente");
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewDraft, setReviewDraft] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewReadAt, setReviewReadAt] = useState("");
+  const [reviewReadAtDate, setReviewReadAtDate] = useState<Date>(new Date());
+  const [reviewDatePickerOpen, setReviewDatePickerOpen] = useState(false);
+  const [reviewTimesRead, setReviewTimesRead] = useState("1ª vez");
+  const [reviewFavoriteQuote, setReviewFavoriteQuote] = useState("");
+  const [reviewRecommendation, setReviewRecommendation] = useState<
+    "si" | "depende" | "no" | undefined
+  >(undefined);
+  const [reviewTags, setReviewTags] = useState<string[]>([]);
+  const [reviewTagInput, setReviewTagInput] = useState("");
+  const [pageInput, setPageInput] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pageHistory, setPageHistory] = useState<
+    Array<{ page: number; when: string }>
+  >([]);
+  const book = detailQuery.data;
 
-  async function onSaveProgress() {
-    const numericPage = Number(page);
+  const similarByGenreFeed = useBooksFeed(
+    useMemo(
+      () => ({
+        ...defaultLibraryBooksQuery,
+        genre: book?.genre?.trim() ? book.genre : null,
+        sort: "recientes" as const,
+      }),
+      [book?.genre],
+    ),
+  );
 
-    if (!Number.isFinite(numericPage) || numericPage < 1) {
-      Alert.alert("Pagina invalida", "La pagina debe ser mayor o igual a 1.");
+  const similarByTagsFeed = useBooksFeed(
+    useMemo(
+      () => ({
+        ...defaultLibraryBooksQuery,
+        genre: null,
+        sort: "recientes" as const,
+      }),
+      [],
+    ),
+  );
+
+  const similarBooks = useMemo(() => {
+    const targetGenre = book?.genre?.toLowerCase().trim();
+    const baseTags = new Set(
+      (book?.tags ?? []).map((t) => t.toLowerCase().trim()).filter(Boolean),
+    );
+
+    const genreCandidates = (similarByGenreFeed.data?.pages.flatMap((p) => p.items) ?? [])
+      .filter((candidate) => candidate.id !== bookId)
+      .filter((candidate) =>
+        targetGenre && candidate.genre
+          ? candidate.genre.toLowerCase().trim() === targetGenre
+          : false,
+      )
+      .map((candidate) => ({ book: candidate, reason: "Mismo genero" as const }));
+
+    const alreadyIncluded = new Set(genreCandidates.map((entry) => entry.book.id));
+
+    const tagCandidates = (similarByTagsFeed.data?.pages.flatMap((p) => p.items) ?? [])
+      .filter((candidate) => candidate.id !== bookId && !alreadyIncluded.has(candidate.id))
+      .filter((candidate) =>
+        (candidate.tags ?? []).some((tag) =>
+          baseTags.has(tag.toLowerCase().trim()),
+        ),
+      )
+      .map((candidate) => ({ book: candidate, reason: "Etiquetas en comun" as const }));
+
+    return [...genreCandidates, ...tagCandidates].slice(0, 6);
+  }, [book?.genre, book?.tags, bookId, similarByGenreFeed.data?.pages, similarByTagsFeed.data?.pages]);
+  const year = book?.publishedYear ? String(book.publishedYear) : "—";
+  const reviewText =
+    book?.reviewText ?? "Aun no has escrito una resena para este libro.";
+  const canMarkPage = selectedStatus === "leyendo";
+  const recommendationValue = (book?.recommendation ?? "").toLowerCase().trim();
+  const recommendationLabel =
+    recommendationValue === "si"
+      ? "👍 Sí, lo recomiendo"
+      : recommendationValue === "depende"
+        ? "🤔 Depende del lector"
+        : recommendationValue === "no"
+          ? "👎 No especialmente"
+          : "Aun sin recomendacion.";
+  const totalPages = Math.max(1, book?.pages ?? 1);
+  const completion = Math.max(
+    0,
+    Math.min(100, Math.round((currentPage / totalPages) * 100)),
+  );
+
+  useEffect(() => {
+    const fromBook = book?.status;
+    if (
+      fromBook === "pendiente" ||
+      fromBook === "leyendo" ||
+      fromBook === "leido"
+    ) {
+      setSelectedStatus(fromBook);
+    }
+  }, [book?.status]);
+
+  useEffect(() => {
+    setIsFavorite(Boolean(book?.isFavorite));
+  }, [book?.isFavorite]);
+
+  useEffect(() => {
+    setReviewDraft(book?.reviewText ?? "");
+    setReviewFavoriteQuote(book?.favoriteQuote ?? "");
+    setReviewRecommendation(
+      book?.recommendation === "si" ||
+        book?.recommendation === "depende" ||
+        book?.recommendation === "no"
+        ? book.recommendation
+        : undefined,
+    );
+    const ratingValue = book?.rating ? Math.max(0, Math.min(5, Math.round(book.rating))) : 0;
+    setReviewRating(ratingValue);
+    setReviewTags(book?.tags ?? []);
+    const parsedReadAt = book?.lastPageMarkedAt ? new Date(book.lastPageMarkedAt) : null;
+    if (parsedReadAt && !Number.isNaN(parsedReadAt.getTime())) {
+      setReviewReadAtDate(parsedReadAt);
+      setReviewReadAt(toReadAtValue(parsedReadAt));
+    }
+  }, [book?.reviewText, book?.favoriteQuote, book?.recommendation, book?.rating, book?.tags, book?.lastPageMarkedAt]);
+
+  function addReviewTag(raw: string) {
+    const normalized = raw.trim().replace(/^#/, "");
+    if (!normalized) return;
+    if (normalized.length > 30) {
+      Alert.alert("Etiqueta demasiado larga", "Maximo 30 caracteres.");
       return;
     }
+    setReviewTags((prev) => {
+      if (prev.some((tag) => tag.toLowerCase() === normalized.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, normalized];
+    });
+    setReviewTagInput("");
+  }
 
-    if (detailQuery.data?.pages && numericPage > detailQuery.data.pages) {
-      Alert.alert("Pagina invalida", "No puede superar el total de paginas del libro.");
-      return;
-    }
+  function toReadAtValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
 
-    try {
-      const currentProgress = detailQuery.data?.progress ?? 0;
-      const totalPages = detailQuery.data?.pages ?? 0;
-      const previousPage =
-        totalPages > 0 ? Math.round((Math.max(0, Math.min(100, currentProgress)) / 100) * totalPages) : undefined;
-      await createSession.mutateAsync({
-        currentPage: numericPage,
-        previousPage,
-      });
-      setPage("");
-      Alert.alert("Sesion guardada", "El progreso se actualizo correctamente.");
-    } catch (error) {
-      Alert.alert("No se pudo guardar", (error as Error).message);
+  function onReviewDateValueChange(
+    _event: unknown,
+    selectedDate?: Date,
+  ) {
+    if (!selectedDate) return;
+    setReviewReadAtDate(selectedDate);
+    setReviewReadAt(toReadAtValue(selectedDate));
+    if (Platform.OS !== "ios") {
+      setReviewDatePickerOpen(false);
     }
   }
+
+  useEffect(() => {
+    const pages = Math.max(1, book?.pages ?? 1);
+    const fromProgress = Math.round(((book?.progress ?? 0) / 100) * pages);
+    const initialPage = Math.max(0, Math.min(pages, fromProgress));
+    setCurrentPage(initialPage);
+    setPageInput(initialPage > 0 ? String(initialPage) : "");
+
+    const lastMarkedAt = book?.lastPageMarkedAt;
+    if (lastMarkedAt) {
+      setPageHistory((prev) => {
+        if (prev.length > 0) return prev;
+        return [{ page: initialPage || 1, when: lastMarkedAt }];
+      });
+    }
+  }, [book?.pages, book?.progress, book?.lastPageMarkedAt]);
 
   if (detailQuery.isLoading && !detailQuery.data) {
     return <AppLoader />;
   }
 
-  const book = detailQuery.data;
+  function onDeletePress() {
+    setDeleteConfirmOpen(true);
+  }
+
+  function moveToTab(tab: DetailTab) {
+    setActiveTab(tab);
+    const idx = DETAIL_TABS.indexOf(tab);
+    pagerRef.current?.scrollTo({ x: idx * width, animated: true });
+  }
+
+  function onPagerEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const x = event.nativeEvent.contentOffset.x;
+    const idx = Math.round(x / width);
+    setActiveTab(DETAIL_TABS[idx] ?? "Informacion");
+  }
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <View style={styles.coverWrap}>
-            <BookCover uri={book?.coverUrl} width={160} aspectRatio={1.5} accessibilityLabel={`Portada: ${book?.title}`} />
-          </View>
-          <Text variant="headlineSmall" style={styles.title}>
-            {book?.title}
-          </Text>
-          <Text variant="bodyMedium" style={styles.meta}>
-            {book?.author ?? "Autor desconocido"}
-          </Text>
-          <Text variant="bodySmall" style={styles.metaMuted}>
-            Progreso {Math.round(book?.progress ?? 0)}% · {book?.pages ?? "?"} paginas
-          </Text>
-          {book?.description ? (
-            <Text variant="bodyMedium" style={styles.description}>
-              {book.description}
+    <Screen
+      edges={["bottom", "left", "right"]}
+      style={{ paddingHorizontal: 0, paddingTop: 0 }}
+    >
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <BookCover
+            uri={book?.coverUrl}
+            width={82}
+            aspectRatio={1.45}
+            borderRadius={4}
+            accessibilityLabel={`Portada: ${book?.title}`}
+          />
+          <View style={styles.heroMeta}>
+            <Text style={styles.heroTitle}>{book?.title}</Text>
+            <Text style={styles.heroAuthor}>
+              {book?.author ?? "Autor desconocido"}
             </Text>
-          ) : null}
+            <View style={styles.heroRatingRow}>
+              <Stars rating={book?.rating} />
+              {isFavorite ? (
+                <Chip compact style={styles.favChip}>
+                  <Ionicons name="heart" size={12} color="#D14E72" /> Favorito
+                </Chip>
+              ) : null}
+            </View>
+          </View>
         </View>
+        <View style={styles.tabsRow}>
+          {DETAIL_TABS.map((tab) => {
+            const active = tab === activeTab;
+            return (
+              <Pressable
+                key={tab}
+                style={styles.tabBtn}
+                onPress={() => moveToTab(tab)}
+              >
+                <Text
+                  style={[styles.tabLabel, active && styles.tabLabelActive]}
+                >
+                  {tab}
+                </Text>
+                <View
+                  style={[
+                    styles.tabUnderline,
+                    active && styles.tabUnderlineActive,
+                  ]}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
-        <View style={styles.form}>
-          <Text variant="titleMedium" style={styles.formTitle}>
-            Registrar sesion
-          </Text>
-          <AppInput
-            label="Pagina alcanzada"
-            keyboardType="number-pad"
-            value={page}
-            onChangeText={setPage}
-            placeholder="Ej: 135"
-          />
-          <AppButton
-            label={createSession.isPending ? "Guardando..." : "Guardar progreso"}
-            onPress={onSaveProgress}
-            disabled={createSession.isPending}
-          />
-        </View>
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onPagerEnd}
+        style={styles.pager}
+      >
+        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="bookmark-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={styles.blockLabel}>Estado de lectura</Text>
+              </View>
+              <Pressable
+                style={styles.statePill}
+                onPress={() => setStatusModalOpen(true)}
+              >
+                <Text style={styles.stateText}>
+                  {selectedStatus.toUpperCase()}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#FFF2D4" />
+              </Pressable>
+            </Card.Content>
+          </Card>
+
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.sectionTitle}>Detalles del libro</Text>
+              <View style={styles.detailGrid}>
+                <View style={styles.detailCell}>
+                  <View style={styles.labelWithIcon}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={14}
+                      color={theme.colors.textSoft}
+                    />
+                    <Text style={styles.blockLabel}>Año de publicacion</Text>
+                  </View>
+                  <Text style={styles.detailValue}>{year}</Text>
+                </View>
+                <View style={styles.detailCell}>
+                  <View style={styles.labelWithIcon}>
+                    <Ionicons
+                      name="book-outline"
+                      size={14}
+                      color={theme.colors.textSoft}
+                    />
+                    <Text style={styles.blockLabel}>Paginas</Text>
+                  </View>
+                  <Text style={styles.detailValue}>{book?.pages ?? "—"}</Text>
+                </View>
+                <View style={styles.detailCell}>
+                  <View style={styles.labelWithIcon}>
+                    <Ionicons
+                      name="pricetag-outline"
+                      size={14}
+                      color={theme.colors.textSoft}
+                    />
+                    <Text style={styles.blockLabel}>Genero</Text>
+                  </View>
+                  <Text style={styles.detailValue}>
+                    {book?.genre ?? "Sin genero"}
+                  </Text>
+                </View>
+                <View style={styles.detailCell}>
+                  <View style={styles.labelWithIcon}>
+                    <Ionicons
+                      name="business-outline"
+                      size={14}
+                      color={theme.colors.textSoft}
+                    />
+                    <Text style={styles.blockLabel}>Editorial</Text>
+                  </View>
+                  <Text style={styles.detailValue}>
+                    {book?.publisher ?? "—"}
+                  </Text>
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <View style={styles.labelWithIcon}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={15}
+                  color={theme.colors.textSoft}
+                />
+                <Text style={[styles.blockLabel, styles.synopsisLabel]}>
+                  Sinopsis
+                </Text>
+              </View>
+              <Text style={styles.bodyText}>
+                {book?.description ?? "No hay sinopsis disponible."}
+              </Text>
+            </Card.Content>
+          </Card>
+        </ScrollView>
+
+        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.blockLabel}>Mi resena</Text>
+              <Text style={styles.bodyText}>{reviewText}</Text>
+            </Card.Content>
+          </Card>
+
+          <View style={styles.twoCols}>
+            <Card mode="contained" style={[styles.block, styles.half]}>
+              <Card.Content>
+                <Text style={styles.blockLabel}>Leido en</Text>
+                <Text style={styles.detailValue}>
+                  {book?.lastPageMarkedAt
+                    ? new Date(book.lastPageMarkedAt).toLocaleDateString(
+                        "es-ES",
+                      )
+                    : "Sin registro"}
+                </Text>
+              </Card.Content>
+            </Card>
+            <Card mode="contained" style={[styles.block, styles.half]}>
+              <Card.Content>
+                <Text style={styles.blockLabel}>Veces leido</Text>
+                <Text style={styles.detailValue}>
+                  {book?.readCount
+                    ? `${book.readCount} vez${book.readCount > 1 ? "es" : ""}`
+                    : "1 vez"}
+                </Text>
+              </Card.Content>
+            </Card>
+          </View>
+
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.blockLabel}>Frase o cita favorita</Text>
+              <Text style={styles.bodyText}>
+                {book?.favoriteQuote ?? "Sin cita favorita por ahora."}
+              </Text>
+            </Card.Content>
+          </Card>
+
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.blockLabel}>Recomendacion</Text>
+              <View style={styles.reviewChipsRow}>
+                <Chip compact style={styles.reviewChip}>
+                  {recommendationLabel}
+                </Chip>
+              </View>
+            </Card.Content>
+          </Card>
+
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.blockLabel}>Etiquetas tematicas</Text>
+              {book?.tags && book.tags.length > 0 ? (
+                <View style={styles.reviewChipsRow}>
+                  {book.tags.map((tag) => (
+                    <Chip key={tag} compact style={styles.reviewChip}>
+                      #{tag}
+                    </Chip>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.markEmpty}>Sin etiquetas todavía.</Text>
+              )}
+            </Card.Content>
+          </Card>
+        </ScrollView>
+
+        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+          <Card mode="contained" style={styles.block}>
+            <Card.Content>
+              <Text style={styles.blockLabel}>Similares</Text>
+              <Text style={styles.subtle}>
+                Libros que podrian interesarte por genero o etiquetas en comun.
+              </Text>
+              <View style={styles.similarGrid}>
+                {similarBooks.map(({ book: item, reason }) => (
+                  <Link
+                    key={item.id}
+                    href={`/(app)/books/${item.id}` as never}
+                    asChild
+                  >
+                    <Pressable style={styles.similarCard}>
+                      <BookCover
+                        uri={item.coverUrl}
+                        width={102}
+                        aspectRatio={1.45}
+                        borderRadius={6}
+                        accessibilityLabel={`Portada: ${item.title}`}
+                      />
+                      <Text numberOfLines={2} style={styles.similarTitle}>
+                        {item.title}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.similarAuthor}>
+                        {reason}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                ))}
+                {similarBooks.length === 0 ? (
+                  <Text style={styles.markEmpty}>
+                    Aun no hay suficientes coincidencias por genero o etiquetas.
+                  </Text>
+                ) : null}
+              </View>
+            </Card.Content>
+          </Card>
+        </ScrollView>
       </ScrollView>
+
+      <View style={styles.bottomMenu}>
+        <Pressable
+          style={[styles.menuBtn, styles.menuBtnPrimary]}
+          onPress={() => {
+            if (activeTab === "Mi resena") {
+              setReviewModalOpen(true);
+              return;
+            }
+            router.push({
+              pathname: "/(app)/books/edit",
+              params: { id: bookId },
+            });
+          }}
+        >
+          <Ionicons
+            name={activeTab === "Mi resena" ? "create" : "create-outline"}
+            size={17}
+            color="#D14E72"
+          />
+        </Pressable>
+
+        <Pressable
+          style={[styles.menuBtn, !canMarkPage && styles.menuBtnDisabled]}
+          disabled={!canMarkPage}
+          onPress={() => setMarkPageModalOpen(true)}
+        >
+          <Ionicons
+            name="bookmark-outline"
+            size={17}
+            color={canMarkPage ? "#D14E72" : theme.colors.textMutedOnDark}
+          />
+        </Pressable>
+
+        <Pressable
+          style={styles.menuBtn}
+          onPress={async () => {
+            const previous = isFavorite;
+            const next = !previous;
+            setIsFavorite(next);
+            try {
+              await updateBook.mutateAsync({
+                isFavorite: next,
+                status: selectedStatus,
+              });
+            } catch (error) {
+              setIsFavorite(previous);
+              Alert.alert("No se pudo actualizar", (error as Error).message);
+            }
+          }}
+        >
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={17}
+            color="#D14E72"
+          />
+        </Pressable>
+
+        <Pressable
+          style={[styles.menuBtn, deleteBook.isPending && styles.menuBtnDisabled]}
+          onPress={onDeletePress}
+          disabled={deleteBook.isPending}
+        >
+          <Ionicons name="trash-outline" size={17} color="#D14E72" />
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={markPageModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMarkPageModalOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setMarkPageModalOpen(false)}
+          />
+          <View style={styles.markSheet}>
+            <View style={styles.markHeader}>
+              <Text style={styles.markTitle}>Marcar pagina</Text>
+              <Text style={styles.markSubtitle}>
+                {book?.title ?? "Libro"} · {totalPages} paginas
+              </Text>
+            </View>
+
+            <Text style={styles.markLabel}>Pagina actual</Text>
+            <View style={styles.markInputRow}>
+              <TextInput
+                value={pageInput}
+                onChangeText={setPageInput}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor="#9D7E5B"
+                style={styles.markInput}
+              />
+              <Text style={styles.markTotal}>/ {totalPages}</Text>
+            </View>
+
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${completion}%` }]} />
+            </View>
+            <Text style={styles.markProgressText}>
+              Pag. {currentPage} · {completion}% completado
+            </Text>
+
+            <Text style={styles.markLabel}>Historial reciente</Text>
+            {pageHistory.length === 0 ? (
+              <Text style={styles.markEmpty}>Aun no hay marcas de pagina.</Text>
+            ) : (
+              pageHistory.slice(0, 3).map((entry, idx) => (
+                <View key={`${entry.when}-${idx}`} style={styles.historyRow}>
+                  <Text style={styles.historyDate}>
+                    {new Date(entry.when).toLocaleString("es-ES")}
+                  </Text>
+                  <Text style={styles.historyPage}>pag. {entry.page}</Text>
+                </View>
+              ))
+            )}
+
+            <View style={styles.markActions}>
+              <Pressable
+                style={[styles.markBtn, styles.markBtnPrimary]}
+                onPress={async () => {
+                  const next = Number(pageInput);
+                  if (!Number.isFinite(next) || next < 1 || next > totalPages) {
+                    Alert.alert(
+                      "Pagina invalida",
+                      `Introduce un valor entre 1 y ${totalPages}.`,
+                    );
+                    return;
+                  }
+                  try {
+                    await createSession.mutateAsync({
+                      currentPage: Math.round(next),
+                      previousPage: Math.max(0, currentPage),
+                    });
+                    const now = new Date().toISOString();
+                    const normalizedPage = Math.round(next);
+                    setCurrentPage(normalizedPage);
+                    setPageInput(String(normalizedPage));
+                    setPageHistory((prev) => [
+                      { page: normalizedPage, when: now },
+                      ...prev.filter(
+                        (item) =>
+                          !(item.page === normalizedPage && item.when === now),
+                      ),
+                    ]);
+                    setMarkPageModalOpen(false);
+                  } catch (error) {
+                    Alert.alert(
+                      "No se pudo guardar",
+                      (error as Error).message,
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.markBtnPrimaryText}>
+                  {createSession.isPending ? "Guardando..." : "Guardar"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.markBtn, styles.markBtnGhost]}
+                onPress={() => setMarkPageModalOpen(false)}
+              >
+                <Text style={styles.markBtnGhostText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={reviewModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReviewModalOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setReviewModalOpen(false)}
+          />
+          <View style={styles.markSheet}>
+            <View style={styles.markHeader}>
+              <Text style={styles.markTitle}>Escribir reseña y valoración</Text>
+              <Text style={styles.markSubtitle}>
+                {book?.title ?? "Libro"} · {book?.author ?? "Autor"}
+              </Text>
+            </View>
+            <ScrollView
+              style={styles.reviewBody}
+              contentContainerStyle={styles.reviewBodyContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.markLabel}>Valoración global</Text>
+              <View style={styles.ratingRow}>
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <Pressable key={value} onPress={() => setReviewRating(value)}>
+                    <Ionicons
+                      name={reviewRating >= value ? "star" : "star-outline"}
+                      size={28}
+                      color={reviewRating >= value ? "#D4A62F" : "#B8A793"}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.reviewTwoCols}>
+                <View style={styles.reviewCol}>
+                  <Text style={styles.markLabel}>Leído en</Text>
+                  <Pressable
+                    style={[
+                      styles.markInput,
+                      styles.reviewSmallInput,
+                      styles.readAtBtn,
+                    ]}
+                    onPress={() => setReviewDatePickerOpen(true)}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={
+                        reviewReadAt ? styles.readAtText : styles.datePlaceholder
+                      }
+                    >
+                      {reviewReadAt || "Seleccionar fecha..."}
+                    </Text>
+                  </Pressable>
+                </View>
+                <View style={styles.reviewCol}>
+                  <Text style={styles.markLabel}>Veces leído</Text>
+                  <Pressable
+                    style={[styles.markInput, styles.reviewSmallInput, styles.timesReadBtn]}
+                    onPress={() => {
+                      const options = ["1ª vez", "2ª vez", "3ª vez", "4ª vez", "5ª vez o más"] as const;
+                      const currentIdx = options.indexOf(reviewTimesRead as (typeof options)[number]);
+                      const next = options[(currentIdx + 1) % options.length];
+                      setReviewTimesRead(next);
+                    }}
+                  >
+                    <Text style={styles.timesReadText}>{reviewTimesRead}</Text>
+                    <Ionicons name="chevron-down" size={18} color="#E4BC78" />
+                  </Pressable>
+                </View>
+              </View>
+              {reviewDatePickerOpen ? (
+                <View style={styles.datePickerWrap}>
+                  <DateTimePicker
+                    value={reviewReadAtDate}
+                    mode="date"
+                    maximumDate={new Date()}
+                    display={Platform.OS === "ios" ? "inline" : "spinner"}
+                    accentColor="#9E7144"
+                    textColor="#E4BC78"
+                    themeVariant="dark"
+                    onValueChange={onReviewDateValueChange}
+                    onDismiss={() => setReviewDatePickerOpen(false)}
+                  />
+                  {Platform.OS === "ios" ? (
+                    <Pressable
+                      style={styles.datePickerDoneBtn}
+                      onPress={() => setReviewDatePickerOpen(false)}
+                    >
+                      <Text style={styles.datePickerDoneText}>Aceptar fecha</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              <View style={styles.reviewHeaderRow}>
+                <Text style={styles.markLabel}>Reseña personal</Text>
+                <Text style={styles.counterText}>{reviewDraft.length}/2000</Text>
+              </View>
+              <TextInput
+                value={reviewDraft}
+                onChangeText={(text) => setReviewDraft(text.slice(0, 2000))}
+                multiline
+                placeholder="¿Qué te pareció el libro? Escribe con libertad..."
+                placeholderTextColor="#9D7E5B"
+                style={[styles.markInput, styles.reviewInput]}
+              />
+
+              <Text style={styles.markLabel}>Frase o cita favorita</Text>
+              <TextInput
+                value={reviewFavoriteQuote}
+                onChangeText={setReviewFavoriteQuote}
+                multiline
+                placeholder="Una frase del libro que te haya marcado..."
+                placeholderTextColor="#9D7E5B"
+                style={[styles.markInput, styles.quoteInput]}
+              />
+
+              <Text style={styles.markLabel}>Etiquetas tematicas</Text>
+              <View style={styles.tagInputRow}>
+                <TextInput
+                  value={reviewTagInput}
+                  onChangeText={setReviewTagInput}
+                  onSubmitEditing={() => addReviewTag(reviewTagInput)}
+                  returnKeyType="done"
+                  placeholder="Escribe una etiqueta y pulsa Enter"
+                  placeholderTextColor="#9D7E5B"
+                  style={[styles.markInput, styles.reviewSmallInput, styles.tagInput]}
+                />
+                <Pressable
+                  style={styles.tagAddBtn}
+                  onPress={() => addReviewTag(reviewTagInput)}
+                >
+                  <Ionicons name="add" size={18} color="#2B1308" />
+                </Pressable>
+              </View>
+              {reviewTags.length > 0 ? (
+                <View style={styles.reviewChipsRow}>
+                  {reviewTags.map((tag) => (
+                    <Pressable
+                      key={tag}
+                      style={styles.tagChipBtn}
+                      onPress={() =>
+                        setReviewTags((prev) => prev.filter((value) => value !== tag))
+                      }
+                    >
+                      <Text style={styles.tagChipText}>#{tag} ×</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.markEmpty}>Sin etiquetas todavía.</Text>
+              )}
+
+              <Text style={styles.markLabel}>¿Lo recomendarías?</Text>
+              <View style={styles.recommendRow}>
+                <Pressable
+                  style={[
+                    styles.recommendBtn,
+                    reviewRecommendation === "si" && styles.recommendBtnActive,
+                  ]}
+                  onPress={() => setReviewRecommendation("si")}
+                >
+                  <Text
+                    style={[
+                      styles.recommendText,
+                      reviewRecommendation === "si" && styles.recommendTextActive,
+                    ]}
+                  >
+                    👍 Sí
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.recommendBtn,
+                    reviewRecommendation === "depende" && styles.recommendBtnActive,
+                  ]}
+                  onPress={() => setReviewRecommendation("depende")}
+                >
+                  <Text
+                    style={[
+                      styles.recommendText,
+                      reviewRecommendation === "depende" && styles.recommendTextActive,
+                    ]}
+                  >
+                    🤔 Depende
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.recommendBtn,
+                    reviewRecommendation === "no" && styles.recommendBtnActive,
+                  ]}
+                  onPress={() => setReviewRecommendation("no")}
+                >
+                  <Text
+                    style={[
+                      styles.recommendText,
+                      reviewRecommendation === "no" && styles.recommendTextActive,
+                    ]}
+                  >
+                    👎 No
+                  </Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+            <View style={styles.markActions}>
+              <Pressable
+                style={[styles.markBtn, styles.markBtnPrimary]}
+                onPress={async () => {
+                  try {
+                    await updateBook.mutateAsync({
+                      reviewText: reviewDraft.trim() || undefined,
+                      rating: reviewRating > 0 ? reviewRating : undefined,
+                      readAt: reviewReadAt.trim() || undefined,
+                      timesRead: reviewTimesRead,
+                      favoriteQuote: reviewFavoriteQuote.trim() || undefined,
+                      wouldRecommend: reviewRecommendation,
+                      reviewTags,
+                      status: selectedStatus,
+                    });
+                    setReviewModalOpen(false);
+                  } catch (error) {
+                    Alert.alert(
+                      "No se pudo guardar la reseña",
+                      (error as Error).message,
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.markBtnPrimaryText}>
+                  {updateBook.isPending ? "Publicando..." : "Publicar reseña"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.markBtn, styles.markBtnGhost]}
+                onPress={() => setReviewModalOpen(false)}
+              >
+                <Text style={styles.markBtnGhostText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deleteConfirmOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteConfirmOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setDeleteConfirmOpen(false)}
+          />
+          <View style={styles.confirmSheet}>
+            <Text style={styles.confirmTitle}>Eliminar libro</Text>
+            <Text style={styles.confirmText}>
+              ¿Seguro que quieres eliminar este libro? Esta accion no se puede
+              deshacer.
+            </Text>
+            <View style={styles.confirmActions}>
+              <Pressable
+                style={[styles.confirmBtn, styles.confirmBtnGhost]}
+                onPress={() => setDeleteConfirmOpen(false)}
+              >
+                <Text style={styles.confirmBtnGhostText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.confirmBtn, styles.confirmBtnDanger]}
+                onPress={async () => {
+                  try {
+                    await deleteBook.mutateAsync();
+                    setDeleteConfirmOpen(false);
+                    Alert.alert("Libro eliminado", "El libro se ha eliminado correctamente.");
+                    router.replace("/(app)/(tabs)");
+                  } catch (error) {
+                    Alert.alert("No se pudo eliminar", (error as Error).message);
+                  }
+                }}
+              >
+                <Text style={styles.confirmBtnDangerText}>
+                  {deleteBook.isPending ? "Eliminando..." : "Eliminar"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={statusModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setStatusModalOpen(false)}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setStatusModalOpen(false)}
+          />
+          <View style={styles.statusSheet}>
+            {STATUS_OPTIONS.map((status) => {
+              const active = status === selectedStatus;
+              return (
+                <Pressable
+                  key={status}
+                  style={styles.statusRow}
+                  onPress={async () => {
+                    const previous = selectedStatus;
+                    setSelectedStatus(status);
+                    setStatusModalOpen(false);
+                    try {
+                      await updateStatus.mutateAsync(status);
+                    } catch (error) {
+                      setSelectedStatus(previous);
+                      Alert.alert(
+                        "No se pudo actualizar",
+                        (error as Error).message,
+                      );
+                    }
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.statusRowText,
+                      active && styles.statusRowTextActive,
+                    ]}
+                  >
+                    {status.toUpperCase()}
+                  </Text>
+                  {active ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                  ) : (
+                    <View style={{ width: 18 }} />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  hero: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: theme.colors.bgPanel,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
+  },
+  heroTop: {
+    flexDirection: "row",
     gap: 12,
-    paddingBottom: 24,
   },
-  card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.border,
-    padding: 16,
-    gap: 8,
+  heroMeta: {
+    flex: 1,
+    minWidth: 0,
   },
-  coverWrap: {
+  heroTitle: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 26,
+    color: theme.colors.textOnDark,
+    lineHeight: 30,
+  },
+  heroAuthor: {
+    fontSize: 14,
+    fontStyle: "italic",
+    color: theme.colors.accent,
+    marginTop: 2,
+  },
+  heroRatingRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
-  },
-  title: {
-    color: theme.colors.text,
-    marginTop: 4,
-  },
-  meta: {
-    color: theme.colors.textSoft,
-  },
-  metaMuted: {
-    color: theme.colors.textSoft,
-    marginTop: -2,
-  },
-  description: {
+    gap: 8,
     marginTop: 8,
+  },
+  stars: {
+    color: theme.colors.accent,
+    letterSpacing: 1.5,
+    fontSize: 15,
+  },
+  favChip: {
+    backgroundColor: theme.colors.cardElevated,
+  },
+  tabsRow: {
+    flexDirection: "row",
+    marginTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    paddingTop: 8,
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+  },
+  tabLabel: {
+    color: theme.colors.textMutedOnDark,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1,
+  },
+  tabLabelActive: {
+    color: theme.colors.accent,
+  },
+  tabUnderline: {
+    height: 1.5,
+    width: "48%",
+    backgroundColor: "transparent",
+  },
+  tabUnderlineActive: {
+    backgroundColor: theme.colors.accent,
+  },
+  pager: {
+    flex: 1,
+    backgroundColor: theme.colors.bgSoft,
+  },
+  tabContent: {
+    padding: 12,
+    gap: 10,
+    paddingBottom: 96,
+  },
+  block: {
+    backgroundColor: "#F3E9D8",
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(179, 154, 125, 0.35)",
+    shadowColor: "#2A1A11",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  labelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  blockLabel: {
+    color: theme.colors.textSoft,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+    fontSize: 12,
+    marginBottom: 0,
+  },
+  synopsisLabel: {
+    fontFamily: "Inter_600SemiBold",
+    color: theme.colors.text,
+  },
+  statePill: {
+    borderRadius: 8,
+    backgroundColor: "#9E7144",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  stateText: {
+    color: "#FFF2D4",
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.6,
+  },
+  sectionTitle: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 18,
+    color: theme.colors.text,
+    marginBottom: 6,
+  },
+  detailGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 10,
+    columnGap: 12,
+  },
+  detailCell: {
+    width: "47%",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.borderOnCard,
+    paddingBottom: 8,
+  },
+  detailValue: {
+    color: theme.colors.text,
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 16,
+  },
+  bodyText: {
     color: theme.colors.text,
     lineHeight: 22,
+    fontSize: 15,
   },
-  form: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radius.md,
+  twoCols: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  half: {
+    flex: 1,
+  },
+  reviewChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  reviewChip: {
+    backgroundColor: "rgba(158, 113, 68, 0.18)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.border,
-    padding: 16,
+    borderColor: "rgba(122, 88, 55, 0.45)",
+  },
+  tagsPlaceholder: {
+    height: 34,
+  },
+  subtle: {
+    color: theme.colors.textSoft,
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  similarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  similarCard: {
+    width: 108,
+    gap: 4,
+  },
+  similarTitle: {
+    fontFamily: "Fraunces_700Bold",
+    color: theme.colors.text,
+    fontSize: 15,
+  },
+  similarAuthor: {
+    color: theme.colors.textSoft,
+    fontStyle: "italic",
+    fontSize: 13,
+  },
+  bottomMenu: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.bgPanel,
+  },
+  menuBtn: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuBtnPrimary: {},
+  menuBtnDisabled: {
+    opacity: 0.5,
+  },
+  modalRoot: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(26, 11, 6, 0.45)",
+  },
+  confirmSheet: {
+    marginHorizontal: 24,
+    backgroundColor: "#230A05",
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#8C653A",
+    padding: 14,
     gap: 12,
   },
-  formTitle: {
+  confirmTitle: {
+    color: "#E4BC78",
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 24,
+  },
+  confirmText: {
+    color: "#D5AF72",
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  confirmActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  confirmBtn: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmBtnGhost: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#6B4B31",
+    backgroundColor: "#28140F",
+  },
+  confirmBtnDanger: {
+    backgroundColor: "#9E7144",
+  },
+  confirmBtnGhostText: {
+    color: "#D9B477",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
+  confirmBtnDangerText: {
+    color: "#FFF1D9",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
+  statusSheet: {
+    marginHorizontal: 24,
+    backgroundColor: theme.colors.cardElevated,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    paddingVertical: 8,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  statusRowText: {
     color: theme.colors.text,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.6,
+  },
+  statusRowTextActive: {
+    color: theme.colors.primary,
+  },
+  markSheet: {
+    marginHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#9C723F",
+    backgroundColor: "#230A05",
+    padding: 14,
+    gap: 10,
+  },
+  markHeader: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#6C4A2D",
+    paddingBottom: 8,
+  },
+  markTitle: {
+    color: theme.colors.accent,
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 28,
+  },
+  markSubtitle: {
+    color: "#C9A36C",
+    fontSize: 16,
+  },
+  markLabel: {
+    color: "#D5AF72",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  markInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  markInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#8C653A",
+    backgroundColor: "#2F120A",
+    color: "#F2D3A2",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 28,
+    fontFamily: "Fraunces_700Bold",
+  },
+  reviewInput: {
+    minHeight: 120,
+    fontSize: 18,
+    textAlignVertical: "top",
+    fontFamily: "Inter_400Regular",
+  },
+  reviewBody: {
+    maxHeight: 460,
+  },
+  reviewBodyContent: {
+    gap: 10,
+    paddingBottom: 6,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 4,
+  },
+  reviewTwoCols: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  reviewCol: {
+    flex: 1,
+  },
+  reviewSmallInput: {
+    minHeight: 54,
+    fontSize: 16,
+    fontFamily: "Inter_500Medium",
+  },
+  timesReadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  timesReadText: {
+    color: "#F2D3A2",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+  },
+  readAtBtn: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingTop: 10,
+  },
+  readAtText: {
+    flex: 1,
+    color: "#F2D3A2",
+    fontFamily: "Inter_500Medium",
+    fontSize: 16,
+    marginTop: 1,
+  },
+  datePlaceholder: {
+    color: "#9D7E5B",
+    fontFamily: "Inter_500Medium",
+    fontSize: 16,
+  },
+  datePickerWrap: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#8C653A",
+    borderRadius: 10,
+    backgroundColor: "#2F120A",
+    padding: 6,
+  },
+  datePickerDoneBtn: {
+    alignSelf: "flex-end",
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#D4A62F",
+  },
+  datePickerDoneText: {
+    color: "#2B1308",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+  },
+  reviewHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  counterText: {
+    color: "#A8885F",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  quoteInput: {
+    minHeight: 84,
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+  },
+  recommendRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  recommendBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#8C653A",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2F120A",
+  },
+  recommendBtnActive: {
+    backgroundColor: "#D4A62F",
+    borderColor: "#D4A62F",
+  },
+  recommendText: {
+    color: "#E4BC78",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  recommendTextActive: {
+    color: "#2B1308",
+  },
+  tagChipBtn: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#8C653A",
+    backgroundColor: "#2F120A",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  tagChipText: {
+    color: "#E4BC78",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+  },
+  tagInputRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  tagInput: {
+    flex: 1,
+  },
+  tagAddBtn: {
+    width: 44,
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: "#D4A62F",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#9C723F",
+  },
+  markTotal: {
+    color: "#E4BC78",
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 32,
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: "#3E210F",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#7E582E",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#C79638",
+  },
+  markProgressText: {
+    color: "#D5AF72",
+    fontSize: 15,
+  },
+  markEmpty: {
+    color: "#A8885F",
+    fontSize: 14,
+    fontStyle: "italic",
+  },
+  historyRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#5A3A20",
+    paddingVertical: 6,
+  },
+  historyDate: {
+    color: "#D5AF72",
+    fontSize: 16,
+  },
+  historyPage: {
+    color: "#D5AF72",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+  },
+  markActions: {
+    marginTop: 8,
+    flexDirection: "row",
+    gap: 10,
+  },
+  markBtn: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+  },
+  markBtnPrimary: {
+    backgroundColor: "#D4A62F",
+  },
+  markBtnGhost: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#6B4B31",
+    backgroundColor: "#28140F",
+  },
+  markBtnPrimaryText: {
+    color: "#2B1308",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 17,
+  },
+  markBtnGhostText: {
+    color: "#D9B477",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 17,
   },
 });
-

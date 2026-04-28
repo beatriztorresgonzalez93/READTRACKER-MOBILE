@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -9,15 +9,23 @@ import {
   View,
 } from "react-native";
 
-import { useCreateBook } from "@/features/books/use-books";
+import {
+  useBookDetail,
+  useUpdateBook,
+} from "@/features/books/use-books";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
+import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
-export default function NewBookScreen() {
-  const createBook = useCreateBook();
+export default function EditBookScreen() {
+  const params = useLocalSearchParams<{ id: string }>();
+  const bookId = params.id ?? "";
+  const detail = useBookDetail(bookId);
+  const updateBook = useUpdateBook(bookId);
+
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [pages, setPages] = useState("");
@@ -28,6 +36,24 @@ export default function NewBookScreen() {
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [selectedCoverUrl, setSelectedCoverUrl] = useState("");
   const [isSearchingCover, setIsSearchingCover] = useState(false);
+  const hydratedBookIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const b = detail.data;
+    if (!b) return;
+    if (hydratedBookIdRef.current === b.id) return;
+    hydratedBookIdRef.current = b.id;
+
+    setTitle(b.title ?? "");
+    setAuthor(b.author ?? "");
+    setPages(b.pages ? String(b.pages) : "");
+    setPublishedYear(b.publishedYear ? String(b.publishedYear) : "");
+    setGenre(b.genre ?? "");
+    setPublisher(b.publisher ?? "");
+    setDescription(b.description ?? "");
+    setSelectedCoverUrl(b.coverUrl ?? "");
+    setCoverOptions(b.coverUrl ? [b.coverUrl] : []);
+  }, [detail.data]);
 
   async function onSearchCover() {
     if (!title.trim()) {
@@ -72,11 +98,12 @@ export default function NewBookScreen() {
     }
   }
 
-  async function onCreate() {
+  async function onSave() {
     if (!title.trim() || !author.trim()) {
       Alert.alert("Campos requeridos", "Titulo y autor son obligatorios.");
       return;
     }
+
     const pagesNumber = pages.trim() ? Number(pages) : undefined;
     const publishedYearNumber = publishedYear.trim()
       ? Number(publishedYear)
@@ -97,7 +124,7 @@ export default function NewBookScreen() {
     }
 
     try {
-      await createBook.mutateAsync({
+      await updateBook.mutateAsync({
         title: title.trim(),
         author: author.trim(),
         pages: pagesNumber,
@@ -106,20 +133,30 @@ export default function NewBookScreen() {
         publisher: publisher.trim() || undefined,
         description: description.trim() || undefined,
         coverUrl: selectedCoverUrl.trim() || undefined,
+        status: detail.data?.status ?? "pendiente",
       });
-      Alert.alert("Libro creado", "El libro se ha anadido correctamente.");
+
+      Alert.alert(
+        "Libro actualizado",
+        "Los cambios se han guardado correctamente.",
+      );
       router.back();
     } catch (error) {
-      Alert.alert("No se pudo crear", (error as Error).message);
+      const message = (error as Error).message;
+      const shortMessage =
+        message.split(" | ")[0]?.trim() || "No se pudo guardar el libro.";
+      Alert.alert("No se pudo guardar", shortMessage);
     }
   }
+
+  if (detail.isLoading && !detail.data) return <AppLoader />;
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Anadir libro</Text>
+        <Text style={styles.title}>Editar libro</Text>
         <Text style={styles.subtitle}>
-          Completa los datos basicos para incorporarlo a tu biblioteca.
+          Actualiza los datos basicos de tu libro.
         </Text>
 
         <AppInput
@@ -217,9 +254,9 @@ export default function NewBookScreen() {
         />
 
         <AppButton
-          label={createBook.isPending ? "Guardando..." : "Guardar libro"}
-          onPress={onCreate}
-          disabled={createBook.isPending}
+          label={updateBook.isPending ? "Guardando..." : "Guardar cambios"}
+          onPress={onSave}
+          disabled={updateBook.isPending}
         />
       </ScrollView>
     </Screen>
@@ -259,10 +296,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textMutedOnDark,
     fontSize: 13,
     marginTop: -2,
-  },
-  coverPreview: {
-    alignItems: "center",
-    marginTop: 2,
   },
   coverPickerBlock: {
     gap: 8,
