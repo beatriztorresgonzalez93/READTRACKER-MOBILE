@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# ReadTracker Mobile (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App movil de ReadTracker construida con React Native + Expo y conectada a la API existente del proyecto web.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- Expo SDK 54 + React Native + TypeScript
+- Expo Router para navegacion
+- React Query para estado remoto
+- Expo Secure Store para persistencia de JWT
 
-   ```bash
-   npm install
-   ```
+## Alcance MVP implementado
 
-2. Start the app
+- Autenticacion:
+  - Login y registro
+  - Persistencia segura de sesion
+  - Restauracion de usuario con `GET /auth/me`
+- Biblioteca:
+  - Listado paginado de libros
+  - Resumen de biblioteca (`/books/summary`)
+  - Carga incremental con boton "Cargar mas"
+- Detalle y progreso:
+  - Vista detalle por libro
+  - Registro de sesion/progreso por pagina (`POST /reading-sessions`)
+  - Validaciones basicas de pagina
+- Fase extendida:
+  - Historial mensual de sesiones y lectura por dia
+  - Estadisticas de lectura (rachas, sesiones, paginas y promedio)
+  - Wishlist con alta/baja de deseos y marcado como comprado
+  - Registro de compras y listado de adquisiciones
 
-   ```bash
-   npx expo start
-   ```
+## Estructura principal
 
-In the output, you'll find options to open the app in a
+- `app/`: rutas con Expo Router
+  - `app/(auth)/`: login y registro
+  - `app/(app)/(tabs)/`: biblioteca y perfil
+  - `app/(app)/books/[id].tsx`: detalle y progreso
+- `src/features/`: modulos por dominio (`auth`, `books`)
+- `src/shared/`: API client, tipos, config, UI comun
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Configuracion
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Instala dependencias:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Crea variables de entorno:
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Ajusta `.env` si usas otro backend:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```env
+EXPO_PUBLIC_API_BASE_URL=https://readtracker-api.onrender.com/api/v1
+```
 
-## Join the community
+## Ejecutar
 
-Join our community of developers creating universal apps.
+```bash
+npm run start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Atajos:
+
+- `npm run android`
+- `npm run ios`
+- `npm run web`
+
+## Calidad
+
+- Lint:
+
+```bash
+npm run lint
+```
+
+- Typecheck:
+
+```bash
+npx tsc --noEmit
+```
+
+## Pendiente para paridad completa con web
+
+- Cobertura automatizada de tests de UI/integracion
