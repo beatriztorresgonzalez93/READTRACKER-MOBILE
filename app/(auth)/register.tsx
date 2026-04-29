@@ -1,6 +1,7 @@
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { AppButton } from "@/shared/ui/app-button";
@@ -9,22 +10,35 @@ import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function RegisterScreen() {
+  const registerSchema = z.object({
+    name: z.string().trim().min(1, "El nombre es obligatorio."),
+    email: z.string().trim().email("Introduce un correo valido."),
+    password: z.string().min(6, "La contrasena debe tener al menos 6 caracteres."),
+  });
   const theme = useAppTheme();
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
 
   async function onSubmit() {
-    if (!name || !email || !password) {
-      Alert.alert("Campos requeridos", "Completa nombre, correo y contrasena.");
+    const parsed = registerSchema.safeParse({ name, email, password });
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setErrors({
+        name: fieldErrors.name?.[0],
+        email: fieldErrors.email?.[0],
+        password: fieldErrors.password?.[0],
+      });
       return;
     }
+    setErrors({});
 
     try {
       setIsSubmitting(true);
-      await register({ name, email, password });
+      await register(parsed.data);
       router.replace("/(app)/(tabs)" as never);
     } catch (error) {
       Alert.alert("No se pudo crear la cuenta", (error as Error).message);
@@ -66,38 +80,60 @@ export default function RegisterScreen() {
 
   return (
     <Screen>
-      <View style={styles.wrapper}>
-        <Text style={styles.title}>Crear cuenta</Text>
-        <Text style={styles.subtitle}>Comienza a registrar tus lecturas</Text>
-        <AppInput label="Nombre" value={name} onChangeText={setName} placeholder="Tu nombre" />
-        <AppInput
-          label="Correo"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholder="tu@email.com"
-        />
-        <AppInput
-          label="Contrasena"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          placeholder="********"
-        />
-        <AppButton
-          label={isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
-          onPress={onSubmit}
-          disabled={isSubmitting}
-        />
-        <View style={styles.registerRow}>
-          <Text style={styles.registerHint}>Ya tienes cuenta?</Text>
-          <Link href={"/(auth)/login" as never} style={styles.link}>
-            Inicia sesion
-          </Link>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "android" ? "height" : "padding"}
+      >
+        <View style={styles.wrapper}>
+          <Text style={styles.title}>Crear cuenta</Text>
+          <Text style={styles.subtitle}>Comienza a registrar tus lecturas</Text>
+          <AppInput
+            label="Nombre"
+            value={name}
+            onChangeText={(value) => {
+              setName(value);
+              if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+            }}
+            placeholder="Tu nombre"
+            error={errors.name}
+          />
+          <AppInput
+            label="Correo"
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="tu@email.com"
+            error={errors.email}
+          />
+          <AppInput
+            label="Contrasena"
+            value={password}
+            onChangeText={(value) => {
+              setPassword(value);
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+            }}
+            secureTextEntry
+            autoCapitalize="none"
+            placeholder="********"
+            error={errors.password}
+          />
+          <AppButton
+            label={isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
+            onPress={onSubmit}
+            disabled={isSubmitting}
+          />
+          <View style={styles.registerRow}>
+            <Text style={styles.registerHint}>Ya tienes cuenta?</Text>
+            <Link href={"/(auth)/login" as never} style={styles.link}>
+              Inicia sesion
+            </Link>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

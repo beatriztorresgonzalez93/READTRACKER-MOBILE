@@ -1,13 +1,17 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { z } from "zod";
 
 import { useCreateBook } from "@/features/books/use-books";
 import { AppButton } from "@/shared/ui/app-button";
@@ -17,6 +21,22 @@ import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 import { useNewBookDraftStore } from "../../../store/new-book-draft";
+
+const newBookSchema = z.object({
+  title: z.string().trim().min(1, "El titulo es obligatorio."),
+  author: z.string().trim().min(1, "El autor es obligatorio."),
+  pages: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 1), "Introduce paginas validas."),
+  publishedYear: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 1000), "Introduce un año valido."),
+  genre: z.string().optional(),
+  publisher: z.string().optional(),
+  description: z.string().optional(),
+});
 
 export default function NewBookScreen() {
   const appTheme = useAppTheme();
@@ -41,10 +61,28 @@ export default function NewBookScreen() {
   const setSelectedCoverUrl = useNewBookDraftStore((state) => state.setSelectedCoverUrl);
   const resetDraft = useNewBookDraftStore((state) => state.resetDraft);
   const [isSearchingCover, setIsSearchingCover] = useState(false);
+  const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
+  const formScrollRef = useRef<ScrollView>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  function scrollFormToBottom() {
+    setTimeout(() => {
+      formScrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+  }
 
   async function onSearchCover() {
     if (!title.trim()) {
-      Alert.alert("Titulo requerido", "Escribe el titulo para buscar portada.");
+      setErrors((prev) => ({ ...prev, title: "Escribe el titulo para buscar portada." }));
       return;
     }
     try {
@@ -86,38 +124,38 @@ export default function NewBookScreen() {
   }
 
   async function onCreate() {
-    if (!title.trim() || !author.trim()) {
-      Alert.alert("Campos requeridos", "Titulo y autor son obligatorios.");
+    const parsed = newBookSchema.safeParse({
+      title,
+      author,
+      pages,
+      publishedYear,
+      genre,
+      publisher,
+      description,
+    });
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      setErrors({
+        title: fieldErrors.title?.[0],
+        author: fieldErrors.author?.[0],
+        pages: fieldErrors.pages?.[0],
+        publishedYear: fieldErrors.publishedYear?.[0],
+      });
       return;
     }
-    const pagesNumber = pages.trim() ? Number(pages) : undefined;
-    const publishedYearNumber = publishedYear.trim()
-      ? Number(publishedYear)
-      : undefined;
-    if (pages.trim() && (!Number.isFinite(pagesNumber) || pagesNumber! < 1)) {
-      Alert.alert(
-        "Paginas invalidas",
-        "Introduce un numero de paginas valido.",
-      );
-      return;
-    }
-    if (
-      publishedYear.trim() &&
-      (!Number.isFinite(publishedYearNumber) || publishedYearNumber! < 1000)
-    ) {
-      Alert.alert("Año invalido", "Introduce un año de publicacion valido.");
-      return;
-    }
+    setErrors({});
+    const pagesNumber = parsed.data.pages.trim() ? Number(parsed.data.pages) : undefined;
+    const publishedYearNumber = parsed.data.publishedYear.trim() ? Number(parsed.data.publishedYear) : undefined;
 
     try {
       await createBook.mutateAsync({
-        title: title.trim(),
-        author: author.trim(),
+        title: parsed.data.title.trim(),
+        author: parsed.data.author.trim(),
         pages: pagesNumber,
         publishedYear: publishedYearNumber,
-        genre: genre.trim() || undefined,
-        publisher: publisher.trim() || undefined,
-        description: description.trim() || undefined,
+        genre: parsed.data.genre?.trim() || undefined,
+        publisher: parsed.data.publisher?.trim() || undefined,
+        description: parsed.data.description?.trim() || undefined,
         coverUrl: selectedCoverUrl.trim() || undefined,
       });
       Alert.alert("Libro creado", "El libro se ha anadido correctamente.");
@@ -130,37 +168,64 @@ export default function NewBookScreen() {
 
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Anadir libro</Text>
-        <Text style={styles.subtitle}>
-          Completa los datos basicos para incorporarlo a tu biblioteca.
-        </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "android" ? "height" : "padding"}
+      >
+        <ScrollView
+          ref={formScrollRef}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.content,
+            isKeyboardVisible ? styles.contentKeyboardOpen : null,
+          ]}
+        >
+          <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Anadir libro</Text>
+          <Text style={styles.subtitle}>
+            Completa los datos basicos para incorporarlo a tu biblioteca.
+          </Text>
 
-        <AppInput
-          label="Titulo *"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Ej: Alas de hierro"
-        />
+          <AppInput
+            label="Titulo *"
+            value={title}
+            onChangeText={(value) => {
+              setTitle(value);
+              if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
+            }}
+            placeholder="Ej: Alas de hierro"
+            error={errors.title}
+          />
         <AppInput
           label="Autor *"
           value={author}
-          onChangeText={setAuthor}
+          onChangeText={(value) => {
+            setAuthor(value);
+            if (errors.author) setErrors((prev) => ({ ...prev, author: undefined }));
+          }}
           placeholder="Ej: Rebecca Yarros"
+          error={errors.author}
         />
         <AppInput
           label="Paginas"
           value={pages}
-          onChangeText={setPages}
+          onChangeText={(value) => {
+            setPages(value);
+            if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
+          }}
           keyboardType="number-pad"
           placeholder="Ej: 520"
+          error={errors.pages}
         />
         <AppInput
           label="Año de publicacion"
           value={publishedYear}
-          onChangeText={setPublishedYear}
+          onChangeText={(value) => {
+            setPublishedYear(value);
+            if (errors.publishedYear) setErrors((prev) => ({ ...prev, publishedYear: undefined }));
+          }}
           keyboardType="number-pad"
           placeholder="Ej: 2025"
+          error={errors.publishedYear}
         />
         <AppInput
           label="Genero"
@@ -224,6 +289,7 @@ export default function NewBookScreen() {
           label="Sinopsis"
           value={description}
           onChangeText={setDescription}
+          onFocus={scrollFormToBottom}
           placeholder="Resumen breve del libro"
           multiline
           numberOfLines={4}
@@ -235,7 +301,8 @@ export default function NewBookScreen() {
           onPress={onCreate}
           disabled={createBook.isPending}
         />
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -247,6 +314,9 @@ const styles = StyleSheet.create({
   content: {
     gap: 12,
     paddingBottom: 24,
+  },
+  contentKeyboardOpen: {
+    paddingBottom: 180,
   },
   title: {
     fontFamily: "Fraunces_700Bold",

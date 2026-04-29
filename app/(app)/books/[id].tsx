@@ -4,6 +4,7 @@ import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -69,6 +70,7 @@ function Stars({ rating }: { rating?: number | null }) {
 export default function BookDetailScreen() {
   const { width } = useWindowDimensions();
   const pagerRef = useRef<ScrollView>(null);
+  const reviewScrollRef = useRef<ScrollView>(null);
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id;
   const detailQuery = useBookDetail(bookId);
@@ -301,6 +303,12 @@ export default function BookDetailScreen() {
     setActiveTab(DETAIL_TABS[idx] ?? "Informacion");
   }
 
+  function scrollReviewToBottom() {
+    setTimeout(() => {
+      reviewScrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+  }
+
   return (
     <Screen
       edges={["bottom", "left", "right"]}
@@ -530,10 +538,12 @@ export default function BookDetailScreen() {
                   size={15}
                   color={theme.colors.textSoft}
                 />
-                <Text style={styles.blockLabel}>Recomendacion</Text>
+                <Text style={[styles.blockLabel, styles.reviewSectionLabel]}>
+                  Recomendacion
+                </Text>
               </View>
               <View style={styles.reviewChipsRow}>
-                <Chip compact style={styles.reviewChip}>
+                <Chip compact style={styles.reviewChip} textStyle={styles.reviewChipText}>
                   {recommendationLabel}
                 </Chip>
               </View>
@@ -548,12 +558,19 @@ export default function BookDetailScreen() {
                   size={15}
                   color={theme.colors.textSoft}
                 />
-                <Text style={styles.blockLabel}>Etiquetas tematicas</Text>
+                <Text style={[styles.blockLabel, styles.reviewSectionLabel]}>
+                  Etiquetas tematicas
+                </Text>
               </View>
               {book?.tags && book.tags.length > 0 ? (
                 <View style={styles.reviewChipsRow}>
                   {book.tags.map((tag) => (
-                    <Chip key={tag} compact style={styles.reviewChip}>
+                    <Chip
+                      key={tag}
+                      compact
+                      style={styles.reviewChip}
+                      textStyle={styles.reviewChipText}
+                    >
                       #{tag}
                     </Chip>
                   ))}
@@ -789,18 +806,24 @@ export default function BookDetailScreen() {
             style={styles.modalBackdrop}
             onPress={() => setReviewModalOpen(false)}
           />
-          <View style={styles.markSheet}>
-            <View style={styles.markHeader}>
-              <Text style={styles.markTitle}>Escribir reseña y valoración</Text>
-              <Text style={styles.markSubtitle}>
-                {book?.title ?? "Libro"} · {book?.author ?? "Autor"}
-              </Text>
-            </View>
-            <ScrollView
-              style={styles.reviewBody}
-              contentContainerStyle={styles.reviewBodyContent}
-              showsVerticalScrollIndicator={false}
-            >
+          <KeyboardAvoidingView
+            style={{ marginHorizontal: 20 }}
+            behavior={Platform.OS === "android" ? "height" : "padding"}
+          >
+            <View style={styles.markSheet}>
+              <View style={styles.markHeader}>
+                <Text style={styles.markTitle}>Escribir reseña y valoración</Text>
+                <Text style={styles.markSubtitle}>
+                  {book?.title ?? "Libro"} · {book?.author ?? "Autor"}
+                </Text>
+              </View>
+              <ScrollView
+                ref={reviewScrollRef}
+                style={styles.reviewBody}
+                contentContainerStyle={styles.reviewBodyContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
               <Text style={styles.markLabel}>Valoración global</Text>
               <View style={styles.ratingRow}>
                 {[1, 2, 3, 4, 5].map((value) => (
@@ -874,36 +897,39 @@ export default function BookDetailScreen() {
                 <Text style={styles.markLabel}>Reseña personal</Text>
                 <Text style={styles.counterText}>{reviewDraft.length}/2000</Text>
               </View>
-              <TextInput
-                value={reviewDraft}
-                onChangeText={(text) => setReviewDraft(text.slice(0, 2000))}
-                multiline
-                placeholder="¿Qué te pareció el libro? Escribe con libertad..."
-                placeholderTextColor="#9D7E5B"
-                style={[styles.markInput, styles.reviewInput]}
-              />
+                <TextInput
+                  value={reviewDraft}
+                  onChangeText={(text) => setReviewDraft(text.slice(0, 2000))}
+                  onFocus={scrollReviewToBottom}
+                  multiline
+                  placeholder="¿Qué te pareció el libro? Escribe con libertad..."
+                  placeholderTextColor="#9D7E5B"
+                  style={[styles.markInput, styles.reviewInput]}
+                />
 
               <Text style={styles.markLabel}>Frase o cita favorita</Text>
-              <TextInput
-                value={reviewFavoriteQuote}
-                onChangeText={setReviewFavoriteQuote}
-                multiline
-                placeholder="Una frase del libro que te haya marcado..."
-                placeholderTextColor="#9D7E5B"
-                style={[styles.markInput, styles.quoteInput]}
-              />
+                <TextInput
+                  value={reviewFavoriteQuote}
+                  onChangeText={setReviewFavoriteQuote}
+                  onFocus={scrollReviewToBottom}
+                  multiline
+                  placeholder="Una frase del libro que te haya marcado..."
+                  placeholderTextColor="#9D7E5B"
+                  style={[styles.markInput, styles.quoteInput]}
+                />
 
               <Text style={styles.markLabel}>Etiquetas tematicas</Text>
               <View style={styles.tagInputRow}>
-                <TextInput
-                  value={reviewTagInput}
-                  onChangeText={setReviewTagInput}
-                  onSubmitEditing={() => addReviewTag(reviewTagInput)}
-                  returnKeyType="done"
-                  placeholder="Escribe una etiqueta y pulsa Enter"
-                  placeholderTextColor="#9D7E5B"
-                  style={[styles.markInput, styles.reviewSmallInput, styles.tagInput]}
-                />
+                  <TextInput
+                    value={reviewTagInput}
+                    onChangeText={setReviewTagInput}
+                    onFocus={scrollReviewToBottom}
+                    onSubmitEditing={() => addReviewTag(reviewTagInput)}
+                    returnKeyType="done"
+                    placeholder="Escribe una etiqueta"
+                    placeholderTextColor="#9D7E5B"
+                    style={[styles.markInput, styles.reviewSmallInput, styles.tagInput]}
+                  />
                 <Pressable
                   style={styles.tagAddBtn}
                   onPress={() => addReviewTag(reviewTagInput)}
@@ -980,8 +1006,8 @@ export default function BookDetailScreen() {
                   </Text>
                 </Pressable>
               </View>
-            </ScrollView>
-            <View style={styles.markActions}>
+              </ScrollView>
+              <View style={styles.markActions}>
               <Pressable
                 style={[styles.markBtn, styles.markBtnPrimary]}
                 onPress={async () => {
@@ -1022,7 +1048,8 @@ export default function BookDetailScreen() {
                 <Text style={styles.markBtnGhostText}>Cancelar</Text>
               </Pressable>
             </View>
-          </View>
+              </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1283,6 +1310,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 0,
   },
+  reviewSectionLabel: {
+    color: theme.colors.text,
+  },
   synopsisLabel: {
     fontFamily: "Inter_600SemiBold",
     color: theme.colors.text,
@@ -1345,6 +1375,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(158, 113, 68, 0.18)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(122, 88, 55, 0.45)",
+  },
+  reviewChipText: {
+    color: theme.colors.text,
   },
   tagsPlaceholder: {
     height: 34,
