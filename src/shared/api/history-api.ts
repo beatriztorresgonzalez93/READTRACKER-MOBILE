@@ -1,3 +1,4 @@
+// Construye historial y resumenes agregando sesiones de lectura.
 import { getReadingSessions } from "@/shared/api/reading-sessions-api";
 import type { MonthlyHistory, ReadingStats } from "@/shared/types/history";
 import type { ReadingSession } from "@/shared/types/reading-session";

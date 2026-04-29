@@ -1,3 +1,4 @@
+// Define providers globales de la app, fuentes y navegacion raiz.
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";

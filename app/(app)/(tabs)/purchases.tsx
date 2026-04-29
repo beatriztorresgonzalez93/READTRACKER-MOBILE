@@ -1,3 +1,4 @@
+// Lista de compras realizadas desde la wishlist del usuario.
 import { FlatList, StyleSheet, View } from "react-native";
 import { Card, Text } from "react-native-paper";
 

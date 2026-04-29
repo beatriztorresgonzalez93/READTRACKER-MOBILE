@@ -1,3 +1,4 @@
+// Controla el acceso autenticado y la estructura privada de navegacion.
 import { Redirect, Stack } from "expo-router";
 
 import { useAuth } from "@/features/auth/use-auth";

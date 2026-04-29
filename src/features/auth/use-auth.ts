@@ -1,3 +1,4 @@
+// Hook de acceso tipado al contexto global de autenticacion.
 import { useContext } from "react";
 
 import { AuthContext } from "@/features/auth/auth-context";

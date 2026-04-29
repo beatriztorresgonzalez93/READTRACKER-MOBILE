@@ -1,3 +1,4 @@
+// Formulario para editar la informacion de un libro existente.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {

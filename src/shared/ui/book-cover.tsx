@@ -1,3 +1,4 @@
+// Componente para renderizar portada de libro con fallback.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";

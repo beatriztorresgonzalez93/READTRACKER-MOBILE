@@ -1,3 +1,4 @@
+// Boton reutilizable de la app con estilos del sistema de tema.
 import { Pressable, StyleSheet, Text, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 

@@ -1,3 +1,4 @@
+// Loader visual comun para estados de carga de pantallas.
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { theme } from "@/shared/ui/theme";

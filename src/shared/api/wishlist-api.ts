@@ -1,9 +1,9 @@
+// Cliente de endpoints para gestionar wishlist y compras.
 import { apiRequest } from "@/shared/api/client";
 import type {
   CreateWishlistItemPayload,
   PurchaseItem,
   WishlistItem,
-  WishlistSummary,
 } from "@/shared/types/wishlist";
 
 function asList<T>(payload: unknown, keys: string[]): T[] {
@@ -60,17 +60,4 @@ export async function getPurchases(token: string): Promise<PurchaseItem[]> {
   return asList<PurchaseItem>(response, ["items", "acquisitions"]);
 }
 
-export async function getWishlistSummary(token: string): Promise<WishlistSummary> {
-  const response = await apiRequest<{ data?: WishlistSummary } | WishlistSummary | Record<string, unknown>>(
-    "/wishlist/summary",
-    { token },
-  );
-  const envelope = response as { data?: Partial<WishlistSummary> };
-  const summary = (envelope.data ?? response) as Partial<WishlistSummary>;
-  return {
-    pendingItems: summary.pendingItems ?? 0,
-    purchasedItems: summary.purchasedItems ?? 0,
-    monthlySpend: summary.monthlySpend ?? 0,
-  };
-}
 

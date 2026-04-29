@@ -1,3 +1,4 @@
+// Tab puente que redirige al flujo de crear libro.
 import { View } from "react-native";
 
 import { theme } from "@/shared/ui/theme";

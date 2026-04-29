@@ -1,3 +1,4 @@
+// Normaliza respuestas de libros de la API a tipos internos.
 import { resolveBookCoverUrl } from "@/shared/lib/resolve-media-url";
 import type { Book, BookDetail } from "@/shared/types/books";
 

@@ -1,3 +1,4 @@
+// Hooks de consultas y mutaciones para obtener y actualizar libros.
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/use-auth";

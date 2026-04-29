@@ -1,3 +1,4 @@
+// Cabecera reutilizable con titulo y accesos de navegacion.
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";

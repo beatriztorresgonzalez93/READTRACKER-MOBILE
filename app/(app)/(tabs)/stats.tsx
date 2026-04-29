@@ -1,3 +1,4 @@
+// Panel de estadisticas de lectura y progreso global.
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card } from "react-native-paper";
 

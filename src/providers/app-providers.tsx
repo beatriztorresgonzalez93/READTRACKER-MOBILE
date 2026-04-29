@@ -1,3 +1,4 @@
+// Agrupa providers globales: React Query, Paper y autenticacion.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useColorScheme } from "react-native";

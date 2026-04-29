@@ -1,3 +1,4 @@
+// Store temporal para el borrador del formulario de nuevo libro.
 import { create } from "zustand";
 
 type NewBookDraftState = {

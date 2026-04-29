@@ -1,3 +1,4 @@
+// Contenedor base de pantalla con Safe Area y fondo tematico.
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Edges } from "react-native-safe-area-context";
 import { StyleSheet, View, type ViewProps } from "react-native";

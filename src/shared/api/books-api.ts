@@ -1,3 +1,4 @@
+// Cliente de endpoints de libros, filtros y operaciones asociadas.
 import { apiRequest } from "@/shared/api/client";
 import { normalizeBook, normalizeBookDetail } from "@/shared/lib/normalize-book";
 import type {

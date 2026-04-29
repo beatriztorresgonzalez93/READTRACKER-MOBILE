@@ -1,3 +1,4 @@
+// Pantalla de inicio de sesion con validacion de formulario.
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";

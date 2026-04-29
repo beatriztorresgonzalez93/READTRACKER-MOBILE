@@ -1,3 +1,4 @@
+// Pantalla de perfil para ver y actualizar datos del usuario.
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";

@@ -1,3 +1,4 @@
+// Formulario para crear un nuevo libro con validaciones.
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -20,7 +21,7 @@ import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
-import { useNewBookDraftStore } from "../../../store/new-book-draft";
+import { useNewBookDraftStore } from "@store/new-book-draft";
 
 const newBookSchema = z.object({
   title: z.string().trim().min(1, "El titulo es obligatorio."),

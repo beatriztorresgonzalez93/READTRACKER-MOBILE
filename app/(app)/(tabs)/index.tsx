@@ -1,3 +1,4 @@
+// Pantalla principal de biblioteca con filtros, resumen y coleccion.
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useMemo, useState } from "react";
@@ -41,7 +42,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
-import { useLibraryPreferencesStore } from "../../../store/library-preferences";
+import { useLibraryPreferencesStore } from "@store/library-preferences";
 
 const COLLECTION_CARD_WIDTH = 146;
 const COLLECTION_COVER_RATIO = 1.42;

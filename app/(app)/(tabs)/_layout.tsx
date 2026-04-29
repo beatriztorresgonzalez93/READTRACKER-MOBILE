@@ -1,3 +1,4 @@
+// Configura tabs principales y accesos rapidos de la seccion privada.
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, useRouter } from "expo-router";

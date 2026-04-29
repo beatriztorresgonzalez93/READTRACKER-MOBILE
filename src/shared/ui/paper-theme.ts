@@ -1,3 +1,4 @@
+// Adapta tokens propios al tema MD3 de React Native Paper.
 import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from "react-native-paper";
 
 import { getThemeByScheme } from "@/shared/ui/theme";

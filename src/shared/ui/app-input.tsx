@@ -1,3 +1,4 @@
+// Input reutilizable con etiqueta, error y estilos consistentes.
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 

@@ -1,3 +1,4 @@
+// Define los tokens visuales globales para modo claro y oscuro.
 export type ThemeColors = {
   bg: string;
   bgPanel: string;

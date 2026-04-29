@@ -1,3 +1,4 @@
+// Muestra el historial de lectura mensual y el calendario de sesiones.
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
@@ -16,6 +17,36 @@ export default function HistoryScreen() {
   const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
   const timeFormatter = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const sessionsByDay = useMemo(() => {
+    const map = new Map<string, {
+      id: string;
+      title: string;
+      author: string;
+      pagesRead: number;
+      previousPage?: number;
+      currentPage: number;
+      recordedAt: string;
+    }[]>();
+    const sessions = sessionsQuery.data ?? [];
+    for (const session of sessions) {
+      const at = new Date(session.recordedAt);
+      if (Number.isNaN(at.getTime())) continue;
+      const key = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+      const row = map.get(key) ?? [];
+      row.push({
+        id: session.id,
+        title: session.title,
+        author: session.author,
+        pagesRead: Math.max(0, session.pagesRead ?? 0),
+        previousPage: session.previousPage,
+        currentPage: session.currentPage,
+        recordedAt: session.recordedAt,
+      });
+      map.set(key, row);
+    }
+    return map;
+  }, [sessionsQuery.data]);
 
   if (history.isLoading && !history.data) {
     return <AppLoader />;
@@ -51,39 +82,6 @@ export default function HistoryScreen() {
   while (calendarCells.length % 7 !== 0) {
     calendarCells.push({ key: `tail-${calendarCells.length}` });
   }
-
-  const sessionsByDay = useMemo(() => {
-    const map = new Map<
-      string,
-      Array<{
-        id: string;
-        title: string;
-        author: string;
-        pagesRead: number;
-        previousPage?: number;
-        currentPage: number;
-        recordedAt: string;
-      }>
-    >();
-    const sessions = sessionsQuery.data ?? [];
-    for (const session of sessions) {
-      const at = new Date(session.recordedAt);
-      if (Number.isNaN(at.getTime())) continue;
-      const key = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
-      const row = map.get(key) ?? [];
-      row.push({
-        id: session.id,
-        title: session.title,
-        author: session.author,
-        pagesRead: Math.max(0, session.pagesRead ?? 0),
-        previousPage: session.previousPage,
-        currentPage: session.currentPage,
-        recordedAt: session.recordedAt,
-      });
-      map.set(key, row);
-    }
-    return map;
-  }, [sessionsQuery.data]);
 
   const selectedSessions = selectedDay ? sessionsByDay.get(selectedDay) ?? [] : [];
 

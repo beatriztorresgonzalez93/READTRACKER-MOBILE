@@ -1,3 +1,4 @@
+// Tipos para historial mensual y estadisticas de lectura.
 export type HistoryDay = {
   date: string;
   sessionsCount: number;

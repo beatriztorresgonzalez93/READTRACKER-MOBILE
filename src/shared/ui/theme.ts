@@ -1,3 +1,4 @@
+// Expone tokens de tema y selector por esquema de color.
 import { noteFlowDarkTheme, noteFlowLightTheme, type ThemeTokens } from "../../../constants/theme";
 
 export { noteFlowDarkTheme, noteFlowLightTheme };

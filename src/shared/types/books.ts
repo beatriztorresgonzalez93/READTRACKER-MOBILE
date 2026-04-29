@@ -1,3 +1,4 @@
+// Define tipos y enums del dominio de libros y biblioteca.
 /** Ordenación alineada con GET /books de la API web. */
 export type BooksSortKey = "recientes" | "titulo" | "autor" | "genero" | "valoracion";
 

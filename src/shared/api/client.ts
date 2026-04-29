@@ -1,3 +1,4 @@
+// Utilidad HTTP base para llamadas autenticadas a la API.
 import { env } from "@/shared/config/env";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";

@@ -1,3 +1,4 @@
+// Agrupa y configura la navegacion del flujo de autenticacion.
 import { Stack } from "expo-router";
 
 export default function AuthLayout() {

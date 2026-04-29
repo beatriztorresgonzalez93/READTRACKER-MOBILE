@@ -1,3 +1,4 @@
+// Cliente de endpoints de autenticacion y perfil de usuario.
 import { apiRequest } from "@/shared/api/client";
 import type { AuthResponse, LoginPayload, RegisterPayload, User } from "@/shared/types/auth";
 

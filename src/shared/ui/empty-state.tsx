@@ -1,3 +1,4 @@
+// Estado vacio reutilizable para listas sin resultados.
 import { StyleSheet, Text, View } from "react-native";
 import { theme } from "@/shared/ui/theme";
 

@@ -1,3 +1,4 @@
+// Gestiona la wishlist: crear, editar, comprar y eliminar deseos.
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";

@@ -1,3 +1,4 @@
+// Detalle de libro con progreso, resena, etiquetas y acciones.
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";

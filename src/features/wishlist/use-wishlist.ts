@@ -1,3 +1,4 @@
+// Hooks para consultar y mutar elementos de la wishlist.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/use-auth";

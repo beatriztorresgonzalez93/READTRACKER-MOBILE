@@ -1,3 +1,4 @@
+// Hook utilitario para retrasar cambios y evitar llamadas excesivas.
 import { useEffect, useState } from "react";
 
 export function useDebouncedValue<T>(value: T, delayMs: number): T {

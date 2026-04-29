@@ -1,3 +1,4 @@
+// Define los tipos de datos para autenticacion y usuario.
 export type User = {
   id: string;
   name?: string;

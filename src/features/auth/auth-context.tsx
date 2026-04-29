@@ -1,3 +1,4 @@
+// Gestiona sesion, usuario autenticado y acciones de autenticacion.
 import * as SecureStore from "expo-secure-store";
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";

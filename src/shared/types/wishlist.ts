@@ -1,3 +1,4 @@
+// Tipos para entidades y payloads del modulo de wishlist.
 export type WishlistItem = {
   id: string;
   title: string;
@@ -15,12 +16,6 @@ export type PurchaseItem = {
   price: string;
   store: string;
   purchasedAt: string;
-};
-
-export type WishlistSummary = {
-  pendingItems: number;
-  purchasedItems: number;
-  monthlySpend: number;
 };
 
 export type CreateWishlistItemPayload = {

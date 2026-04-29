@@ -1,3 +1,4 @@
+// Resuelve rutas de media relativas a URLs absolutas utilizables.
 import { env } from "@/shared/config/env";
 
 /**

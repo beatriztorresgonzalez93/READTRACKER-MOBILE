@@ -1,3 +1,4 @@
+// Pantalla de registro de usuario con validacion y feedback.
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";

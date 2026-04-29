@@ -1,3 +1,4 @@
+// Tipos para representar una sesion individual de lectura.
 export type ReadingSession = {
   id: string;
   userId: string;

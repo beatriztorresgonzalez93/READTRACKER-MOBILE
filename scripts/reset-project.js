@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Script auxiliar para reiniciar la estructura base del proyecto.
 
 /**
  * This script is used to reset the project to a blank state.

@@ -1,3 +1,4 @@
+// Store global con filtros y preferencias de vista de biblioteca.
 import { create } from "zustand";
 
 import type { BooksSortKey, LibraryShelfFilter, LibraryStatusFilter } from "@/shared/types/books";

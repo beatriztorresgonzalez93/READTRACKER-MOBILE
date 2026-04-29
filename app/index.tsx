@@ -1,3 +1,4 @@
+// Redirige al usuario a la seccion publica o privada segun su sesion.
 import { Redirect } from "expo-router";
 
 import { useAuth } from "@/features/auth/use-auth";

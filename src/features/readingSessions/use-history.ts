@@ -1,3 +1,4 @@
+// Hooks para construir historial mensual y estadisticas de lectura.
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 

@@ -1,3 +1,4 @@
+// Cliente de endpoints de sesiones de lectura registradas.
 import { apiRequest } from "@/shared/api/client";
 import type { ReadingSession } from "@/shared/types/reading-session";
 

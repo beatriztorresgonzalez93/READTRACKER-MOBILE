@@ -1,3 +1,4 @@
+// Centraliza variables de entorno y valores por defecto de red.
 const DEFAULT_API_BASE_URL = "https://readtracker-api.onrender.com/api/v1";
 
 export const env = {
