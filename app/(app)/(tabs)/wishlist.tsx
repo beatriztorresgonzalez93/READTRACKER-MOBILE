@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Searchbar, Text } from "react-native-paper";
+import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
 import {
   useCreatePurchase,
@@ -251,55 +252,60 @@ export default function WishlistScreen() {
           </View>
         }
         ListEmptyComponent={<EmptyState title="Wishlist vacia" description="Anade tus proximas lecturas aqui." />}
-        renderItem={({ item }) => (
-          <Card mode="outlined" style={styles.itemCard}>
-            <Card.Content>
-              <View style={styles.itemTop}>
-                <View style={styles.priorityBadge}>
-                  <Text style={styles.priorityBadgeText}>
-                    {item.priority <= 2 ? "ALTA" : item.priority === 3 ? "MEDIA" : "BAJA"}
-                  </Text>
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(index * 30).duration(240)}
+            exiting={FadeOutLeft.duration(180)}
+          >
+            <Card mode="outlined" style={styles.itemCard}>
+              <Card.Content>
+                <View style={styles.itemTop}>
+                  <View style={styles.priorityBadge}>
+                    <Text style={styles.priorityBadgeText}>
+                      {item.priority <= 2 ? "ALTA" : item.priority === 3 ? "MEDIA" : "BAJA"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.itemTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <Text style={styles.itemMeta}>{item.author ?? "Autor no definido"}</Text>
-              <View style={styles.itemDivider} />
-              <View style={styles.storePriceRow}>
-                <Text style={styles.itemStore} numberOfLines={1}>
-                  {item.store || "Sin tienda"}
+                <Text style={styles.itemTitle} numberOfLines={2}>
+                  {item.title}
                 </Text>
-                <Text style={styles.itemPrice}>{item.price || "-"}</Text>
-              </View>
-              <View style={styles.actionsRow}>
-                <Pressable
-                  style={[styles.miniIconBtn, styles.miniIconBtnPrimary]}
-                  onPress={() => onConfirmPurchase(item)}
-                  disabled={createPurchase.isPending}
-                  accessibilityLabel="Marcar como comprado"
-                >
-                  <Ionicons name="checkmark" size={16} color={theme.colors.onPrimary} />
-                </Pressable>
-                <Pressable
-                  style={styles.miniIconBtn}
-                  onPress={() => onStartEdit(item)}
-                  disabled={createItem.isPending || updateItem.isPending}
-                  accessibilityLabel="Editar deseo"
-                >
-                  <Ionicons name="pencil-outline" size={15} color={theme.colors.textSoft} />
-                </Pressable>
-                <Pressable
-                  style={styles.miniIconBtn}
-                  onPress={() => onConfirmDelete(item)}
-                  disabled={removeItem.isPending}
-                  accessibilityLabel="Eliminar deseo"
-                >
-                  <Ionicons name="trash-outline" size={15} color={theme.colors.textSoft} />
-                </Pressable>
-              </View>
-            </Card.Content>
-          </Card>
+                <Text style={styles.itemMeta}>{item.author ?? "Autor no definido"}</Text>
+                <View style={styles.itemDivider} />
+                <View style={styles.storePriceRow}>
+                  <Text style={styles.itemStore} numberOfLines={1}>
+                    {item.store || "Sin tienda"}
+                  </Text>
+                  <Text style={styles.itemPrice}>{item.price || "-"}</Text>
+                </View>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    style={[styles.miniIconBtn, styles.miniIconBtnPrimary]}
+                    onPress={() => onConfirmPurchase(item)}
+                    disabled={createPurchase.isPending}
+                    accessibilityLabel="Marcar como comprado"
+                  >
+                    <Ionicons name="checkmark" size={16} color={theme.colors.onPrimary} />
+                  </Pressable>
+                  <Pressable
+                    style={styles.miniIconBtn}
+                    onPress={() => onStartEdit(item)}
+                    disabled={createItem.isPending || updateItem.isPending}
+                    accessibilityLabel="Editar deseo"
+                  >
+                    <Ionicons name="pencil-outline" size={15} color={theme.colors.textSoft} />
+                  </Pressable>
+                  <Pressable
+                    style={styles.miniIconBtn}
+                    onPress={() => onConfirmDelete(item)}
+                    disabled={removeItem.isPending}
+                    accessibilityLabel="Eliminar deseo"
+                  >
+                    <Ionicons name="trash-outline" size={15} color={theme.colors.textSoft} />
+                  </Pressable>
+                </View>
+              </Card.Content>
+            </Card>
+          </Animated.View>
         )}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}

@@ -20,6 +20,7 @@ import {
   Text,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
 import {
   useBooksFeed,
@@ -292,7 +293,14 @@ function LibraryAcquisitionsFooter() {
           keyExtractor={(p) => `acq-${p.id}`}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.acquisitionsListContent}
-          renderItem={({ item }) => <AcquisitionCard item={item} />}
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={FadeInDown.delay(index * 35).duration(240)}
+              exiting={FadeOutLeft.duration(180)}
+            >
+              <AcquisitionCard item={item} />
+            </Animated.View>
+          )}
         />
       )}
     </View>
@@ -583,8 +591,13 @@ export default function LibraryScreen() {
                     keyExtractor={(item) => `c-${item.id}`}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.collectionListContent}
-                    renderItem={({ item }) => (
-                      <CollectionBookCard book={item} />
+                    renderItem={({ item, index }) => (
+                      <Animated.View
+                        entering={FadeInDown.delay(index * 35).duration(260)}
+                        exiting={FadeOutLeft.duration(180)}
+                      >
+                        <CollectionBookCard book={item} />
+                      </Animated.View>
                     )}
                   />
                 </View>
@@ -596,8 +609,14 @@ export default function LibraryScreen() {
                     Leyendo ahora
                   </Text>
                   <View style={styles.readingStack}>
-                    {readingBooks.map((book) => (
-                      <ReadingNowCard key={book.id} book={book} />
+                    {readingBooks.map((book, index) => (
+                      <Animated.View
+                        key={book.id}
+                        entering={FadeInDown.delay(index * 40).duration(260)}
+                        exiting={FadeOutLeft.duration(180)}
+                      >
+                        <ReadingNowCard book={book} />
+                      </Animated.View>
                     ))}
                   </View>
                 </View>
@@ -613,10 +632,14 @@ export default function LibraryScreen() {
         }
         numColumns={2}
         key={"library-grid-2"}
-        renderItem={({ item }) => (
-          <View style={styles.gridItemWrap}>
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(index * 20).duration(220)}
+            exiting={FadeOutLeft.duration(180)}
+            style={styles.gridItemWrap}
+          >
             <BookGridCard book={item} />
-          </View>
+          </Animated.View>
         )}
         columnWrapperStyle={styles.gridRow}
         ListEmptyComponent={

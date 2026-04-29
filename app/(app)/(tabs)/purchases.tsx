@@ -1,6 +1,7 @@
 // Lista de compras realizadas desde la wishlist del usuario.
 import { FlatList, StyleSheet, View } from "react-native";
 import { Card, Text } from "react-native-paper";
+import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
 import { usePurchases } from "@/features/wishlist/use-wishlist";
 import { AppLoader } from "@/shared/ui/app-loader";
@@ -33,16 +34,21 @@ export default function PurchasesScreen() {
         data={purchases.data ?? []}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<EmptyState title="Sin compras aun" description="Cuando marques deseos como comprados apareceran aqui." />}
-        renderItem={({ item }) => (
-          <Card mode="outlined" style={styles.purchaseCard}>
-            <Card.Content>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.meta}>{item.author || "Autor no definido"}</Text>
-              <Text style={styles.meta}>{item.price || "Sin precio"}</Text>
-              <Text style={styles.meta}>{item.store || "Sin tienda"}</Text>
-              <Text style={styles.meta}>{dateFormatter.format(new Date(item.purchasedAt))}</Text>
-            </Card.Content>
-          </Card>
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(index * 30).duration(240)}
+            exiting={FadeOutLeft.duration(180)}
+          >
+            <Card mode="outlined" style={styles.purchaseCard}>
+              <Card.Content>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.meta}>{item.author || "Autor no definido"}</Text>
+                <Text style={styles.meta}>{item.price || "Sin precio"}</Text>
+                <Text style={styles.meta}>{item.store || "Sin tienda"}</Text>
+                <Text style={styles.meta}>{dateFormatter.format(new Date(item.purchasedAt))}</Text>
+              </Card.Content>
+            </Card>
+          </Animated.View>
         )}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={{ paddingBottom: 24 }}
