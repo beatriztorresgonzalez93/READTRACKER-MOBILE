@@ -1,9 +1,11 @@
 // Cabecera reutilizable con titulo y accesos de navegacion.
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Link, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "@/features/auth/use-auth";
 import { theme } from "@/shared/ui/theme";
 
 export type ScriptoriumHeaderProps = {
@@ -13,6 +15,8 @@ export type ScriptoriumHeaderProps = {
 
 export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const avatarUri = user?.avatarUrl?.trim() ? user.avatarUrl : null;
   return (
     <View style={[styles.root, { paddingTop: insets.top + 6 }]}>
       <View style={styles.row}>
@@ -28,7 +32,11 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
         <View style={styles.right}>
           <Link href={"/(app)/profile" as never} asChild>
             <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Perfil">
-              <Ionicons name="person-circle-outline" size={28} color={theme.colors.accent} />
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+              ) : (
+                <Ionicons name="person-circle-outline" size={28} color={theme.colors.accent} />
+              )}
             </Pressable>
           </Link>
           <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Avisos">
@@ -85,5 +93,13 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     padding: 4,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+    backgroundColor: theme.colors.card,
   },
 });

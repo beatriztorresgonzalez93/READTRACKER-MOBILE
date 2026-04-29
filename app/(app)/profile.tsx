@@ -36,7 +36,21 @@ export default function ProfileSheetScreen() {
   const [lastNameDraft, setLastNameDraft] = useState(lastName);
   const [avatarUrlDraft, setAvatarUrlDraft] = useState<string | null>(user?.avatarUrl ?? null);
   const [saving, setSaving] = useState(false);
-  const memberSince = "No disponible";
+  const memberSince = useMemo(() => {
+    const source =
+      user?.createdAt ??
+      user?.created_at ??
+      user?.registeredAt ??
+      user?.registered_at;
+    if (!source) return "No disponible";
+    const date = new Date(source);
+    if (Number.isNaN(date.getTime())) return "No disponible";
+    return date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  }, [user?.createdAt, user?.created_at, user?.registeredAt, user?.registered_at]);
 
   async function onLogout() {
     await logout();

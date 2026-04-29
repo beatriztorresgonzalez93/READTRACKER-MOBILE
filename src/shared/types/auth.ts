@@ -6,6 +6,10 @@ export type User = {
   lastName?: string;
   email: string;
   avatarUrl?: string | null;
+  createdAt?: string;
+  created_at?: string;
+  registeredAt?: string;
+  registered_at?: string;
 };
 
 export type AuthResponse = {

@@ -175,7 +175,8 @@ function CollectionBookCard({ book }: { book: Book }) {
           <Text
             variant="titleSmall"
             style={styles.collectionTitle}
-            numberOfLines={2}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {book.title}
           </Text>
@@ -254,7 +255,8 @@ function AcquisitionCard({ item }: { item: PurchaseItem }) {
       <Text
         variant="titleSmall"
         style={styles.acquisitionTitle}
-        numberOfLines={2}
+        numberOfLines={1}
+        ellipsizeMode="tail"
       >
         {item.title}
       </Text>
@@ -328,6 +330,7 @@ function BookGridCard({ book }: { book: Book }) {
             variant="labelLarge"
             style={styles.gridCardTitle}
             numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {book.title}
           </Text>
