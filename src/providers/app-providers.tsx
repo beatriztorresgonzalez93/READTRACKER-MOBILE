@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useColorScheme } from "react-native";
 import { Provider as PaperProvider } from "react-native-paper";
 
 import { AuthProvider } from "@/features/auth/auth-context";
-import { paperTheme } from "@/shared/ui/paper-theme";
+import { createPaperTheme } from "@/shared/ui/paper-theme";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
+  const colorScheme = useColorScheme();
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -17,6 +19,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         },
       }),
   );
+  const paperTheme = useMemo(() => createPaperTheme(colorScheme), [colorScheme]);
 
   return (
     <PaperProvider theme={paperTheme}>

@@ -25,7 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
       </Stack>
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
     </AppProviders>
   );
 }

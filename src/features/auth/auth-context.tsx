@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import { Platform } from "react-native";
 
 import {
   getMe,
@@ -10,6 +11,29 @@ import {
 import type { LoginPayload, RegisterPayload, User } from "@/shared/types/auth";
 
 const TOKEN_KEY = "readtracker_auth_token";
+
+async function getStoredToken(): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return globalThis.localStorage?.getItem(TOKEN_KEY) ?? null;
+  }
+  return SecureStore.getItemAsync(TOKEN_KEY);
+}
+
+async function setStoredToken(token: string): Promise<void> {
+  if (Platform.OS === "web") {
+    globalThis.localStorage?.setItem(TOKEN_KEY, token);
+    return;
+  }
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
+}
+
+async function clearStoredToken(): Promise<void> {
+  if (Platform.OS === "web") {
+    globalThis.localStorage?.removeItem(TOKEN_KEY);
+    return;
+  }
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
 
 type AuthContextValue = {
   user: User | null;
@@ -36,13 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const bootstrap = useCallback(async () => {
     try {
-      const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+      const storedToken = await getStoredToken();
       if (!storedToken) return;
       const me = await getMe(storedToken);
       setToken(storedToken);
       setUser(me);
     } catch {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await clearStoredToken();
       setToken(null);
       setUser(null);
     } finally {
@@ -56,14 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await apiLogin(payload);
-    await SecureStore.setItemAsync(TOKEN_KEY, response.token);
+    await setStoredToken(response.token);
     setToken(response.token);
     setUser(response.user);
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
     const response = await apiRegister(payload);
-    await SecureStore.setItemAsync(TOKEN_KEY, response.token);
+    await setStoredToken(response.token);
     setToken(response.token);
     setUser(response.user);
   }, []);
@@ -100,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await clearStoredToken();
     setToken(null);
     setUser(null);
   }, []);

@@ -1,0 +1,71 @@
+Project: NoteFlow / ReadTracker Mobile
+
+Context
+- Mobile reading tracker app built with Expo + React Native.
+- Main domains: auth, books, reading sessions, wishlist, profile.
+- Routing is file-based with expo-router.
+
+Tech stack
+- Expo SDK 54
+- React Native + TypeScript (strict)
+- expo-router
+- react-native-paper
+- @tanstack/react-query for server state
+
+Architecture and structure
+- Keep route files in `app/`.
+- Keep domain logic in `src/features/<feature>/`.
+- Keep shared modules in `src/shared/` (api, ui, lib, types, config).
+- Prefer small, focused files and colocate hooks near their feature.
+
+Code style and naming
+- Use functional components only.
+- Use explicit TypeScript types for props, API contracts, and hook returns.
+- Prefer `type` for object shapes and `interface` only when extension is needed.
+- Naming:
+  - Components: PascalCase
+  - Hooks: camelCase starting with `use`
+  - Utility functions: camelCase with verb-first names
+  - Constants: UPPER_SNAKE_CASE for true constants
+- Use absolute imports via configured aliases when available.
+- Keep comments short and only for non-obvious logic.
+
+Type safety rules
+- Do not use `any`.
+- Do not use unsafe casts unless there is no alternative and explain with a short comment.
+- Narrow unknown errors before reading properties.
+- Avoid non-null assertions (`!`) unless strictly guaranteed.
+
+React Native and UI rules
+- Use `react-native-paper` components when practical for consistency.
+- Respect existing theme tokens; do not hardcode colors when a theme token exists.
+- Keep screens responsive and keyboard-safe:
+  - Use `KeyboardAvoidingView` in form-heavy screens.
+  - Use Android behavior `height` where applicable.
+- Maintain accessibility basics:
+  - Add meaningful `accessibilityLabel` to actionable icon-only elements.
+  - Ensure touch targets are reasonably sized.
+
+Forms and validation
+- Validate form input with Zod schemas.
+- Show field-level validation errors below inputs.
+- Keep submit handlers async-safe (loading, error handling, disabled states).
+
+State management
+- Use React Query for remote/server state.
+- Use Zustand for cross-screen client state when Context is not appropriate.
+- Keep local component state local; avoid global state by default.
+
+Networking and errors
+- Centralize API calls in `src/shared/api/`.
+- Surface user-friendly errors in UI; avoid exposing raw backend internals.
+- Prefer predictable error messages in Spanish to match app language.
+
+Testing and quality gates
+- Changes should pass lint and typecheck before considering complete.
+- Avoid large refactors unless requested; keep edits scoped to the task.
+
+Restrictions
+- Do not introduce new dependencies unless necessary for the requirement.
+- Do not modify unrelated files.
+- Preserve current behavior unless a change is explicitly requested.
