@@ -2,65 +2,86 @@
 
 [![CI](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml/badge.svg)](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml)
 
-App movil de ReadTracker construida con React Native + Expo y conectada a la API existente del proyecto web.
+> **CI (Integracion continua):** este indicador muestra si las comprobaciones automaticas del proyecto estan pasando en GitHub Actions (`lint`, `typecheck` y `tests`).
+> Si aparece en verde, la ultima ejecucion fue correcta. Si aparece en rojo, alguna validacion fallo.
+> Puedes hacer clic en el badge para ver el detalle de cada ejecucion.
+
+Aplicacion movil de ReadTracker construida con React Native + Expo y conectada a la API del proyecto web.
+
+## Que es esta app y para que sirve
+
+ReadTracker Mobile es una app para llevar tu lectura al dia de forma simple.
+Te ayuda a organizar tus libros, recordar por que pagina vas y ver tu progreso con el tiempo.
+
+Como usuario, puedes:
+
+- Guardar libros en tu biblioteca personal
+- Marcar paginas leidas cuando avanzas
+- Consultar tu historial de lectura por fechas
+- Ver estadisticas para entender tus habitos de lectura
+- Crear una lista de deseos y pasar libros a comprados
 
 ## Stack
 
 - Expo SDK 54 + React Native + TypeScript
-- Expo Router para navegacion
+- Expo Router para navegacion por rutas
 - React Query para estado remoto
-- Expo Secure Store para persistencia de JWT
+- Zustand para estado local/persistente
+- Expo Secure Store para JWT
 
-## Alcance MVP implementado
+## Funcionalidades implementadas
 
-- Autenticacion:
+- **Autenticacion**
   - Login y registro
   - Persistencia segura de sesion
   - Restauracion de usuario con `GET /auth/me`
-- Biblioteca:
+- **Biblioteca**
   - Listado paginado de libros
+  - Busqueda y filtros
   - Resumen de biblioteca (`/books/summary`)
-  - Carga incremental con boton "Cargar mas"
-- Detalle y progreso:
-  - Vista detalle por libro
-  - Registro de sesion/progreso por pagina (`POST /reading-sessions`)
-  - Validaciones basicas de pagina
-- Fase extendida:
-  - Historial mensual de sesiones y lectura por dia
-  - Estadisticas de lectura (rachas, sesiones, paginas y promedio)
-  - Wishlist con alta/baja de deseos y marcado como comprado
-  - Registro de compras y listado de adquisiciones
+- **Detalle de libro**
+  - Vista completa del libro
+  - Marcado de progreso por pagina (`POST /reading-sessions`)
+  - Validaciones de pagina y calculo de avance
+- **Historial y estadisticas**
+  - Historial mensual con calendario de intensidad
+  - Estadisticas de lectura (rachas, sesiones, paginas, promedio)
+- **Wishlist y compras**
+  - Alta/baja de deseos
+  - Marcado como comprado
+  - Registro y listado de adquisiciones
 
 ## Estructura principal
 
-- `app/`: rutas con Expo Router
+- `app/`: rutas Expo Router
   - `app/(auth)/`: login y registro
-  - `app/(app)/(tabs)/`: biblioteca y perfil
-  - `app/(app)/books/[id].tsx`: detalle y progreso
-- `src/features/`: modulos por dominio (`auth`, `books`)
-- `src/shared/`: API client, tipos, config, UI comun
+  - `app/(app)/(tabs)/`: biblioteca, historial, stats, wishlist, perfil
+  - `app/(app)/books/[id].tsx`: detalle del libro
+- `src/features/`: modulos por dominio
+- `src/shared/`: API client, hooks y UI compartida
+- `e2e/`: flows de Maestro
 
-## Configuracion
+## Instalacion y configuracion
 
-1. Instala dependencias:
+1) Instalar dependencias:
 
 ```bash
 npm install
 ```
 
-2. Crea variables de entorno:
+2) Crear archivo de entorno:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Ajusta `.env` si usas otro backend:
+3) Configurar backend en `.env`:
 
 ```env
 EXPO_PUBLIC_API_BASE_URL=https://readtracker-api.onrender.com/api/v1
 ```
 
-## Ejecutar
+## Ejecutar la app
 
 ```bash
 npm run start
@@ -72,32 +93,67 @@ Atajos:
 - `npm run ios`
 - `npm run web`
 
-## Calidad
+## Calidad y testing
 
-- Lint:
+- Lint: `npm run lint`
+- Typecheck: `npm run typecheck`
+- Test unit/integration (CI): `npm run test:ci`
+- Cobertura: `npm run test:coverage`
+
+## E2E con Maestro (Windows + Expo Go)
+
+Este proyecto incluye:
+
+- `e2e/smoke-login-library.yaml`
+- `e2e/mark-page-history.yaml`
+
+Y scripts npm:
+
+- `npm run e2e:maestro:smoke`
+- `npm run e2e:maestro:mark-page`
+
+### 1) Prerrequisitos
+
+- Android Emulator o dispositivo Android conectado
+- `adb devices` debe mostrar al menos 1 dispositivo
+- Expo en marcha con tunnel:
 
 ```bash
-npm run lint
+npm start -- --tunnel --clear
 ```
 
-- Typecheck:
+- Maestro CLI instalado (en este equipo se usa `C:\tools\maestro\maestro\maestro\bin\maestro.bat`)
 
-```bash
-npm run typecheck
+### 2) Ejecutar flow smoke
+
+En PowerShell:
+
+```powershell
+$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="tu_email"; $env:MAESTRO_PASSWORD="tu_password"; & "C:\tools\maestro\maestro\maestro\bin\maestro.bat" test "C:\Users\beatr\Desktop\readtracker-mobile\e2e\smoke-login-library.yaml"
 ```
 
-- Tests:
+### 3) Ejecutar flow marcar pagina + historial
 
-```bash
-npm run test:ci
+En PowerShell:
+
+```powershell
+$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="tu_email"; $env:MAESTRO_PASSWORD="tu_password"; $env:MAESTRO_READING_BOOK_TITLE="En llamas"; $env:MAESTRO_NEXT_PAGE="120"; & "C:\tools\maestro\maestro\maestro\bin\maestro.bat" test "C:\Users\beatr\Desktop\readtracker-mobile\e2e\mark-page-history.yaml"
 ```
 
-- Cobertura:
+## Troubleshooting rapido (Maestro)
 
-```bash
-npm run test:coverage
+- **`maestro` no se reconoce**
+  - Usa la ruta completa del `.bat` (como en los comandos de arriba), o agrega su carpeta al `PATH`.
+- **`You have 0 devices connected`**
+  - Inicia emulador/dispositivo y verifica con `adb devices`.
+- **Timeouts o errores `UNAVAILABLE/DEADLINE_EXCEEDED`**
+  - Reinicia ADB:
+
+```powershell
+adb kill-server; adb start-server; adb devices
 ```
 
-## Pendiente para paridad completa con web
+## Pendiente para endurecer CI E2E
 
-- Cobertura automatizada de tests de UI/integracion
+- Añadir mas `testID` en pantallas criticas (especialmente `History`) para reducir dependencia de coordenadas.
+- Mantener dos flows: uno estable local (actual) y uno estricto para CI.
