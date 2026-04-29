@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Searchbar, Text } from "react-native-paper";
@@ -133,6 +134,7 @@ export default function WishlistScreen() {
       closeConfirmModal();
       return;
     }
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     removeItem.mutate(selectedItem.id, {
       onSettled: () => closeConfirmModal(),
     });

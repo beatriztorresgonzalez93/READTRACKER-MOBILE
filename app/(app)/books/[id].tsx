@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as Haptics from "expo-haptics";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -1128,6 +1129,7 @@ export default function BookDetailScreen() {
                 style={[styles.confirmBtn, styles.confirmBtnDanger]}
                 onPress={async () => {
                   try {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                     await deleteBook.mutateAsync();
                     setDeleteConfirmOpen(false);
                     Alert.alert("Libro eliminado", "El libro se ha eliminado correctamente.");
