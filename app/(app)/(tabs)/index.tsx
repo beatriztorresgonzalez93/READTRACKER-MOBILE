@@ -41,6 +41,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { useLibraryPreferencesStore } from "../../../store/library-preferences";
 
 const COLLECTION_CARD_WIDTH = 146;
 const COLLECTION_COVER_RATIO = 1.42;
@@ -349,15 +350,22 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const summary = useBooksSummary();
   const leyendoPreview = useLeyendoPreview();
-  const [searchDraft, setSearchDraft] = useState("");
+  const searchDraft = useLibraryPreferencesStore((state) => state.searchDraft);
+  const setSearchDraft = useLibraryPreferencesStore((state) => state.setSearchDraft);
   const debouncedSearch = useDebouncedValue(searchDraft, 400);
-  const [status, setStatus] = useState<LibraryStatusFilter>("todos");
-  const [shelf, setShelf] = useState<LibraryShelfFilter>("todos");
-  const [genre, setGenre] = useState<string | null>(null);
-  const [sort, setSort] = useState<BooksSortKey>("recientes");
+  const status = useLibraryPreferencesStore((state) => state.status);
+  const setStatus = useLibraryPreferencesStore((state) => state.setStatus);
+  const shelf = useLibraryPreferencesStore((state) => state.shelf);
+  const setShelf = useLibraryPreferencesStore((state) => state.setShelf);
+  const genre = useLibraryPreferencesStore((state) => state.genre);
+  const setGenre = useLibraryPreferencesStore((state) => state.setGenre);
+  const sort = useLibraryPreferencesStore((state) => state.sort);
+  const setSort = useLibraryPreferencesStore((state) => state.setSort);
+  const showFilters = useLibraryPreferencesStore((state) => state.showFilters);
+  const toggleShowFilters = useLibraryPreferencesStore((state) => state.toggleShowFilters);
+  const clearFilters = useLibraryPreferencesStore((state) => state.clearFilters);
   const [genreModalOpen, setGenreModalOpen] = useState(false);
   const [sortModalOpen, setSortModalOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   const listQuery = useMemo<LibraryBooksQuery>(
     () => ({
@@ -372,14 +380,6 @@ export default function LibraryScreen() {
 
   const booksFeed = useBooksFeed(listQuery);
   const filtered = isFilteredQuery(listQuery);
-
-  function clearFilters() {
-    setSearchDraft("");
-    setStatus("todos");
-    setShelf("todos");
-    setGenre(null);
-    setSort("recientes");
-  }
 
   if (booksFeed.isPending && !booksFeed.data) {
     return <AppLoader />;
@@ -451,7 +451,7 @@ export default function LibraryScreen() {
                   elevation={0}
                 />
                 <Pressable
-                  onPress={() => setShowFilters((v) => !v)}
+                  onPress={toggleShowFilters}
                   style={[
                     styles.filterIconBtn,
                     showFilters && styles.filterIconBtnActive,

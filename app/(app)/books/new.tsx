@@ -16,19 +16,30 @@ import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { useNewBookDraftStore } from "../../../store/new-book-draft";
 
 export default function NewBookScreen() {
   const appTheme = useAppTheme();
   const createBook = useCreateBook();
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [pages, setPages] = useState("");
-  const [publishedYear, setPublishedYear] = useState("");
-  const [genre, setGenre] = useState("");
-  const [publisher, setPublisher] = useState("");
-  const [description, setDescription] = useState("");
-  const [coverOptions, setCoverOptions] = useState<string[]>([]);
-  const [selectedCoverUrl, setSelectedCoverUrl] = useState("");
+  const title = useNewBookDraftStore((state) => state.title);
+  const setTitle = useNewBookDraftStore((state) => state.setTitle);
+  const author = useNewBookDraftStore((state) => state.author);
+  const setAuthor = useNewBookDraftStore((state) => state.setAuthor);
+  const pages = useNewBookDraftStore((state) => state.pages);
+  const setPages = useNewBookDraftStore((state) => state.setPages);
+  const publishedYear = useNewBookDraftStore((state) => state.publishedYear);
+  const setPublishedYear = useNewBookDraftStore((state) => state.setPublishedYear);
+  const genre = useNewBookDraftStore((state) => state.genre);
+  const setGenre = useNewBookDraftStore((state) => state.setGenre);
+  const publisher = useNewBookDraftStore((state) => state.publisher);
+  const setPublisher = useNewBookDraftStore((state) => state.setPublisher);
+  const description = useNewBookDraftStore((state) => state.description);
+  const setDescription = useNewBookDraftStore((state) => state.setDescription);
+  const coverOptions = useNewBookDraftStore((state) => state.coverOptions);
+  const setCoverOptions = useNewBookDraftStore((state) => state.setCoverOptions);
+  const selectedCoverUrl = useNewBookDraftStore((state) => state.selectedCoverUrl);
+  const setSelectedCoverUrl = useNewBookDraftStore((state) => state.setSelectedCoverUrl);
+  const resetDraft = useNewBookDraftStore((state) => state.resetDraft);
   const [isSearchingCover, setIsSearchingCover] = useState(false);
 
   async function onSearchCover() {
@@ -110,6 +121,7 @@ export default function NewBookScreen() {
         coverUrl: selectedCoverUrl.trim() || undefined,
       });
       Alert.alert("Libro creado", "El libro se ha anadido correctamente.");
+      resetDraft();
       router.back();
     } catch (error) {
       Alert.alert("No se pudo crear", (error as Error).message);
