@@ -1,5 +1,7 @@
 // Lista de compras realizadas desde la wishlist del usuario.
+import Constants from "expo-constants";
 import { FlatList, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Card, Text } from "react-native-paper";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
@@ -12,6 +14,7 @@ import { theme } from "@/shared/ui/theme";
 export default function PurchasesScreen() {
   const purchases = usePurchases();
   const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
 
   if (purchases.isLoading && !purchases.data) {
     return <AppLoader />;
@@ -30,11 +33,11 @@ export default function PurchasesScreen() {
 
   return (
     <Screen>
-      <FlatList
+      <ListComponent
         data={purchases.data ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: { id: string }) => item.id}
         ListEmptyComponent={<EmptyState title="Sin compras aun" description="Cuando marques deseos como comprados apareceran aqui." />}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }: { item: any; index: number }) => (
           <Animated.View
             entering={FadeInDown.delay(index * 30).duration(240)}
             exiting={FadeOutLeft.duration(180)}

@@ -1,5 +1,8 @@
 // Store temporal para el borrador del formulario de nuevo libro.
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+
+import { zustandStateStorage } from "@/shared/lib/zustand-storage";
 
 type NewBookDraftState = {
   title: string;
@@ -35,17 +38,36 @@ const defaultDraft = {
   selectedCoverUrl: "",
 };
 
-export const useNewBookDraftStore = create<NewBookDraftState>((set) => ({
-  ...defaultDraft,
-  setTitle: (title) => set({ title }),
-  setAuthor: (author) => set({ author }),
-  setPages: (pages) => set({ pages }),
-  setPublishedYear: (publishedYear) => set({ publishedYear }),
-  setGenre: (genre) => set({ genre }),
-  setPublisher: (publisher) => set({ publisher }),
-  setDescription: (description) => set({ description }),
-  setCoverOptions: (coverOptions) => set({ coverOptions }),
-  setSelectedCoverUrl: (selectedCoverUrl) => set({ selectedCoverUrl }),
-  resetDraft: () => set(defaultDraft),
-}));
+export const useNewBookDraftStore = create<NewBookDraftState>()(
+  persist(
+    (set) => ({
+      ...defaultDraft,
+      setTitle: (title) => set({ title }),
+      setAuthor: (author) => set({ author }),
+      setPages: (pages) => set({ pages }),
+      setPublishedYear: (publishedYear) => set({ publishedYear }),
+      setGenre: (genre) => set({ genre }),
+      setPublisher: (publisher) => set({ publisher }),
+      setDescription: (description) => set({ description }),
+      setCoverOptions: (coverOptions) => set({ coverOptions }),
+      setSelectedCoverUrl: (selectedCoverUrl) => set({ selectedCoverUrl }),
+      resetDraft: () => set(defaultDraft),
+    }),
+    {
+      name: "new-book-draft-store",
+      storage: createJSONStorage(() => zustandStateStorage),
+      partialize: (state) => ({
+        title: state.title,
+        author: state.author,
+        pages: state.pages,
+        publishedYear: state.publishedYear,
+        genre: state.genre,
+        publisher: state.publisher,
+        description: state.description,
+        coverOptions: state.coverOptions,
+        selectedCoverUrl: state.selectedCoverUrl,
+      }),
+    },
+  ),
+);
 

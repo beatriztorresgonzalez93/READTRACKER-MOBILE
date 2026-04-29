@@ -1,6 +1,8 @@
 // Store global con filtros y preferencias de vista de biblioteca.
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
+import { zustandStateStorage } from "@/shared/lib/zustand-storage";
 import type { BooksSortKey, LibraryShelfFilter, LibraryStatusFilter } from "@/shared/types/books";
 
 type LibraryPreferencesState = {
@@ -29,22 +31,37 @@ const defaultState = {
   showFilters: false,
 };
 
-export const useLibraryPreferencesStore = create<LibraryPreferencesState>((set) => ({
-  ...defaultState,
-  setSearchDraft: (searchDraft) => set({ searchDraft }),
-  setStatus: (status) => set({ status }),
-  setShelf: (shelf) => set({ shelf }),
-  setGenre: (genre) => set({ genre }),
-  setSort: (sort) => set({ sort }),
-  setShowFilters: (showFilters) => set({ showFilters }),
-  toggleShowFilters: () => set((state) => ({ showFilters: !state.showFilters })),
-  clearFilters: () =>
-    set({
-      searchDraft: defaultState.searchDraft,
-      status: defaultState.status,
-      shelf: defaultState.shelf,
-      genre: defaultState.genre,
-      sort: defaultState.sort,
+export const useLibraryPreferencesStore = create<LibraryPreferencesState>()(
+  persist(
+    (set) => ({
+      ...defaultState,
+      setSearchDraft: (searchDraft) => set({ searchDraft }),
+      setStatus: (status) => set({ status }),
+      setShelf: (shelf) => set({ shelf }),
+      setGenre: (genre) => set({ genre }),
+      setSort: (sort) => set({ sort }),
+      setShowFilters: (showFilters) => set({ showFilters }),
+      toggleShowFilters: () => set((state) => ({ showFilters: !state.showFilters })),
+      clearFilters: () =>
+        set({
+          searchDraft: defaultState.searchDraft,
+          status: defaultState.status,
+          shelf: defaultState.shelf,
+          genre: defaultState.genre,
+          sort: defaultState.sort,
+        }),
     }),
-}));
+    {
+      name: "library-preferences-store",
+      storage: createJSONStorage(() => zustandStateStorage),
+      partialize: (state) => ({
+        searchDraft: state.searchDraft,
+        status: state.status,
+        shelf: state.shelf,
+        genre: state.genre,
+        sort: state.sort,
+      }),
+    },
+  ),
+);
 

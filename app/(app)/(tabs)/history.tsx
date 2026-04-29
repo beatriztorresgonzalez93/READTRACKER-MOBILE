@@ -1,5 +1,7 @@
 // Muestra el historial de lectura mensual y el calendario de sesiones.
+import Constants from "expo-constants";
 import { useMemo, useState } from "react";
+import { FlashList } from "@shopify/flash-list";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 
@@ -10,6 +12,7 @@ import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function HistoryScreen() {
+  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
   const appTheme = useAppTheme();
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
@@ -95,9 +98,9 @@ export default function HistoryScreen() {
 
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <FlatList
+      <ListComponent
         data={[{ id: "history-header-only" }]}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: { id: string }) => item.id}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             <View style={styles.monthControls}>

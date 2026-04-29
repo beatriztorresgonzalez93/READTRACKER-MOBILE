@@ -1,7 +1,9 @@
 // Gestiona la wishlist: crear, editar, comprar y eliminar deseos.
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
+import { FlashList } from "@shopify/flash-list";
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Searchbar, Text } from "react-native-paper";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
@@ -26,6 +28,7 @@ const PRIORITY_OPTIONS = [
 ];
 
 export default function WishlistScreen() {
+  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
   const itemsQuery = useWishlistItems();
   const createItem = useCreateWishlistItem();
   const updateItem = useUpdateWishlistItem();
@@ -204,9 +207,9 @@ export default function WishlistScreen() {
 
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <FlatList
+      <ListComponent
         data={filteredItems}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: { id: string }) => item.id}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             <View style={styles.controlsBlock}>
@@ -252,7 +255,7 @@ export default function WishlistScreen() {
           </View>
         }
         ListEmptyComponent={<EmptyState title="Wishlist vacia" description="Anade tus proximas lecturas aqui." />}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }: { item: any; index: number }) => (
           <Animated.View
             entering={FadeInDown.delay(index * 30).duration(240)}
             exiting={FadeOutLeft.duration(180)}

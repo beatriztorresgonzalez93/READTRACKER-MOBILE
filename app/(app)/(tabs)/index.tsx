@@ -1,5 +1,7 @@
 // Pantalla principal de biblioteca con filtros, resumen y coleccion.
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
+import { FlashList } from "@shopify/flash-list";
 import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -267,6 +269,7 @@ function AcquisitionCard({ item }: { item: PurchaseItem }) {
 }
 
 function LibraryAcquisitionsFooter() {
+  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
   const appTheme = useAppTheme();
   const purchases = usePurchases();
   const items = purchases.data ?? [];
@@ -287,13 +290,13 @@ function LibraryAcquisitionsFooter() {
           Cuando marques deseos como comprados apareceran aqui.
         </Text>
       ) : (
-        <FlatList
+        <ListComponent
           horizontal
           data={items}
-          keyExtractor={(p) => `acq-${p.id}`}
+          keyExtractor={(p: { id: string }) => `acq-${p.id}`}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.acquisitionsListContent}
-          renderItem={({ item, index }) => (
+          renderItem={({ item, index }: { item: any; index: number }) => (
             <Animated.View
               entering={FadeInDown.delay(index * 35).duration(240)}
               exiting={FadeOutLeft.duration(180)}
@@ -355,6 +358,7 @@ function BookGridCard({ book }: { book: Book }) {
 }
 
 export default function LibraryScreen() {
+  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
   const appTheme = useAppTheme();
   const insets = useSafeAreaInsets();
   const summary = useBooksSummary();
@@ -427,9 +431,9 @@ export default function LibraryScreen() {
       edges={["bottom", "left", "right"]}
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
-      <FlatList
+      <ListComponent
         data={books}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: { id: string }) => item.id}
         nestedScrollEnabled
         contentInsetAdjustmentBehavior="never"
         refreshControl={
@@ -585,13 +589,13 @@ export default function LibraryScreen() {
                       Colección
                     </Text>
                   </View>
-                  <FlatList
+                  <ListComponent
                     horizontal
                     data={collectionSlice}
-                    keyExtractor={(item) => `c-${item.id}`}
+                    keyExtractor={(item: { id: string }) => `c-${item.id}`}
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.collectionListContent}
-                    renderItem={({ item, index }) => (
+                    renderItem={({ item, index }: { item: any; index: number }) => (
                       <Animated.View
                         entering={FadeInDown.delay(index * 35).duration(260)}
                         exiting={FadeOutLeft.duration(180)}
@@ -632,7 +636,7 @@ export default function LibraryScreen() {
         }
         numColumns={2}
         key={"library-grid-2"}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }: { item: any; index: number }) => (
           <Animated.View
             entering={FadeInDown.delay(index * 20).duration(220)}
             exiting={FadeOutLeft.duration(180)}
@@ -641,7 +645,6 @@ export default function LibraryScreen() {
             <BookGridCard book={item} />
           </Animated.View>
         )}
-        columnWrapperStyle={styles.gridRow}
         ListEmptyComponent={
           <View style={styles.listRowOuter}>
             <EmptyState title={emptyTitle} description={emptyDescription} />
@@ -662,10 +665,7 @@ export default function LibraryScreen() {
             <LibraryAcquisitionsFooter />
           </View>
         }
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: 24 + insets.bottom },
-        ]}
+        contentContainerStyle={{ ...styles.listContent, paddingBottom: 24 + insets.bottom }}
       />
 
       <Modal
@@ -683,12 +683,12 @@ export default function LibraryScreen() {
             <Text variant="titleMedium" style={styles.genreSheetTitle}>
               Ordenar por
             </Text>
-            <FlatList
+            <ListComponent
               style={styles.sortList}
               data={SORT_OPTIONS}
-              keyExtractor={(item) => item.key}
+              keyExtractor={(item: { key: string }) => item.key}
               ItemSeparatorComponent={() => <View style={styles.genreSep} />}
-              renderItem={({ item }) => {
+              renderItem={({ item }: { item: any }) => {
                 const active = sort === item.key;
                 return (
                   <Pressable
@@ -741,15 +741,15 @@ export default function LibraryScreen() {
             <Text variant="titleMedium" style={styles.genreSheetTitle}>
               Genero
             </Text>
-            <FlatList
+            <ListComponent
               style={styles.genreList}
               data={[
                 { genre: "__all__", count: summary.data?.total ?? 0 },
                 ...genreRows.map((g) => ({ genre: g.genre, count: g.count })),
               ]}
-              keyExtractor={(item) => item.genre}
+              keyExtractor={(item: { genre: string }) => item.genre}
               ItemSeparatorComponent={() => <View style={styles.genreSep} />}
-              renderItem={({ item }) => (
+              renderItem={({ item }: { item: any }) => (
                 <Pressable
                   style={styles.genreRow}
                   onPress={() => {
