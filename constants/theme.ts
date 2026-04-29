@@ -58,8 +58,8 @@ export type ThemeTokens = {
 const baseTypography: ThemeTokens["typography"] = {
   fontFamily: {
     heading: "Fraunces_700Bold",
-    body: "Inter_400Regular",
-    bodySemibold: "Inter_600SemiBold",
+    body: "Fraunces_400Regular",
+    bodySemibold: "Fraunces_700Bold",
   },
   fontSize: {
     xs: 12,

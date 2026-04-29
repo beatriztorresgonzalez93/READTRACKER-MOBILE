@@ -219,6 +219,7 @@ export default function WishlistScreen() {
                 onChangeText={setSearch}
                 style={styles.searchBar}
                 inputStyle={styles.searchInput}
+                placeholderTextColor={theme.colors.textSoft}
                 iconColor={theme.colors.textSoft}
                 elevation={0}
               />
@@ -487,8 +488,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderOnCard,
   },
   searchInput: {
-    color: theme.colors.text,
+    color: theme.colors.textSoft,
     fontSize: 14,
+    fontFamily: "Fraunces_400Regular",
   },
   controlsRow: {
     flexDirection: "row",
@@ -541,14 +543,20 @@ const styles = StyleSheet.create({
     color: theme.colors.card,
     fontSize: 10,
     fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     letterSpacing: 0.8,
   },
   itemTitle: {
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 18,
+    lineHeight: 22,
     color: theme.colors.text,
   },
   itemMeta: {
     color: theme.colors.textSoft,
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 13,
+    marginTop: 2,
   },
   itemDivider: {
     marginTop: 6,
@@ -563,6 +571,7 @@ const styles = StyleSheet.create({
   },
   itemStore: {
     color: theme.colors.textSoft,
+    fontFamily: "Fraunces_400Regular",
     fontSize: 12,
     flex: 1,
     marginRight: 6,
@@ -570,6 +579,7 @@ const styles = StyleSheet.create({
   itemPrice: {
     color: theme.colors.text,
     fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
   },
   actionsRow: {
     flexDirection: "row",

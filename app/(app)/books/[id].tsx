@@ -1263,6 +1263,7 @@ const styles = StyleSheet.create({
   heroAuthor: {
     fontSize: 14,
     fontStyle: "italic",
+    fontFamily: "Fraunces_700Bold",
     color: theme.colors.accent,
     marginTop: 2,
   },
@@ -1282,7 +1283,7 @@ const styles = StyleSheet.create({
   },
   favChipText: {
     color: theme.colors.text,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
   },
   tabsRow: {
     flexDirection: "row",
@@ -1298,7 +1299,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     color: theme.colors.textMutedOnDark,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     letterSpacing: 1,
   },
   tabLabelActive: {
@@ -1343,13 +1344,14 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1.4,
     fontSize: 12,
+    fontFamily: "Fraunces_700Bold",
     marginBottom: 0,
   },
   reviewSectionLabel: {
     color: theme.colors.text,
   },
   synopsisLabel: {
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     color: theme.colors.text,
   },
   statePill: {
@@ -1363,7 +1365,7 @@ const styles = StyleSheet.create({
   },
   stateText: {
     color: "#FFF2D4",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     letterSpacing: 0.6,
   },
   sectionTitle: {
@@ -1393,6 +1395,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     lineHeight: 22,
     fontSize: 15,
+    fontFamily: "Fraunces_400Regular",
   },
   twoCols: {
     flexDirection: "row",
@@ -1413,6 +1416,7 @@ const styles = StyleSheet.create({
   },
   reviewChipText: {
     color: theme.colors.text,
+    fontFamily: "Fraunces_700Bold",
   },
   tagsPlaceholder: {
     height: 34,
@@ -1421,6 +1425,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     marginBottom: 10,
     fontSize: 16,
+    fontFamily: "Fraunces_400Regular",
   },
   similarGrid: {
     flexDirection: "row",
@@ -1512,12 +1517,12 @@ const styles = StyleSheet.create({
   },
   confirmBtnGhostText: {
     color: "#D9B477",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 15,
   },
   confirmBtnDangerText: {
     color: "#FFF1D9",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 15,
   },
   statusSheet: {
@@ -1537,7 +1542,7 @@ const styles = StyleSheet.create({
   },
   statusRowText: {
     color: theme.colors.text,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     letterSpacing: 0.6,
   },
   statusRowTextActive: {
@@ -1568,7 +1573,7 @@ const styles = StyleSheet.create({
   },
   markLabel: {
     color: "#D5AF72",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 14,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -1593,7 +1598,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
     fontSize: 18,
     textAlignVertical: "top",
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Fraunces_400Regular",
   },
   reviewBody: {
     maxHeight: 460,
@@ -1617,7 +1622,7 @@ const styles = StyleSheet.create({
   reviewSmallInput: {
     minHeight: 54,
     fontSize: 16,
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Fraunces_400Regular",
   },
   timesReadBtn: {
     flexDirection: "row",
@@ -1626,7 +1631,7 @@ const styles = StyleSheet.create({
   },
   timesReadText: {
     color: "#F2D3A2",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 16,
   },
   readAtBtn: {
@@ -1638,13 +1643,13 @@ const styles = StyleSheet.create({
   readAtText: {
     flex: 1,
     color: "#F2D3A2",
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Fraunces_400Regular",
     fontSize: 16,
     marginTop: 1,
   },
   datePlaceholder: {
     color: "#9D7E5B",
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Fraunces_400Regular",
     fontSize: 16,
   },
   datePickerWrap: {
@@ -1664,7 +1669,7 @@ const styles = StyleSheet.create({
   },
   datePickerDoneText: {
     color: "#2B1308",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 13,
   },
   reviewHeaderRow: {
@@ -1675,12 +1680,12 @@ const styles = StyleSheet.create({
   counterText: {
     color: "#A8885F",
     fontSize: 13,
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Fraunces_400Regular",
   },
   quoteInput: {
     minHeight: 84,
     fontSize: 16,
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Fraunces_400Regular",
   },
   recommendRow: {
     flexDirection: "row",
@@ -1703,7 +1708,7 @@ const styles = StyleSheet.create({
   },
   recommendText: {
     color: "#E4BC78",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 14,
     textAlign: "center",
   },
@@ -1720,7 +1725,7 @@ const styles = StyleSheet.create({
   },
   tagChipText: {
     color: "#E4BC78",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 13,
   },
   tagInputRow: {
@@ -1778,7 +1783,7 @@ const styles = StyleSheet.create({
   },
   historyPage: {
     color: "#D5AF72",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 16,
   },
   markActions: {
@@ -1803,12 +1808,12 @@ const styles = StyleSheet.create({
   },
   markBtnPrimaryText: {
     color: "#2B1308",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 17,
   },
   markBtnGhostText: {
     color: "#D9B477",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 17,
   },
 });

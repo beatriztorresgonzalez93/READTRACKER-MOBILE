@@ -152,7 +152,7 @@ export default function HistoryScreen() {
  
             <Card mode="outlined" style={styles.calendarCard}>
               <Card.Content>
-              <Text variant="titleMedium" style={styles.calendarTitle}>Calendario de intensidad</Text>
+              <Text style={styles.calendarTitle}>Calendario de intensidad</Text>
               <View style={styles.weekRow}>
                 {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
                   <Text key={weekDay} style={styles.weekDayLabel}>
@@ -270,9 +270,10 @@ const styles = StyleSheet.create({
   },
   navBtnLabel: {
     fontSize: 12,
+    fontFamily: "Fraunces_400Regular",
   },
   monthLabel: {
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     color: theme.colors.textOnDark,
     minWidth: 72,
     textAlign: "center",
@@ -285,12 +286,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   calendarTitle: {
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     color: theme.colors.text,
+    fontSize: 17,
+    marginBottom: 8,
+    textAlign: "center",
   },
   weekRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 4,
   },
   weekDayLabel: {
     width: "14%",
@@ -298,6 +303,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: "Fraunces_700Bold",
   },
   calendarGrid: {
     flexDirection: "row",
@@ -320,17 +326,19 @@ const styles = StyleSheet.create({
   dayCellText: {
     fontSize: 12,
     color: theme.colors.text,
-    fontWeight: "600",
+    fontFamily: "Fraunces_700Bold",
   },
   dayCellTextOnDark: {
     color: theme.colors.textOnDark,
   },
   errorText: {
     color: theme.colors.textOnDark,
+    fontFamily: "Fraunces_400Regular",
   },
   legendText: {
     color: theme.colors.textSoft,
     fontSize: 12,
+    fontFamily: "Fraunces_400Regular",
   },
   legendRow: {
     marginTop: 0,
@@ -357,6 +365,7 @@ const styles = StyleSheet.create({
   sessionsTitle: {
     color: theme.colors.text,
     fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
   },
   sessionMiniCard: {
     borderRadius: 10,
@@ -376,14 +385,17 @@ const styles = StyleSheet.create({
     flex: 1,
     color: theme.colors.text,
     fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
   },
   sessionMiniMeta: {
     color: theme.colors.textSoft,
     fontSize: 12,
+    fontFamily: "Fraunces_400Regular",
   },
   sessionEmptyText: {
     color: theme.colors.textSoft,
     fontSize: 12,
+    fontFamily: "Fraunces_400Regular",
   },
 });
 

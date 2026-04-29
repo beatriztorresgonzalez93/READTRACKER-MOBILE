@@ -2,22 +2,27 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
-import { Fraunces_700Bold } from "@expo-google-fonts/fraunces";
-import { Inter_400Regular, Inter_600SemiBold } from "@expo-google-fonts/inter";
+import { Fraunces_400Regular, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
+import { Text, TextInput } from "react-native";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/providers/app-providers";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
+    Fraunces_400Regular,
     Fraunces_700Bold,
-    Inter_400Regular,
-    Inter_600SemiBold,
   });
 
   if (!fontsLoaded) {
     return null;
   }
+
+  // Fuerza Fraunces como fuente base global.
+  Text.defaultProps = Text.defaultProps || {};
+  Text.defaultProps.style = [{ fontFamily: "Fraunces_400Regular" }, Text.defaultProps.style];
+  TextInput.defaultProps = TextInput.defaultProps || {};
+  TextInput.defaultProps.style = [{ fontFamily: "Fraunces_400Regular" }, TextInput.defaultProps.style];
 
   return (
     <AppProviders>

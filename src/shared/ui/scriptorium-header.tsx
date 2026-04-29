@@ -27,7 +27,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
         ) : null}
         <View style={styles.brand}>
           <Text style={styles.title}>SCRIPTORIUM</Text>
-          <Text style={styles.subtitle}>BIBLIOTECA PERSONAL</Text>
+          <Text style={styles.subtitle}>✦ BIBLIOTECA PERSONAL ✦</Text>
         </View>
         <View style={styles.right}>
           <Link href={"/(app)/profile" as never} asChild>
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 10,
     letterSpacing: 2,
+    fontFamily: "Fraunces_400Regular",
     color: theme.colors.textMutedOnDark,
     marginTop: 2,
   },

@@ -327,6 +327,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: theme.colors.textMutedOnDark,
     marginBottom: 4,
+    fontFamily: "Fraunces_400Regular",
   },
   coverSearchBtn: {
     borderWidth: 1,
@@ -341,12 +342,13 @@ const styles = StyleSheet.create({
   },
   coverSearchLabel: {
     color: theme.colors.textOnDark,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
   },
   coverHelp: {
     color: theme.colors.textMutedOnDark,
     fontSize: 13,
     marginTop: -2,
+    fontFamily: "Fraunces_400Regular",
   },
   coverPreview: {
     alignItems: "center",
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
   },
   coverPickerLabel: {
     color: theme.colors.textOnDark,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 13,
   },
   coverOptionsRow: {

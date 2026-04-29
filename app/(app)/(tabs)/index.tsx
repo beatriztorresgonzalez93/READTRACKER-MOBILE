@@ -486,6 +486,7 @@ export default function LibraryScreen() {
                   onChangeText={setSearchDraft}
                   style={styles.searchBarFlex}
                   inputStyle={styles.searchInput}
+                  placeholderTextColor={theme.colors.textSoft}
                   iconColor={theme.colors.textSoft}
                   elevation={0}
                 />
@@ -879,7 +880,7 @@ const styles = StyleSheet.create({
   acquisitionDate: {
     color: theme.colors.primary,
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     marginTop: 4,
   },
   statsCard: {
@@ -932,9 +933,11 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderOnCard,
   },
   searchInput: {
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Fraunces_400Regular",
     minHeight: 40,
     fontSize: 14,
+    color: theme.colors.textSoft,
+    opacity: 0.9,
   },
   filterIconBtn: {
     width: 44,
@@ -971,13 +974,13 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     color: theme.colors.textOnDark,
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 12,
     lineHeight: 16,
   },
   filterChipTextSelected: {
     color: theme.colors.onPrimary,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 12,
     lineHeight: 16,
   },
@@ -1161,7 +1164,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     fontSize: 11,
     letterSpacing: 1.2,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
   },
   gridDivider: {
     height: StyleSheet.hairlineWidth,
@@ -1208,7 +1211,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     color: theme.colors.primary,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
   },
   sortCheckSpacer: {
     width: 24,
@@ -1226,7 +1229,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   genreRowActive: {
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Fraunces_700Bold",
     color: theme.colors.primary,
   },
   genreRowCount: {

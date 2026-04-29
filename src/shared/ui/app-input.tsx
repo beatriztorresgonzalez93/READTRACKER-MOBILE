@@ -14,7 +14,7 @@ export function AppInput({ label, error, style, ...props }: AppInputProps) {
       gap: 6,
     },
     label: {
-      fontWeight: "600",
+      fontFamily: "Fraunces_700Bold",
       color: theme.colors.textOnDark,
     },
     input: {
@@ -25,6 +25,7 @@ export function AppInput({ label, error, style, ...props }: AppInputProps) {
       paddingHorizontal: 12,
       paddingVertical: 10,
       color: theme.colors.text,
+      fontFamily: "Fraunces_400Regular",
     },
     inputError: {
       borderColor: theme.colors.danger,
@@ -32,6 +33,7 @@ export function AppInput({ label, error, style, ...props }: AppInputProps) {
     error: {
       color: theme.colors.danger,
       fontSize: 12,
+      fontFamily: "Fraunces_400Regular",
     },
   });
 

@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 17,
     lineHeight: 26,
+    fontFamily: "Fraunces_400Regular",
     color: theme.colors.textSoft,
     paddingRight: 20,
   },
@@ -246,14 +247,14 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 19,
     color: "#8C5E35",
-    fontWeight: "600",
+    fontFamily: "Fraunces_700Bold",
   },
   fieldBlock: {
     gap: 8,
   },
   label: {
     color: "#7A5C47",
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     letterSpacing: 1.6,
     fontSize: 13,
   },
@@ -266,6 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 17,
+    fontFamily: "Fraunces_400Regular",
   },
   memberCard: {
     marginTop: 8,
@@ -278,12 +280,13 @@ const styles = StyleSheet.create({
   },
   memberTitle: {
     color: "#6F4F3A",
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 18,
   },
   memberSubtitle: {
     color: "#775C4A",
     fontSize: 15,
+    fontFamily: "Fraunces_400Regular",
   },
   logoutBtn: {
     marginTop: 4,
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: theme.colors.textOnDark,
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 16,
   },
   saveBtn: {
@@ -308,7 +311,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     color: theme.colors.onPrimary,
-    fontWeight: "700",
+    fontFamily: "Fraunces_700Bold",
     fontSize: 16,
   },
 });

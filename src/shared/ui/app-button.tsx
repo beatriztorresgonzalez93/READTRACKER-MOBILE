@@ -32,11 +32,11 @@ export function AppButton({ label, variant = "primary", containerStyle, ...props
     },
     primaryLabel: {
       color: theme.colors.onPrimary,
-      fontWeight: "700",
+      fontFamily: "Fraunces_700Bold",
     },
     secondaryLabel: {
       color: theme.colors.textOnDark,
-      fontWeight: "700",
+      fontFamily: "Fraunces_700Bold",
     },
   });
 
