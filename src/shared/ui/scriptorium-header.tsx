@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -39,7 +39,14 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
               )}
             </Pressable>
           </Link>
-          <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Avisos">
+          <Pressable
+            hitSlop={12}
+            style={styles.iconBtn}
+            accessibilityLabel="Avisos"
+            onPress={() =>
+              Alert.alert("Proximamente", "Funcionalidad disponible en la siguiente iteracion.")
+            }
+          >
             <Ionicons name="notifications-outline" size={24} color={theme.colors.accent} />
           </Pressable>
         </View>

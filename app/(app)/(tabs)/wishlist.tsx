@@ -260,7 +260,7 @@ export default function WishlistScreen() {
             entering={FadeInDown.delay(index * 30).duration(240)}
             exiting={FadeOutLeft.duration(180)}
           >
-            <Card mode="outlined" style={styles.itemCard}>
+            <Card mode="contained" style={styles.itemCard}>
               <Card.Content>
                 <View style={styles.itemTop}>
                   <View style={styles.priorityBadge}>
@@ -522,7 +522,8 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     borderRadius: theme.radius.md,
-    borderColor: theme.colors.border,
+    borderWidth: 0,
+    borderColor: "transparent",
     backgroundColor: theme.colors.card,
   },
   itemTop: {

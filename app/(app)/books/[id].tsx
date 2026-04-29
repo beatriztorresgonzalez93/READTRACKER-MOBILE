@@ -361,7 +361,7 @@ export default function BookDetailScreen() {
             <View style={styles.heroRatingRow}>
               <Stars rating={book?.rating} />
               {isFavorite ? (
-                <Chip compact style={styles.favChip}>
+                <Chip compact style={styles.favChip} textStyle={styles.favChipText}>
                   <Ionicons name="heart" size={12} color="#D14E72" /> Favorito
                 </Chip>
               ) : null}
@@ -1279,6 +1279,10 @@ const styles = StyleSheet.create({
   },
   favChip: {
     backgroundColor: theme.colors.cardElevated,
+  },
+  favChipText: {
+    color: theme.colors.text,
+    fontFamily: "Inter_600SemiBold",
   },
   tabsRow: {
     flexDirection: "row",
