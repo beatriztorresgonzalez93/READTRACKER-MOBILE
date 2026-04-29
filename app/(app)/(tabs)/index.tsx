@@ -40,6 +40,7 @@ import { BookCover } from "@/shared/ui/book-cover";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 const COLLECTION_CARD_WIDTH = 146;
 const COLLECTION_COVER_RATIO = 1.42;
@@ -263,6 +264,7 @@ function AcquisitionCard({ item }: { item: PurchaseItem }) {
 }
 
 function LibraryAcquisitionsFooter() {
+  const appTheme = useAppTheme();
   const purchases = usePurchases();
   const items = purchases.data ?? [];
 
@@ -272,7 +274,7 @@ function LibraryAcquisitionsFooter() {
 
   return (
     <View style={styles.acquisitionsSection}>
-      <Text variant="titleLarge" style={styles.sectionTitle}>
+      <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
         Ultimas adquisiciones
       </Text>
       {purchases.isLoading && !purchases.data ? (
@@ -343,6 +345,7 @@ function BookGridCard({ book }: { book: Book }) {
 }
 
 export default function LibraryScreen() {
+  const appTheme = useAppTheme();
   const insets = useSafeAreaInsets();
   const summary = useBooksSummary();
   const leyendoPreview = useLeyendoPreview();
@@ -569,7 +572,7 @@ export default function LibraryScreen() {
               {collectionSlice.length > 0 ? (
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
-                    <Text variant="titleLarge" style={styles.sectionTitle}>
+                    <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
                       Colección
                     </Text>
                   </View>
@@ -588,7 +591,7 @@ export default function LibraryScreen() {
 
               {readingBooks.length > 0 ? (
                 <View style={styles.section}>
-                  <Text variant="titleLarge" style={styles.sectionTitle}>
+                  <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
                     Leyendo ahora
                   </Text>
                   <View style={styles.readingStack}>

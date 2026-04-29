@@ -4,10 +4,43 @@ import { Tabs, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
-import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 function AddBookCenterButton(_props: BottomTabBarButtonProps) {
+  const theme = useAppTheme();
   const router = useRouter();
+  const styles = StyleSheet.create({
+    addSlot: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "flex-start",
+      paddingTop: 2,
+    },
+    addCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      marginTop: -26,
+      backgroundColor: theme.colors.bgPanel,
+      borderWidth: 2,
+      borderColor: theme.colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOpacity: 0.35,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 3 },
+        },
+        android: { elevation: 8 },
+      }),
+    },
+    addCirclePressed: {
+      opacity: 0.9,
+    },
+  });
+
   return (
     <View style={styles.addSlot}>
       <Pressable
@@ -23,6 +56,7 @@ function AddBookCenterButton(_props: BottomTabBarButtonProps) {
 }
 
 export default function AppTabsLayout() {
+  const theme = useAppTheme();
   return (
     <Tabs
       screenOptions={{
@@ -93,35 +127,3 @@ export default function AppTabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  addSlot: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 2,
-  },
-  addCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginTop: -26,
-    backgroundColor: theme.colors.bgPanel,
-    borderWidth: 2,
-    borderColor: theme.colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.35,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 3 },
-      },
-      android: { elevation: 8 },
-    }),
-  },
-  addCirclePressed: {
-    opacity: 0.9,
-  },
-});

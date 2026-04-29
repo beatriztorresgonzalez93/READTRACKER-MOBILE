@@ -19,8 +19,10 @@ import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function EditBookScreen() {
+  const appTheme = useAppTheme();
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id ?? "";
   const detail = useBookDetail(bookId);
@@ -154,7 +156,7 @@ export default function EditBookScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Editar libro</Text>
+        <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Editar libro</Text>
         <Text style={styles.subtitle}>
           Actualiza los datos basicos de tu libro.
         </Text>
@@ -207,13 +209,13 @@ export default function EditBookScreen() {
             pressed && styles.coverSearchBtnPressed,
           ]}
         >
-          <Text style={styles.coverSearchLabel}>
+          <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
             {isSearchingCover ? "Buscando portada..." : "Buscar portada"}
           </Text>
         </Pressable>
         {coverOptions.length > 0 ? (
           <View style={styles.coverPickerBlock}>
-            <Text style={styles.coverPickerLabel}>Elige una portada</Text>
+            <Text style={[styles.coverPickerLabel, { color: appTheme.colors.textOnDark }]}>Elige una portada</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}

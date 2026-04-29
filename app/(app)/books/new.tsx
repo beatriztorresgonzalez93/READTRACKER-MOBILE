@@ -15,8 +15,10 @@ import { AppInput } from "@/shared/ui/app-input";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function NewBookScreen() {
+  const appTheme = useAppTheme();
   const createBook = useCreateBook();
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -117,7 +119,7 @@ export default function NewBookScreen() {
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Anadir libro</Text>
+        <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Anadir libro</Text>
         <Text style={styles.subtitle}>
           Completa los datos basicos para incorporarlo a tu biblioteca.
         </Text>
@@ -170,13 +172,13 @@ export default function NewBookScreen() {
             pressed && styles.coverSearchBtnPressed,
           ]}
         >
-          <Text style={styles.coverSearchLabel}>
+          <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
             {isSearchingCover ? "Buscando portada..." : "Buscar portada"}
           </Text>
         </Pressable>
         {coverOptions.length > 0 ? (
           <View style={styles.coverPickerBlock}>
-            <Text style={styles.coverPickerLabel}>Elige una portada</Text>
+            <Text style={[styles.coverPickerLabel, { color: appTheme.colors.textOnDark }]}>Elige una portada</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}

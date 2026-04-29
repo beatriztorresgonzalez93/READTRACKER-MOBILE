@@ -6,9 +6,10 @@ import { useAuth } from "@/features/auth/use-auth";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function LoginScreen() {
+  const theme = useAppTheme();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,6 +31,37 @@ export default function LoginScreen() {
       setIsSubmitting(false);
     }
   }
+
+  const styles = StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      justifyContent: "center",
+      gap: 12,
+    },
+    title: {
+      fontWeight: "800",
+      fontSize: 26,
+      fontFamily: "Fraunces_700Bold",
+      color: theme.colors.textOnDark,
+    },
+    subtitle: {
+      color: theme.colors.textMutedOnDark,
+      marginBottom: 8,
+    },
+    registerRow: {
+      flexDirection: "row",
+      gap: 6,
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    registerHint: {
+      color: theme.colors.textMutedOnDark,
+    },
+    link: {
+      color: theme.colors.primary,
+      fontWeight: "700",
+    },
+  });
 
   return (
     <Screen>
@@ -63,35 +95,3 @@ export default function LoginScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    justifyContent: "center",
-    gap: 12,
-  },
-  title: {
-    fontWeight: "800",
-    fontSize: 26,
-    fontFamily: "Fraunces_700Bold",
-    color: theme.colors.textOnDark,
-  },
-  subtitle: {
-    color: theme.colors.textMutedOnDark,
-    marginBottom: 8,
-  },
-  registerRow: {
-    flexDirection: "row",
-    gap: 6,
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  registerHint: {
-    color: theme.colors.textMutedOnDark,
-  },
-  link: {
-    color: theme.colors.primary,
-    fontWeight: "700",
-  },
-});
-

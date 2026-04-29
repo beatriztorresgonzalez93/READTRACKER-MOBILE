@@ -6,8 +6,10 @@ import { useMonthlyHistory, useReadingSessionsList } from "@/features/readingSes
 import { AppLoader } from "@/shared/ui/app-loader";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function HistoryScreen() {
+  const appTheme = useAppTheme();
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
   const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
@@ -109,7 +111,7 @@ export default function HistoryScreen() {
               >
                 Mes anterior
               </Button>
-              <Text style={styles.monthLabel}>
+              <Text style={[styles.monthLabel, { color: appTheme.colors.textOnDark }]}>
                 {monthFormatter.format(new Date(history.selected.year, history.selected.month - 1, 1))}
               </Text>
               <Button
