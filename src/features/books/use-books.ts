@@ -72,6 +72,9 @@ export function useCreateReadingSession(bookId: string) {
     mutationFn: (payload: Omit<CreateReadingSessionPayload, "bookId">) =>
       createReadingSession(token ?? "", { ...payload, bookId }),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["reading-sessions", "list"] });
+      await queryClient.invalidateQueries({ queryKey: ["history", "monthly"] });
+      await queryClient.invalidateQueries({ queryKey: ["stats", "reading"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });

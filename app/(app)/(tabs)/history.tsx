@@ -1,11 +1,12 @@
 // Muestra el historial de lectura mensual y el calendario de sesiones.
+import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useMemo, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 
-import { useMonthlyHistory, useReadingSessionsList } from "@/features/readingSessions/use-history";
+import { useDeleteReadingSession, useMonthlyHistory, useReadingSessionsList } from "@/features/readingSessions/use-history";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
@@ -16,6 +17,7 @@ export default function HistoryScreen() {
   const appTheme = useAppTheme();
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
+  const deleteSession = useDeleteReadingSession();
   const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
   const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
   const timeFormatter = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
@@ -26,6 +28,7 @@ export default function HistoryScreen() {
       id: string;
       title: string;
       author: string;
+      bookId: string;
       pagesRead: number;
       previousPage?: number;
       currentPage: number;
@@ -41,6 +44,7 @@ export default function HistoryScreen() {
         id: session.id,
         title: session.title,
         author: session.author,
+        bookId: session.bookId,
         pagesRead: Math.max(0, session.pagesRead ?? 0),
         previousPage: session.previousPage,
         currentPage: session.currentPage,
@@ -94,6 +98,27 @@ export default function HistoryScreen() {
     if (pages <= 25) return "#C9A36A";
     if (pages <= 40) return "#A0713F";
     return "#6B4528";
+  }
+
+  function onDeleteSession(session: { id: string; title: string }) {
+    Alert.alert(
+      "Eliminar sesion",
+      `Se eliminara la sesion de "${session.title}".`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSession.mutateAsync(session.id);
+            } catch (error) {
+              Alert.alert("No se pudo eliminar", (error as Error).message);
+            }
+          },
+        },
+      ],
+    );
   }
 
   return (
@@ -180,9 +205,19 @@ export default function HistoryScreen() {
                   {selectedSessions.length > 0 ? (
                     selectedSessions.map((session) => (
                       <View key={session.id} style={styles.sessionMiniCard}>
-                        <Text style={styles.sessionMiniTitle} numberOfLines={1}>
-                          {session.title}
-                        </Text>
+                        <View style={styles.sessionMiniHeader}>
+                          <Text style={styles.sessionMiniTitle} numberOfLines={1}>
+                            {session.title}
+                          </Text>
+                          <Pressable
+                            hitSlop={10}
+                            onPress={() => onDeleteSession({ id: session.id, title: session.title })}
+                            disabled={deleteSession.isPending}
+                            accessibilityLabel="Eliminar sesion"
+                          >
+                            <Ionicons name="trash-outline" size={16} color={theme.colors.textSoft} />
+                          </Pressable>
+                        </View>
                         <Text style={styles.sessionMiniMeta} numberOfLines={1}>
                           {session.author || "Autor desconocido"}
                         </Text>
@@ -331,7 +366,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
+  sessionMiniHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
   sessionMiniTitle: {
+    flex: 1,
     color: theme.colors.text,
     fontWeight: "700",
   },

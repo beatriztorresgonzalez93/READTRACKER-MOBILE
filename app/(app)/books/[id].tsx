@@ -28,6 +28,7 @@ import {
   useUpdateBook,
   useUpdateBookStatus,
 } from "@/features/books/use-books";
+import { useReadingSessionsList } from "@/features/readingSessions/use-history";
 import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
@@ -79,6 +80,7 @@ export default function BookDetailScreen() {
   const updateStatus = useUpdateBookStatus(bookId);
   const updateBook = useUpdateBook(bookId);
   const createSession = useCreateReadingSession(bookId);
+  const sessionsQuery = useReadingSessionsList();
   const deleteBook = useDeleteBook(bookId);
   const [activeTab, setActiveTab] = useState<DetailTab>("Informacion");
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -192,6 +194,18 @@ export default function BookDetailScreen() {
     0,
     Math.min(100, Math.round((currentPage / totalPages) * 100)),
   );
+  const bookSessions = useMemo(
+    () =>
+      (sessionsQuery.data ?? [])
+        .filter((session) => session.bookId === bookId)
+        .sort(
+          (a, b) =>
+            Date.parse(b.recordedAt || b.createdAt) -
+            Date.parse(a.recordedAt || a.createdAt),
+        ),
+    [sessionsQuery.data, bookId],
+  );
+  const latestBookSession = bookSessions[0];
 
   useEffect(() => {
     const fromBook = book?.status;
@@ -272,18 +286,32 @@ export default function BookDetailScreen() {
   useEffect(() => {
     const pages = Math.max(1, book?.pages ?? 1);
     const fromProgress = Math.round(((book?.progress ?? 0) / 100) * pages);
-    const initialPage = Math.max(0, Math.min(pages, fromProgress));
+    const fromLatestSession = latestBookSession?.currentPage ?? null;
+    const initialCandidate =
+      fromLatestSession != null && Number.isFinite(fromLatestSession)
+        ? fromLatestSession
+        : fromProgress;
+    const initialPage = Math.max(0, Math.min(pages, Math.round(initialCandidate)));
     setCurrentPage(initialPage);
     setPageInput(initialPage > 0 ? String(initialPage) : "");
 
+    if (bookSessions.length > 0) {
+      setPageHistory(
+        bookSessions.slice(0, 20).map((session) => ({
+          page: Math.max(1, session.currentPage),
+          when: session.recordedAt || session.createdAt,
+        })),
+      );
+      return;
+    }
+
     const lastMarkedAt = book?.lastPageMarkedAt;
     if (lastMarkedAt) {
-      setPageHistory((prev) => {
-        if (prev.length > 0) return prev;
-        return [{ page: initialPage || 1, when: lastMarkedAt }];
-      });
+      setPageHistory([{ page: initialPage || 1, when: lastMarkedAt }]);
+    } else {
+      setPageHistory([]);
     }
-  }, [book?.pages, book?.progress, book?.lastPageMarkedAt]);
+  }, [book?.pages, book?.progress, book?.lastPageMarkedAt, latestBookSession?.currentPage, bookSessions]);
 
   if (detailQuery.isLoading && !detailQuery.data) {
     return <AppLoader />;

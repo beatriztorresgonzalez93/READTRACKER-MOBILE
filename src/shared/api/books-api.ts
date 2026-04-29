@@ -88,11 +88,60 @@ export async function createReadingSession(
   token: string,
   payload: CreateReadingSessionPayload,
 ): Promise<void> {
-  await apiRequest("/reading-sessions", {
-    method: "POST",
-    token,
-    body: payload,
-  });
+  const currentPage = Math.max(1, Math.round(payload.currentPage));
+  const previousPage = payload.previousPage != null ? Math.max(0, Math.round(payload.previousPage)) : undefined;
+  const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
+    {
+      path: "/reading-sessions",
+      body: {
+        bookId: payload.bookId,
+        currentPage,
+        previousPage,
+        recordedAt: payload.recordedAt,
+      },
+    },
+    {
+      path: "/reading-sessions",
+      body: {
+        book_id: payload.bookId,
+        current_page: currentPage,
+        previous_page: previousPage,
+        recorded_at: payload.recordedAt,
+      },
+    },
+    {
+      path: `/books/${payload.bookId}/reading-sessions`,
+      body: {
+        currentPage,
+        previousPage,
+        recordedAt: payload.recordedAt,
+      },
+    },
+    {
+      path: `/books/${payload.bookId}/reading-sessions`,
+      body: {
+        current_page: currentPage,
+        previous_page: previousPage,
+        recorded_at: payload.recordedAt,
+      },
+    },
+  ];
+
+  let lastError: Error | null = null;
+  for (const attempt of attempts) {
+    try {
+      await apiRequest(attempt.path, {
+        method: "POST",
+        token,
+        body: attempt.body,
+      });
+      return;
+    } catch (error) {
+      lastError = error as Error;
+    }
+  }
+
+  throw lastError ?? new Error("No se pudo guardar la sesion de lectura.");
 }
 
 export async function updateBookStatus(

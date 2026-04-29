@@ -1,10 +1,10 @@
 // Hooks para construir historial mensual y estadisticas de lectura.
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { getMonthlyHistory, getReadingStats } from "@/shared/api/history-api";
-import { getReadingSessions } from "@/shared/api/reading-sessions-api";
+import { deleteReadingSession, getReadingSessions } from "@/shared/api/reading-sessions-api";
 
 function getTodayMonth() {
   const now = new Date();
@@ -63,6 +63,23 @@ export function useReadingSessionsList() {
     queryKey: ["reading-sessions", "list"],
     queryFn: () => getReadingSessions(token ?? ""),
     enabled: Boolean(token),
+  });
+}
+
+export function useDeleteReadingSession() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => deleteReadingSession(token ?? "", sessionId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["reading-sessions", "list"] });
+      await queryClient.invalidateQueries({ queryKey: ["history", "monthly"] });
+      await queryClient.invalidateQueries({ queryKey: ["stats", "reading"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+    },
   });
 }
 

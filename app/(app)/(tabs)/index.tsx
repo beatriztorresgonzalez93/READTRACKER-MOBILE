@@ -29,6 +29,7 @@ import {
   useBooksSummary,
   useLeyendoPreview,
 } from "@/features/books/use-books";
+import { useReadingSessionsList } from "@/features/readingSessions/use-history";
 import { usePurchases } from "@/features/wishlist/use-wishlist";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import type {
@@ -363,6 +364,7 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const summary = useBooksSummary();
   const leyendoPreview = useLeyendoPreview();
+  const sessionsQuery = useReadingSessionsList();
   const searchDraft = useLibraryPreferencesStore((state) => state.searchDraft);
   const setSearchDraft = useLibraryPreferencesStore((state) => state.setSearchDraft);
   const debouncedSearch = useDebouncedValue(searchDraft, 400);
@@ -393,6 +395,17 @@ export default function LibraryScreen() {
 
   const booksFeed = useBooksFeed(listQuery);
   const filtered = isFilteredQuery(listQuery);
+  const latestSessionByBook = useMemo(() => {
+    const map = new Map<string, { currentPage: number; at: number }>();
+    for (const session of sessionsQuery.data ?? []) {
+      const at = Date.parse(session.recordedAt || session.createdAt);
+      const current = map.get(session.bookId);
+      if (!current || at > current.at) {
+        map.set(session.bookId, { currentPage: Math.max(0, session.currentPage), at });
+      }
+    }
+    return map;
+  }, [sessionsQuery.data]);
 
   if (booksFeed.isPending && !booksFeed.data) {
     return <AppLoader />;
@@ -406,7 +419,17 @@ export default function LibraryScreen() {
       return bTime - aTime;
     })
     .slice(0, 10);
-  const readingBooks = (leyendoPreview.data ?? []).slice(0, 3);
+  const readingBooks = (leyendoPreview.data ?? [])
+    .map((book) => {
+      const latest = latestSessionByBook.get(book.id);
+      if (!latest || !book.pages || book.pages <= 0) return book;
+      const progressFromSession = Math.max(
+        0,
+        Math.min(100, Math.round((latest.currentPage / book.pages) * 100)),
+      );
+      return { ...book, progress: progressFromSession };
+    })
+    .slice(0, 3);
   const genreRows = (summary.data?.genres ?? []).filter(
     (row): row is { genre: string; count: number } =>
       Boolean(row) &&
