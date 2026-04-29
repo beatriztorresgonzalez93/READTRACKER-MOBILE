@@ -436,7 +436,7 @@ export default function BookDetailScreen() {
                       size={14}
                       color={theme.colors.textSoft}
                     />
-                    <Text style={styles.blockLabel}>Año de publicacion</Text>
+                    <Text style={styles.blockLabel}>Publicado en</Text>
                   </View>
                   <Text style={styles.detailValue}>{year}</Text>
                 </View>

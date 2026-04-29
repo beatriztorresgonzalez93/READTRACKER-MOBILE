@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useMemo, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
-import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 
 import { useDeleteReadingSession, useMonthlyHistory, useReadingSessionsList } from "@/features/readingSessions/use-history";
@@ -22,6 +22,8 @@ export default function HistoryScreen() {
   const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
   const timeFormatter = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<{ id: string; title: string } | null>(null);
 
   const sessionsByDay = useMemo(() => {
     const map = new Map<string, {
@@ -101,24 +103,24 @@ export default function HistoryScreen() {
   }
 
   function onDeleteSession(session: { id: string; title: string }) {
-    Alert.alert(
-      "Eliminar sesion",
-      `Se eliminara la sesion de "${session.title}".`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteSession.mutateAsync(session.id);
-            } catch (error) {
-              Alert.alert("No se pudo eliminar", (error as Error).message);
-            }
-          },
-        },
-      ],
-    );
+    setSelectedSession(session);
+    setConfirmModalOpen(true);
+  }
+
+  function closeConfirmModal() {
+    if (deleteSession.isPending) return;
+    setConfirmModalOpen(false);
+    setSelectedSession(null);
+  }
+
+  async function onConfirmDeleteSession() {
+    if (!selectedSession) return;
+    try {
+      await deleteSession.mutateAsync(selectedSession.id);
+      closeConfirmModal();
+    } catch (error) {
+      Alert.alert("No se pudo eliminar", (error as Error).message);
+    }
   }
 
   return (
@@ -243,6 +245,37 @@ export default function HistoryScreen() {
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}
       />
+
+      <Modal
+        visible={confirmModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={closeConfirmModal}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Eliminar sesión</Text>
+            <Text style={styles.confirmBody}>
+              {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
+            </Text>
+            <View style={styles.confirmActionsRow}>
+              <Button mode="outlined" onPress={closeConfirmModal} style={styles.confirmCancelBtn}>
+                Cancelar
+              </Button>
+              <Button
+                mode="contained"
+                buttonColor={theme.colors.danger}
+                onPress={onConfirmDeleteSession}
+                loading={deleteSession.isPending}
+                disabled={deleteSession.isPending}
+                style={styles.confirmDeleteBtn}
+              >
+                Eliminar
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -396,6 +429,45 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     fontSize: 12,
     fontFamily: "Fraunces_400Regular",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  confirmCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.card,
+    padding: 14,
+    gap: 8,
+  },
+  confirmTitle: {
+    color: theme.colors.text,
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 22,
+  },
+  confirmBody: {
+    color: theme.colors.textSoft,
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 6,
+  },
+  confirmActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  confirmCancelBtn: {
+    flex: 1,
+    borderRadius: 10,
+    borderColor: theme.colors.border,
+  },
+  confirmDeleteBtn: {
+    flex: 1,
+    borderRadius: 10,
   },
 });
 
