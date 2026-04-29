@@ -1,5 +1,7 @@
 # ReadTracker Mobile (Expo)
 
+[![CI](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml/badge.svg)](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml)
+
 App movil de ReadTracker construida con React Native + Expo y conectada a la API existente del proyecto web.
 
 ## Stack
@@ -81,7 +83,19 @@ npm run lint
 - Typecheck:
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
+```
+
+- Tests:
+
+```bash
+npm run test:ci
+```
+
+- Cobertura:
+
+```bash
+npm run test:coverage
 ```
 
 ## Pendiente para paridad completa con web

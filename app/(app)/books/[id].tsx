@@ -28,6 +28,11 @@ import {
   useUpdateBook,
   useUpdateBookStatus,
 } from "@/features/books/use-books";
+import {
+  buildReadingSessionPayload,
+  calculateCompletion,
+  parseNextPageInput,
+} from "@/features/books/lib/mark-page";
 import { useReadingSessionsList } from "@/features/readingSessions/use-history";
 import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
@@ -190,10 +195,7 @@ export default function BookDetailScreen() {
       : book?.readCount
       ? `${book.readCount} vez${book.readCount > 1 ? "es" : ""}`
       : "No leido aun");
-  const completion = Math.max(
-    0,
-    Math.min(100, Math.round((currentPage / totalPages) * 100)),
-  );
+  const completion = calculateCompletion(currentPage, totalPages);
   const bookSessions = useMemo(
     () =>
       (sessionsQuery.data ?? [])
@@ -777,8 +779,8 @@ export default function BookDetailScreen() {
               <Pressable
                 style={[styles.markBtn, styles.markBtnPrimary]}
                 onPress={async () => {
-                  const next = Number(pageInput);
-                  if (!Number.isFinite(next) || next < 1 || next > totalPages) {
+                  const next = parseNextPageInput(pageInput, totalPages);
+                  if (next == null) {
                     Alert.alert(
                       "Pagina invalida",
                       `Introduce un valor entre 1 y ${totalPages}.`,
@@ -786,12 +788,11 @@ export default function BookDetailScreen() {
                     return;
                   }
                   try {
-                    await createSession.mutateAsync({
-                      currentPage: Math.round(next),
-                      previousPage: Math.max(0, currentPage),
-                    });
+                    await createSession.mutateAsync(
+                      buildReadingSessionPayload(next, currentPage),
+                    );
                     const now = new Date().toISOString();
-                    const normalizedPage = Math.round(next);
+                    const normalizedPage = next;
                     setCurrentPage(normalizedPage);
                     setPageInput(String(normalizedPage));
                     setPageHistory((prev) => [
