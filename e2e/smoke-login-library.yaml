@@ -1,0 +1,27 @@
+appId: host.exp.exponent
+---
+- launchApp
+- openLink: ${MAESTRO_APP_URL}
+
+# Si estamos en login, hacemos inicio de sesion.
+- runFlow:
+    when:
+      visible: "Entrar"
+    commands:
+      - tapOn: "Correo"
+      - inputText: ${MAESTRO_EMAIL}
+      - tapOn: "Contrasena"
+      - inputText: ${MAESTRO_PASSWORD}
+      - tapOn: "Entrar"
+
+# Si ya estamos dentro, forzamos tab de biblioteca para evitar depender del estado previo.
+- runFlow:
+    when:
+      visible: "Biblioteca"
+    commands:
+      - tapOn: "Biblioteca"
+
+# Espera a que termine la navegacion/render y valida un texto estable de la app.
+- extendedWaitUntil:
+    visible: "SCRIPTORIUM"
+    timeout: 30000

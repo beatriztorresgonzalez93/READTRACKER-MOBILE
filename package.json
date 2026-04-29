@@ -13,7 +13,9 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --runInBand",
     "test:coverage": "jest --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e:maestro:smoke": "maestro test e2e/smoke-login-library.yaml",
+    "e2e:maestro:mark-page": "maestro test e2e/mark-page-history.yaml"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",

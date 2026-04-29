@@ -481,6 +481,8 @@ export default function LibraryScreen() {
 
               <View style={styles.searchRow}>
                 <Searchbar
+                  testID="library-searchbar"
+                  accessibilityLabel="Buscar en biblioteca"
                   placeholder="Título, autor, género o año..."
                   value={searchDraft}
                   onChangeText={setSearchDraft}

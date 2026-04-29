@@ -1,0 +1,97 @@
+appId: host.exp.exponent
+---
+- launchApp
+- openLink: ${MAESTRO_APP_URL}
+
+# Si estamos en login, hacemos inicio de sesion.
+- runFlow:
+    when:
+      visible: "Entrar"
+    commands:
+      - tapOn: "Correo"
+      - inputText: ${MAESTRO_EMAIL}
+      - tapOn: "Contrasena"
+      - inputText: ${MAESTRO_PASSWORD}
+      - tapOn: "Entrar"
+
+# Abrimos biblioteca y entramos en un libro que este "leyendo".
+- runFlow:
+    when:
+      visible: "Biblioteca"
+    commands:
+      - tapOn: "Biblioteca"
+
+# Busca el libro objetivo con el buscador de biblioteca y lo abre.
+- runFlow:
+    when:
+      visible: "Buscar en biblioteca"
+    commands:
+      - tapOn: "Buscar en biblioteca"
+      - inputText: ${MAESTRO_READING_BOOK_TITLE}
+
+- runFlow:
+    when:
+      visible: "Título, autor, género o año..."
+    commands:
+      - tapOn: "Título, autor, género o año..."
+      - inputText: ${MAESTRO_READING_BOOK_TITLE}
+
+- runFlow:
+    when:
+      visible: "Titulo, autor, genero o ano..."
+    commands:
+      - tapOn: "Titulo, autor, genero o ano..."
+      - inputText: ${MAESTRO_READING_BOOK_TITLE}
+
+- runFlow:
+    when:
+      visible: ${MAESTRO_READING_BOOK_TITLE}
+    commands:
+      - tapOn: ${MAESTRO_READING_BOOK_TITLE}
+
+- runFlow:
+    when:
+      visible: "Portada: ${MAESTRO_READING_BOOK_TITLE}"
+    commands:
+      - tapOn: "Portada: ${MAESTRO_READING_BOOK_TITLE}"
+
+# Fallback: abre la primera card visible de la biblioteca.
+- tapOn:
+    point: "20%,46%"
+
+# El boton de "marcar pagina" es icon-only en el menu inferior.
+# En emulador 1080x2400 suele estar cerca del 2o icono (aprox 38%, 92%).
+- tapOn:
+    point: "38%,92%"
+
+# Foco en el input de pagina (evita depender de si el valor visible es "0").
+- tapOn:
+    point: "50%,64%"
+- inputText: ${MAESTRO_NEXT_PAGE}
+- runFlow:
+    when:
+      visible: "Guardar"
+    commands:
+      - tapOn: "Guardar"
+
+- runFlow:
+    when:
+      visible: "GUARDAR"
+    commands:
+      - tapOn: "GUARDAR"
+
+# Fallback por coordenada sobre el boton principal del modal.
+- tapOn:
+    point: "50%,72%"
+
+# Validacion final de navegacion a historial.
+- runFlow:
+    when:
+      visible: "Historial"
+    commands:
+      - tapOn: "Historial"
+
+# Fallback: tab "Historial" por coordenada en barra inferior.
+- tapOn:
+    point: "76%,95%"
+- waitForAnimationToEnd
