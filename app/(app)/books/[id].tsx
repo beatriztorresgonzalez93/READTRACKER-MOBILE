@@ -114,6 +114,7 @@ export default function BookDetailScreen() {
   const [pageInput, setPageInput] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteSuccessOpen, setDeleteSuccessOpen] = useState(false);
   const [pageHistory, setPageHistory] = useState<
     { page: number; when: string }[]
   >([]);
@@ -1162,8 +1163,7 @@ export default function BookDetailScreen() {
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                     await deleteBook.mutateAsync();
                     setDeleteConfirmOpen(false);
-                    Alert.alert("Libro eliminado", "El libro se ha eliminado correctamente.");
-                    router.replace("/(app)/(tabs)");
+                    setDeleteSuccessOpen(true);
                   } catch (error) {
                     Alert.alert("No se pudo eliminar", (error as Error).message);
                   }
@@ -1172,6 +1172,43 @@ export default function BookDetailScreen() {
                 <Text style={styles.confirmBtnDangerText}>
                   {deleteBook.isPending ? "Eliminando..." : "Eliminar"}
                 </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deleteSuccessOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setDeleteSuccessOpen(false);
+          router.replace("/(app)/(tabs)");
+        }}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => {
+              setDeleteSuccessOpen(false);
+              router.replace("/(app)/(tabs)");
+            }}
+          />
+          <View style={styles.confirmSheet}>
+            <Text style={styles.confirmTitle}>Libro eliminado</Text>
+            <Text style={styles.confirmText}>
+              El libro se ha eliminado correctamente.
+            </Text>
+            <View style={styles.confirmActions}>
+              <Pressable
+                style={[styles.confirmBtn, styles.confirmBtnDanger]}
+                onPress={() => {
+                  setDeleteSuccessOpen(false);
+                  router.replace("/(app)/(tabs)");
+                }}
+              >
+                <Text style={styles.confirmBtnDangerText}>Continuar</Text>
               </Pressable>
             </View>
           </View>
