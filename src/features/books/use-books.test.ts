@@ -159,7 +159,7 @@ describe("books hooks query/mutation wiring", () => {
   });
 
   it("disables queries when token is missing", () => {
-    mockUseAuth.mockReturnValue({ token: null });
+    mockUseAuth.mockReturnValue({ token: "" });
     const query = {
       search: "a",
       status: "leyendo",

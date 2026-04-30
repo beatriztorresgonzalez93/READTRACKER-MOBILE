@@ -155,7 +155,7 @@ describe("history query hooks", () => {
   });
 
   it("disables history/stats/sessions queries when token is missing", () => {
-    mockUseAuth.mockReturnValue({ token: undefined });
+    mockUseAuth.mockReturnValue({ token: "" });
     renderHook(() => useMonthlyHistory());
     renderHook(() => useReadingStats());
     renderHook(() => useReadingSessionsList());
