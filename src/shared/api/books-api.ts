@@ -90,7 +90,7 @@ export async function createReadingSession(
 ): Promise<void> {
   const currentPage = Math.max(1, Math.round(payload.currentPage));
   const previousPage = payload.previousPage != null ? Math.max(0, Math.round(payload.previousPage)) : undefined;
-  const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
+  const attempts: { path: string; body: Record<string, unknown> }[] = [
     {
       path: "/reading-sessions",
       body: {
@@ -156,11 +156,11 @@ export async function updateBookStatus(
   };
   const statusEn = englishStatusMap[status];
 
-  const attempts: Array<{
+  const attempts: {
     method: "PATCH" | "PUT";
     path: string;
     body: Record<string, unknown>;
-  }> = [
+  }[] = [
     { method: "PATCH", path: `/books/${bookId}`, body: { status } },
     { method: "PATCH", path: `/books/${bookId}`, body: { status: statusEn } },
     { method: "PATCH", path: `/books/${bookId}`, body: { readingStatus: status } },
@@ -212,7 +212,7 @@ export type CreateBookPayload = {
 };
 
 export async function createBook(token: string, payload: CreateBookPayload): Promise<BookDetail> {
-  const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
+  const attempts: { path: string; body: Record<string, unknown> }[] = [
     {
       path: "/books",
       body: {

@@ -155,7 +155,7 @@ export default function WishlistScreen() {
     setPriority("3");
   }
 
-  const allItems = itemsQuery.data ?? [];
+  const allItems = useMemo(() => itemsQuery.data ?? [], [itemsQuery.data]);
   const uniqueStores = useMemo(() => {
     const stores = new Set<string>();
     for (const item of allItems) {

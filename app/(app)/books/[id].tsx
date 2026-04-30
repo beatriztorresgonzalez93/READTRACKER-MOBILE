@@ -115,7 +115,7 @@ export default function BookDetailScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pageHistory, setPageHistory] = useState<
-    Array<{ page: number; when: string }>
+    { page: number; when: string }[]
   >([]);
   const book = detailQuery.data;
 

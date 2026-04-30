@@ -51,7 +51,7 @@ type UpdateMePayload = {
 };
 
 export async function updateMe(token: string, payload: UpdateMePayload): Promise<User> {
-  const attempts: Array<{ method: "PATCH" | "PUT"; path: string; body: Record<string, unknown> }> = [
+  const attempts: { method: "PATCH" | "PUT"; path: string; body: Record<string, unknown> }[] = [
     { method: "PATCH", path: "/auth/me", body: payload },
     { method: "PUT", path: "/auth/me", body: payload },
     { method: "PATCH", path: "/users/me", body: payload },

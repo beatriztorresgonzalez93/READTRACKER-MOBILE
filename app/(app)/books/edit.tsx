@@ -108,11 +108,11 @@ export default function EditBookScreen() {
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error(`Google Books ${response.status}`);
       const payload = (await response.json()) as {
-        items?: Array<{
+        items?: {
           volumeInfo?: {
             imageLinks?: { thumbnail?: string; smallThumbnail?: string };
           };
-        }>;
+        }[];
       };
       const options = (payload.items ?? [])
         .map(
