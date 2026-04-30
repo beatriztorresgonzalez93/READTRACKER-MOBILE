@@ -7,10 +7,12 @@ import { useMemo, useState } from "react";
 import {
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import {
@@ -362,9 +364,20 @@ function BookGridCard({ book }: { book: Book }) {
 }
 
 export default function LibraryScreen() {
-  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
+  const ListComponent: any = FlatList;
   const appTheme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+  const gridColumns = isWeb
+    ? width >= 1500
+      ? 5
+      : width >= 1220
+        ? 4
+        : width >= 980
+          ? 3
+          : 2
+    : 2;
   const summary = useBooksSummary();
   const leyendoPreview = useLeyendoPreview();
   const sessionsQuery = useReadingSessionsList();
@@ -471,7 +484,7 @@ export default function LibraryScreen() {
         ListHeaderComponent={
           <View style={styles.listHeaderOuter}>
             <View style={{ height: insets.top + 70 }} />
-            <View style={styles.listHeader}>
+            <View style={[styles.listHeader, isWeb && styles.listHeaderWeb]}>
               <StatsStrip
                 total={summary.data?.total ?? 0}
                 leido={summary.data?.leido ?? 0}
@@ -576,7 +589,7 @@ export default function LibraryScreen() {
                       compact
                       onPress={() => setGenreModalOpen(true)}
                       style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={[styles.actionBtnLabel, { color: appTheme.colors.textOnDark }]}
+                      labelStyle={styles.actionBtnLabel}
                       contentStyle={styles.actionBtnContent}
                     >
                       Género:{" "}
@@ -591,7 +604,7 @@ export default function LibraryScreen() {
                       compact
                       onPress={() => setSortModalOpen(true)}
                       style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={[styles.actionBtnLabel, { color: appTheme.colors.textOnDark }]}
+                      labelStyle={styles.actionBtnLabel}
                       contentStyle={styles.actionBtnContent}
                     >
                       Orden: {SORT_LABELS[sort]}
@@ -663,8 +676,9 @@ export default function LibraryScreen() {
             </View>
           </View>
         }
-        numColumns={2}
-        key={"library-grid-2"}
+        numColumns={gridColumns}
+        key={`library-grid-${gridColumns}`}
+        columnWrapperStyle={styles.gridColumn}
         renderItem={({ item, index }: { item: any; index: number }) => (
           <Animated.View
             entering={FadeInDown.delay(index * 20).duration(220)}
@@ -694,7 +708,11 @@ export default function LibraryScreen() {
             <LibraryAcquisitionsFooter />
           </View>
         }
-        contentContainerStyle={{ ...styles.listContent, paddingBottom: 24 + insets.bottom }}
+        contentContainerStyle={[
+          styles.listContent,
+          isWeb && styles.listContentWeb,
+          { paddingBottom: 24 + insets.bottom },
+        ]}
       />
 
       <Modal
@@ -822,6 +840,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     gap: 0,
   },
+  listContentWeb: {
+    paddingHorizontal: 18,
+  },
   listHeaderOuter: {
     alignSelf: "stretch",
     width: "100%",
@@ -831,6 +852,11 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 8,
     gap: 12,
+  },
+  listHeaderWeb: {
+    width: "100%",
+    maxWidth: 1220,
+    alignSelf: "center",
   },
   listRowOuter: {
     paddingHorizontal: 16,
@@ -1010,6 +1036,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     textTransform: "none",
+    color: theme.colors.textOnDark,
   },
   clearFiltersLabel: {
     fontSize: 12,
@@ -1113,13 +1140,17 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 8,
   },
+  gridColumn: {
+    gap: 10,
+  },
   gridItemWrap: {
     flex: 1,
     minWidth: 0,
+    marginBottom: 12,
   },
   gridCard: {
     overflow: "visible",
-    height: 378,
+    height: 356,
     paddingHorizontal: 2,
     alignItems: "center",
     justifyContent: "flex-start",

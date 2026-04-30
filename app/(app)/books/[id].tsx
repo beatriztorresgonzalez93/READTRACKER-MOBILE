@@ -911,8 +911,7 @@ export default function BookDetailScreen() {
                     accentColor="#9E7144"
                     textColor="#E4BC78"
                     themeVariant="dark"
-                    onValueChange={onReviewDateValueChange}
-                    onDismiss={() => setReviewDatePickerOpen(false)}
+                    onChange={onReviewDateValueChange}
                   />
                   {Platform.OS === "ios" ? (
                     <Pressable
