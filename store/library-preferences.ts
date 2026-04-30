@@ -1,6 +1,6 @@
 // Store global con filtros y preferencias de vista de biblioteca.
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware.js";
 
 import { zustandStateStorage } from "@/shared/lib/zustand-storage";
 import type { BooksSortKey, LibraryShelfFilter, LibraryStatusFilter } from "@/shared/types/books";
