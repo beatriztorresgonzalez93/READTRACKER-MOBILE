@@ -60,7 +60,7 @@ describe("HistoryScreen flow", () => {
     fireEvent.press(getByText("1"));
     expect(getByText("Dune")).toBeTruthy();
 
-    fireEvent.press(getByLabelText("Eliminar sesion"));
+    fireEvent.press(getByLabelText("Eliminar sesión"));
     expect(getByText("Eliminar sesión")).toBeTruthy();
     expect(getByText(/¿Seguro que quieres eliminar la sesión de "Dune"\?/)).toBeTruthy();
   });
