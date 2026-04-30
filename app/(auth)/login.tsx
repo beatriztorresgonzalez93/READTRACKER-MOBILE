@@ -13,7 +13,7 @@ import { useAppTheme } from "@/shared/ui/use-app-theme";
 export default function LoginScreen() {
   const loginSchema = z.object({
     email: z.string().trim().email("Introduce un correo valido."),
-    password: z.string().min(1, "La contrasena es obligatoria."),
+    password: z.string().min(1, "La contraseña es obligatoria."),
   });
   const theme = useAppTheme();
   const { login } = useAuth();
@@ -39,7 +39,7 @@ export default function LoginScreen() {
       await login(parsed.data);
       router.replace("/(app)/(tabs)" as never);
     } catch (error) {
-      Alert.alert("No se pudo iniciar sesion", (error as Error).message);
+      Alert.alert("No se pudo iniciar sesión", (error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +84,7 @@ export default function LoginScreen() {
       >
         <View style={styles.wrapper}>
           <Text style={styles.title}>Scriptorium</Text>
-          <Text style={styles.subtitle}>Inicia sesion para ver tu biblioteca</Text>
+          <Text style={styles.subtitle}>Inicia sesión para ver tu biblioteca</Text>
           <AppInput
             label="Correo"
             value={email}
@@ -98,7 +98,7 @@ export default function LoginScreen() {
             error={errors.email}
           />
           <AppInput
-            label="Contrasena"
+            label="Contraseña"
             value={password}
             onChangeText={(value) => {
               setPassword(value);
@@ -111,7 +111,7 @@ export default function LoginScreen() {
           />
           <AppButton label={isSubmitting ? "Entrando..." : "Entrar"} onPress={onSubmit} disabled={isSubmitting} />
           <View style={styles.registerRow}>
-            <Text style={styles.registerHint}>Aun no tienes cuenta?</Text>
+            <Text style={styles.registerHint}>Aún no tienes cuenta?</Text>
             <Link href={"/(auth)/register" as never} style={styles.link}>
               Registrate
             </Link>

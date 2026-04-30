@@ -167,7 +167,7 @@ export default function ProfileSheetScreen() {
           </View>
 
           <Pressable style={styles.logoutBtn} onPress={onLogout}>
-            <Text style={styles.logoutText}>Cerrar sesion</Text>
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
           </Pressable>
           <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={onSave} disabled={saving}>
             <Text style={styles.saveText}>{saving ? "Guardando..." : "Guardar cambios"}</Text>

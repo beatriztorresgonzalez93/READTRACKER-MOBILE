@@ -14,7 +14,7 @@ export default function RegisterScreen() {
   const registerSchema = z.object({
     name: z.string().trim().min(1, "El nombre es obligatorio."),
     email: z.string().trim().email("Introduce un correo valido."),
-    password: z.string().min(6, "La contrasena debe tener al menos 6 caracteres."),
+    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   });
   const theme = useAppTheme();
   const { register } = useAuth();
@@ -111,7 +111,7 @@ export default function RegisterScreen() {
             error={errors.email}
           />
           <AppInput
-            label="Contrasena"
+            label="Contraseña"
             value={password}
             onChangeText={(value) => {
               setPassword(value);
@@ -130,7 +130,7 @@ export default function RegisterScreen() {
           <View style={styles.registerRow}>
             <Text style={styles.registerHint}>Ya tienes cuenta?</Text>
             <Link href={"/(auth)/login" as never} style={styles.link}>
-              Inicia sesion
+              Inicia sesión
             </Link>
           </View>
         </View>

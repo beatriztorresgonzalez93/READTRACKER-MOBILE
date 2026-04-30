@@ -215,7 +215,7 @@ export default function HistoryScreen() {
                             hitSlop={10}
                             onPress={() => onDeleteSession({ id: session.id, title: session.title })}
                             disabled={deleteSession.isPending}
-                            accessibilityLabel="Eliminar sesion"
+                            accessibilityLabel="Eliminar sesión"
                           >
                             <Ionicons name="trash-outline" size={16} color={theme.colors.textSoft} />
                           </Pressable>

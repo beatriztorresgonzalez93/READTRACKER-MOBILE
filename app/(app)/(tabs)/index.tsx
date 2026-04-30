@@ -54,10 +54,10 @@ const GRID_COVER_WIDTH = 168;
 
 const SORT_LABELS: Record<BooksSortKey, string> = {
   recientes: "Mas recientes",
-  titulo: "Titulo (A-Z)",
+  titulo: "Título (A-Z)",
   autor: "Autor (A-Z)",
-  genero: "Genero (A-Z)",
-  valoracion: "Valoracion",
+  genero: "Género (A-Z)",
+  valoracion: "Valoración",
 };
 
 const SORT_OPTIONS: { key: BooksSortKey; label: string }[] = (
@@ -347,7 +347,7 @@ function BookGridCard({ book }: { book: Book }) {
               style={styles.gridCardStatus}
               numberOfLines={1}
             >
-              {book.genre ?? "Sin genero"}
+              {book.genre ?? "Sin género"}
             </Text>
             <Text variant="labelSmall" style={styles.gridCardYear}>
               {year ? String(year) : "----"}
@@ -579,7 +579,7 @@ export default function LibraryScreen() {
                       labelStyle={[styles.actionBtnLabel, { color: appTheme.colors.textOnDark }]}
                       contentStyle={styles.actionBtnContent}
                     >
-                      Genero:{" "}
+                      Género:{" "}
                       {genre
                         ? genre.length > 10
                           ? `${genre.slice(0, 10)}…`
@@ -768,7 +768,7 @@ export default function LibraryScreen() {
           />
           <View style={styles.genreSheet}>
             <Text variant="titleMedium" style={styles.genreSheetTitle}>
-              Genero
+              Género
             </Text>
             <ListComponent
               style={styles.genreList}
@@ -799,7 +799,7 @@ export default function LibraryScreen() {
                     numberOfLines={1}
                   >
                     {item.genre === "__all__"
-                      ? "Todos los generos"
+                      ? "Todos los géneros"
                       : item.genre}
                   </Text>
                   <Text variant="labelMedium" style={styles.genreRowCount}>

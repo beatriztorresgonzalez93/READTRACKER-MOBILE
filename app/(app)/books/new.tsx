@@ -24,12 +24,12 @@ import { useAppTheme } from "@/shared/ui/use-app-theme";
 import { useNewBookDraftStore } from "@store/new-book-draft";
 
 const newBookSchema = z.object({
-  title: z.string().trim().min(1, "El titulo es obligatorio."),
+  title: z.string().trim().min(1, "El título es obligatorio."),
   author: z.string().trim().min(1, "El autor es obligatorio."),
   pages: z
     .string()
     .trim()
-    .refine((value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 1), "Introduce paginas validas."),
+    .refine((value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 1), "Introduce páginas válidas."),
   publishedYear: z
     .string()
     .trim()
@@ -83,7 +83,7 @@ export default function NewBookScreen() {
 
   async function onSearchCover() {
     if (!title.trim()) {
-      setErrors((prev) => ({ ...prev, title: "Escribe el titulo para buscar portada." }));
+      setErrors((prev) => ({ ...prev, title: "Escribe el título para buscar portada." }));
       return;
     }
     try {
@@ -181,13 +181,13 @@ export default function NewBookScreen() {
             isKeyboardVisible ? styles.contentKeyboardOpen : null,
           ]}
         >
-          <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Anadir libro</Text>
+          <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Añadir libro</Text>
           <Text style={styles.subtitle}>
             Completa los datos basicos para incorporarlo a tu biblioteca.
           </Text>
 
           <AppInput
-            label="Titulo *"
+            label="Título *"
             value={title}
             onChangeText={(value) => {
               setTitle(value);
@@ -229,7 +229,7 @@ export default function NewBookScreen() {
           error={errors.publishedYear}
         />
         <AppInput
-          label="Genero"
+          label="Género"
           value={genre}
           onChangeText={setGenre}
           placeholder="Ej: Fantasia"
@@ -241,7 +241,7 @@ export default function NewBookScreen() {
           placeholder="Ej: Planeta"
         />
         <Text style={styles.coverHelp}>
-          La portada se busca automaticamente por titulo y autor.
+          La portada se busca automáticamente por título y autor.
         </Text>
         <Pressable
           onPress={onSearchCover}

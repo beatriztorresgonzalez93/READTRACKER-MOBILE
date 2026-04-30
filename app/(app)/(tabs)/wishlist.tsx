@@ -187,7 +187,7 @@ export default function WishlistScreen() {
 
   const storeFilterLabel = storeFilter === "all" ? "Todas las tiendas" : storeFilter;
   const sortLabel =
-    sortBy === "priority" ? "Ordenar: Prioridad" : sortBy === "title" ? "Ordenar: Titulo" : "Ordenar: Recientes";
+    sortBy === "priority" ? "Ordenar: Prioridad" : sortBy === "title" ? "Ordenar: Título" : "Ordenar: Recientes";
   const selectedPriorityLabel = PRIORITY_OPTIONS.find((p) => p.value === priority)?.label ?? "Media";
 
   if (itemsQuery.isLoading && !itemsQuery.data) {
@@ -250,7 +250,7 @@ export default function WishlistScreen() {
                 onPress={onOpenNewForm}
                 icon="plus"
               >
-                Anadir deseo
+                Añadir deseo
               </Button>
             </View>
           </View>
@@ -319,14 +319,14 @@ export default function WishlistScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.formModalCard}>
             <View style={styles.formHeader}>
-              <Text style={styles.formTitle}>{editingId ? "Editar deseo" : "Anadir deseo"}</Text>
+              <Text style={styles.formTitle}>{editingId ? "Editar deseo" : "Añadir deseo"}</Text>
               <Pressable onPress={() => setFormOpen(false)} hitSlop={10}>
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </Pressable>
             </View>
 
             <ScrollView contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
-              <AppInput label="Titulo" value={title} onChangeText={setTitle} placeholder="Titulo" />
+              <AppInput label="Título" value={title} onChangeText={setTitle} placeholder="Título" />
               <AppInput label="Autor" value={author} onChangeText={setAuthor} placeholder="Autor" />
               <AppInput label="Precio" value={price} onChangeText={setPrice} placeholder="ej: 19,90 EUR" keyboardType="decimal-pad" />
               <AppInput label="Tienda" value={store} onChangeText={setStore} placeholder="ej: Casa del Libro, Amazon..." />
@@ -387,7 +387,7 @@ export default function WishlistScreen() {
               Prioridad
             </Button>
             <Button mode={sortBy === "title" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setSortBy("title"); setSortModalOpen(false); }}>
-              Titulo
+              Título
             </Button>
             <Button mode={sortBy === "recent" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setSortBy("recent"); setSortModalOpen(false); }}>
               Mas recientes

@@ -40,7 +40,7 @@ import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
-const DETAIL_TABS = ["Informacion", "Mi resena", "Similares"] as const;
+const DETAIL_TABS = ["Información", "Mi reseña", "Similares"] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
 const STATUS_OPTIONS = ["pendiente", "leyendo", "leido"] as const;
 const TIMES_READ_OPTIONS = [
@@ -87,7 +87,7 @@ export default function BookDetailScreen() {
   const createSession = useCreateReadingSession(bookId);
   const sessionsQuery = useReadingSessionsList();
   const deleteBook = useDeleteBook(bookId);
-  const [activeTab, setActiveTab] = useState<DetailTab>("Informacion");
+  const [activeTab, setActiveTab] = useState<DetailTab>("Información");
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [markPageModalOpen, setMarkPageModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] =
@@ -155,7 +155,7 @@ export default function BookDetailScreen() {
           ? candidate.genre.toLowerCase().trim() === targetGenre
           : false,
       )
-      .map((candidate) => ({ book: candidate, reason: "Mismo genero" as const }));
+      .map((candidate) => ({ book: candidate, reason: "Mismo género" as const }));
 
     const alreadyIncluded = new Set(genreCandidates.map((entry) => entry.book.id));
 
@@ -172,7 +172,7 @@ export default function BookDetailScreen() {
   }, [book?.genre, book?.tags, bookId, similarByGenreFeed.data?.pages, similarByTagsFeed.data?.pages]);
   const year = book?.publishedYear ? String(book.publishedYear) : "—";
   const reviewText =
-    book?.reviewText ?? "Aun no has escrito una resena para este libro.";
+    book?.reviewText ?? "Aún no has escrito una reseña para este libro.";
   const canMarkPage = selectedStatus === "leyendo";
   const recommendationValue = (book?.recommendation ?? "").toLowerCase().trim();
   const recommendationLabel =
@@ -182,7 +182,7 @@ export default function BookDetailScreen() {
         ? "🤔 Depende del lector"
         : recommendationValue === "no"
           ? "👎 No especialmente"
-          : "Aun sin recomendacion.";
+          : "Aún sin recomendación.";
   const totalPages = Math.max(1, book?.pages ?? 1);
   const readAtLabel =
     reviewReadAtDisplay ??
@@ -333,7 +333,7 @@ export default function BookDetailScreen() {
   function onPagerEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const x = event.nativeEvent.contentOffset.x;
     const idx = Math.round(x / width);
-    setActiveTab(DETAIL_TABS[idx] ?? "Informacion");
+    setActiveTab(DETAIL_TABS[idx] ?? "Información");
   }
 
   function scrollReviewToBottom() {
@@ -461,10 +461,10 @@ export default function BookDetailScreen() {
                       size={14}
                       color={theme.colors.textSoft}
                     />
-                    <Text style={styles.blockLabel}>Genero</Text>
+                    <Text style={styles.blockLabel}>Género</Text>
                   </View>
                   <Text style={styles.detailValue}>
-                    {book?.genre ?? "Sin genero"}
+                    {book?.genre ?? "Sin género"}
                   </Text>
                 </View>
                 <View style={styles.detailCell}>
@@ -512,7 +512,7 @@ export default function BookDetailScreen() {
                   size={15}
                   color={theme.colors.textSoft}
                 />
-                <Text style={styles.blockLabel}>Mi resena</Text>
+                <Text style={styles.blockLabel}>Mi reseña</Text>
               </View>
               <Text style={styles.bodyText}>{reviewText}</Text>
             </Card.Content>
@@ -620,7 +620,7 @@ export default function BookDetailScreen() {
             <Card.Content>
               <Text style={styles.blockLabel}>Similares</Text>
               <Text style={styles.subtle}>
-                Libros que podrian interesarte por genero o etiquetas en comun.
+                Libros que podrían interesarte por género o etiquetas en común.
               </Text>
               <View style={styles.similarGrid}>
                 {similarBooks.map(({ book: item, reason }) => (
@@ -648,7 +648,7 @@ export default function BookDetailScreen() {
                 ))}
                 {similarBooks.length === 0 ? (
                   <Text style={styles.markEmpty}>
-                    Aun no hay suficientes coincidencias por genero o etiquetas.
+                    Aún no hay suficientes coincidencias por género o etiquetas.
                   </Text>
                 ) : null}
               </View>
@@ -661,7 +661,7 @@ export default function BookDetailScreen() {
         <Pressable
           style={[styles.menuBtn, styles.menuBtnPrimary]}
           onPress={() => {
-            if (activeTab === "Mi resena") {
+            if (activeTab === "Mi reseña") {
               setReviewModalOpen(true);
               return;
             }
@@ -672,7 +672,7 @@ export default function BookDetailScreen() {
           }}
         >
           <Ionicons
-            name={activeTab === "Mi resena" ? "create" : "create-outline"}
+            name={activeTab === "Mi reseña" ? "create" : "create-outline"}
             size={17}
             color="#D14E72"
           />
@@ -736,9 +736,9 @@ export default function BookDetailScreen() {
           />
           <View style={styles.markSheet}>
             <View style={styles.markHeader}>
-              <Text style={styles.markTitle}>Marcar pagina</Text>
+              <Text style={styles.markTitle}>Marcar página</Text>
               <Text style={styles.markSubtitle}>
-                {book?.title ?? "Libro"} · {totalPages} paginas
+                {book?.title ?? "Libro"} · {totalPages} páginas
               </Text>
             </View>
 
@@ -764,7 +764,7 @@ export default function BookDetailScreen() {
 
             <Text style={styles.markLabel}>Historial reciente</Text>
             {pageHistory.length === 0 ? (
-              <Text style={styles.markEmpty}>Aun no hay marcas de pagina.</Text>
+              <Text style={styles.markEmpty}>Aún no hay marcas de página.</Text>
             ) : (
               pageHistory.slice(0, 3).map((entry, idx) => (
                 <View key={`${entry.when}-${idx}`} style={styles.historyRow}>

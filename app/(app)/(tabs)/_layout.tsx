@@ -46,7 +46,7 @@ function AddBookCenterButton(_props: BottomTabBarButtonProps) {
     <View style={styles.addSlot}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Anadir libro"
+        accessibilityLabel="Añadir libro"
         onPress={() => router.push("/(app)/books/new")}
         style={({ pressed }) => [styles.addCircle, pressed && styles.addCirclePressed]}
       >

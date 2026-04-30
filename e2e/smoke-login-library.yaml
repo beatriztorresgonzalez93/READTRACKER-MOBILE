@@ -10,8 +10,18 @@ appId: host.exp.exponent
     commands:
       - tapOn: "Correo"
       - inputText: ${MAESTRO_EMAIL}
-      - tapOn: "Contrasena"
-      - inputText: ${MAESTRO_PASSWORD}
+      - runFlow:
+          when:
+            visible: "Contraseña"
+          commands:
+            - tapOn: "Contraseña"
+            - inputText: ${MAESTRO_PASSWORD}
+      - runFlow:
+          when:
+            visible: "Contrasena"
+          commands:
+            - tapOn: "Contrasena"
+            - inputText: ${MAESTRO_PASSWORD}
       - tapOn: "Entrar"
 
 # Si ya estamos dentro, forzamos tab de biblioteca para evitar depender del estado previo.
