@@ -25,9 +25,10 @@ const mockInvalidateQueries = jest.fn(async () => undefined);
 const mockRemoveQueries = jest.fn(async () => undefined);
 const mockUseInfiniteQuery = jest.fn((config: unknown) => config);
 const mockUseQuery = jest.fn((config: unknown) => config);
+const mockUseAuth = jest.fn(() => ({ token: "token-test" }));
 
 jest.mock("@/features/auth/use-auth", () => ({
-  useAuth: () => ({ token: "token-test" }),
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock("@/shared/api/books-api", () => ({
@@ -101,6 +102,7 @@ describe("useCreateReadingSession", () => {
 describe("books hooks query/mutation wiring", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ token: "token-test" });
   });
 
   it("configures library feed query with filters in key", () => {
@@ -123,6 +125,23 @@ describe("books hooks query/mutation wiring", () => {
     );
   });
 
+  it("handles getNextPageParam branches for hasMore true/false", () => {
+    const query = {
+      search: "",
+      status: "all",
+      shelf: "all",
+      genre: "",
+      sort: "updated_desc",
+    } as unknown as LibraryBooksQuery;
+
+    const feedConfig = useBooksFeed(query) as unknown as {
+      getNextPageParam: (lastPage: { hasMore: boolean; offset: number; limit: number }) => number | undefined;
+    };
+
+    expect(feedConfig.getNextPageParam({ hasMore: true, offset: 10, limit: 10 })).toBe(20);
+    expect(feedConfig.getNextPageParam({ hasMore: false, offset: 10, limit: 10 })).toBeUndefined();
+  });
+
   it("configures summary, detail and preview queries", () => {
     useBooksSummary();
     useBookDetail("book-99");
@@ -136,6 +155,33 @@ describe("books hooks query/mutation wiring", () => {
     );
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({ queryKey: ["books", "leyendo-preview"], enabled: true }),
+    );
+  });
+
+  it("disables queries when token is missing", () => {
+    mockUseAuth.mockReturnValue({ token: null });
+    const query = {
+      search: "a",
+      status: "leyendo",
+      shelf: "all",
+      genre: "",
+      sort: "updated_desc",
+    } as unknown as LibraryBooksQuery;
+
+    useBooksFeed(query);
+    useBooksSummary();
+    useBookDetail("book-1");
+    useLeyendoPreview();
+
+    expect(mockUseInfiniteQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["books", "summary"], enabled: false }),
+    );
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["books", "detail", "book-1"], enabled: false }),
+    );
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["books", "leyendo-preview"], enabled: false }),
     );
   });
 

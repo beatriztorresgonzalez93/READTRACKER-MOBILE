@@ -16,9 +16,10 @@ const mockUseQuery = jest.fn((config: unknown) => ({
   isLoading: false,
   isError: false,
 }));
+const mockUseAuth = jest.fn(() => ({ token: "token-test" }));
 
 jest.mock("@/features/auth/use-auth", () => ({
-  useAuth: () => ({ token: "token-test" }),
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock("@/shared/api/history-api", () => ({
@@ -77,6 +78,7 @@ describe("useDeleteReadingSession", () => {
 describe("history query hooks", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ token: "token-test" });
   });
 
   it("builds monthly history label and switches months", () => {
@@ -96,6 +98,27 @@ describe("history query hooks", () => {
     expect(firstLabel).toMatch(/^\d{2}\/\d{4}$/);
     expect(prevLabel).toMatch(/^\d{2}\/\d{4}$/);
     expect(backLabel).toBe(firstLabel);
+  });
+
+  it("covers january and december month boundaries", () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-01-10T12:00:00.000Z"));
+    const januaryHook = renderHook(() => useMonthlyHistory());
+
+    act(() => {
+      januaryHook.result.current.previousMonth();
+    });
+    expect(januaryHook.result.current.selected.month).toBe(12);
+    expect(januaryHook.result.current.selected.year).toBe(2025);
+
+    jest.setSystemTime(new Date("2026-12-10T12:00:00.000Z"));
+    const decemberHook = renderHook(() => useMonthlyHistory());
+    act(() => {
+      decemberHook.result.current.nextMonth();
+    });
+    expect(decemberHook.result.current.selected.month).toBe(1);
+    expect(decemberHook.result.current.selected.year).toBe(2027);
+
+    jest.useRealTimers();
   });
 
   it("wires monthly stats/sessions queries and executes query fns", async () => {
@@ -129,5 +152,22 @@ describe("history query hooks", () => {
       monthly.selected.month,
     );
     expect(getReadingStats).toHaveBeenCalledWith("token-test");
+  });
+
+  it("disables history/stats/sessions queries when token is missing", () => {
+    mockUseAuth.mockReturnValue({ token: undefined });
+    renderHook(() => useMonthlyHistory());
+    renderHook(() => useReadingStats());
+    renderHook(() => useReadingSessionsList());
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: expect.arrayContaining(["history", "monthly"]), enabled: false }),
+    );
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["stats", "reading"], enabled: false }),
+    );
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["reading-sessions", "list"], enabled: false }),
+    );
   });
 });

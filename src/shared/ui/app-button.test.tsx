@@ -28,4 +28,13 @@ describe("AppButton", () => {
     fireEvent.press(getByText("Guardar"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it("renders secondary variant label color", () => {
+    const { getByText } = render(
+      <AppButton label="Cancelar" variant="secondary" onPress={() => undefined} />,
+    );
+
+    const label = getByText("Cancelar");
+    expect(label).toHaveStyle({ color: "#222" });
+  });
 });
