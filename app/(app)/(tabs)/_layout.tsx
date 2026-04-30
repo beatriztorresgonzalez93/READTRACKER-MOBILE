@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Tabs, useRouter } from "expo-router";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
@@ -58,8 +58,7 @@ function AddBookCenterButton(_props: BottomTabBarButtonProps) {
 
 export default function AppTabsLayout() {
   const theme = useAppTheme();
-  const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === "web" && width >= 1024;
+  const isWeb = Platform.OS === "web";
   return (
     <Tabs
       screenOptions={{
@@ -68,29 +67,19 @@ export default function AppTabsLayout() {
         headerShadowVisible: false,
         tabBarActiveTintColor: theme.colors.accent,
         tabBarInactiveTintColor: theme.colors.textMutedOnDark,
-        tabBarPosition: isDesktopWeb ? "left" : "bottom",
+        tabBarPosition: "bottom",
         tabBarStyle: {
           backgroundColor: theme.colors.bgPanel,
-          ...(isDesktopWeb
-            ? {
-                borderRightColor: theme.colors.border,
-                borderTopWidth: 0,
-                width: 220,
-                paddingTop: 20,
-                paddingBottom: 20,
-              }
-            : {
-                borderTopColor: theme.colors.border,
-                height: 72,
-                paddingTop: 8,
-                paddingBottom: 10,
-              }),
+          borderTopColor: theme.colors.border,
+          height: 72,
+          paddingTop: 8,
+          paddingBottom: 10,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
         },
-        sceneStyle: isDesktopWeb
+        sceneStyle: isWeb
           ? {
               maxWidth: 1200,
               width: "100%",
@@ -117,12 +106,10 @@ export default function AppTabsLayout() {
       <Tabs.Screen
         name="add"
         options={{
-          title: isDesktopWeb ? "Añadir" : "",
-          tabBarLabel: isDesktopWeb ? undefined : () => null,
-          tabBarIcon: isDesktopWeb
-            ? ({ color, size }) => <Ionicons name="add-circle-outline" color={color} size={size} />
-            : () => null,
-          tabBarButton: isDesktopWeb ? undefined : (props) => <AddBookCenterButton {...props} />,
+          title: "",
+          tabBarLabel: () => null,
+          tabBarIcon: () => null,
+          tabBarButton: (props) => <AddBookCenterButton {...props} />,
         }}
       />
       <Tabs.Screen
