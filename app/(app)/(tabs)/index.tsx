@@ -576,7 +576,7 @@ export default function LibraryScreen() {
                       compact
                       onPress={() => setGenreModalOpen(true)}
                       style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={styles.actionBtnLabel}
+                      labelStyle={[styles.actionBtnLabel, { color: appTheme.colors.textOnDark }]}
                       contentStyle={styles.actionBtnContent}
                     >
                       Genero:{" "}
@@ -591,7 +591,7 @@ export default function LibraryScreen() {
                       compact
                       onPress={() => setSortModalOpen(true)}
                       style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={styles.actionBtnLabel}
+                      labelStyle={[styles.actionBtnLabel, { color: appTheme.colors.textOnDark }]}
                       contentStyle={styles.actionBtnContent}
                     >
                       Orden: {SORT_LABELS[sort]}
@@ -1010,7 +1010,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     textTransform: "none",
-    color: theme.colors.textOnDark,
   },
   clearFiltersLabel: {
     fontSize: 12,
