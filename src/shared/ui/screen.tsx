@@ -1,8 +1,8 @@
 // Contenedor base de pantalla con Safe Area y fondo tematico.
-import { SafeAreaView } from "react-native-safe-area-context";
-import type { Edges } from "react-native-safe-area-context";
-import { Platform, StyleSheet, View, type ViewProps } from "react-native";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { Platform, StyleSheet, View, type ViewProps } from "react-native";
+import type { Edges } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type ScreenProps = ViewProps & {
   /** Si se omite, se respetan los cuatro insets. En biblioteca se excluye `top` para cabecera a pantalla completa. */
@@ -11,7 +11,7 @@ export type ScreenProps = ViewProps & {
 
 export function Screen({ children, style, edges }: ScreenProps) {
   const theme = useAppTheme();
-  const webUnifiedBg = theme.colors.bgSoft;
+  const webUnifiedBg = theme.colors.cardElevated;
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -26,13 +26,19 @@ export function Screen({ children, style, edges }: ScreenProps) {
       width: "100%",
       maxWidth: 1120,
       alignSelf: "center",
-      backgroundColor: webUnifiedBg,
+      backgroundColor: "transparent",
     },
   });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={edges}>
-      <View style={[styles.content, Platform.OS === "web" && styles.contentWeb, style]}>
+      <View
+        style={[
+          styles.content,
+          Platform.OS === "web" && styles.contentWeb,
+          style,
+        ]}
+      >
         {children}
       </View>
     </SafeAreaView>

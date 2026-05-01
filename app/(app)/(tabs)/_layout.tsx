@@ -81,9 +81,7 @@ export default function AppTabsLayout() {
         },
         sceneStyle: isWeb
           ? {
-              maxWidth: 1120,
               width: "100%",
-              alignSelf: "center",
             }
           : undefined,
       }}

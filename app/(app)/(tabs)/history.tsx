@@ -1,41 +1,69 @@
 // Muestra el historial de lectura mensual y el calendario de sesiones.
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import Constants from "expo-constants";
 import { useMemo, useState } from "react";
-import { FlashList } from "@shopify/flash-list";
-import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from "react-native";
+import {
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    StyleSheet,
+    View,
+} from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 
-import { useDeleteReadingSession, useMonthlyHistory, useReadingSessionsList } from "@/features/readingSessions/use-history";
+import {
+    useDeleteReadingSession,
+    useMonthlyHistory,
+    useReadingSessionsList,
+} from "@/features/readingSessions/use-history";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function HistoryScreen() {
-  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
+  const ListComponent: any =
+    Constants.appOwnership === "expo" ? FlatList : FlashList;
   const appTheme = useAppTheme();
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
   const deleteSession = useDeleteReadingSession();
-  const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
-  const dateFormatter = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const timeFormatter = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const monthFormatter = new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
+  const dateFormatter = new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const timeFormatter = new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<{ id: string; title: string } | null>(null);
+  const [selectedSession, setSelectedSession] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const sessionsByDay = useMemo(() => {
-    const map = new Map<string, {
-      id: string;
-      title: string;
-      author: string;
-      bookId: string;
-      pagesRead: number;
-      previousPage?: number;
-      currentPage: number;
-      recordedAt: string;
-    }[]>();
+    const map = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        author: string;
+        bookId: string;
+        pagesRead: number;
+        previousPage?: number;
+        currentPage: number;
+        recordedAt: string;
+      }[]
+    >();
     const sessions = sessionsQuery.data ?? [];
     for (const session of sessions) {
       const at = new Date(session.recordedAt);
@@ -64,15 +92,28 @@ export default function HistoryScreen() {
   if (history.isError) {
     return (
       <Screen>
-        <Text style={styles.errorText}>No se pudo cargar el historial. Comprueba tu conexion y vuelve a intentarlo.</Text>
+        <Text style={styles.errorText}>
+          No se pudo cargar el historial. Comprueba tu conexion y vuelve a
+          intentarlo.
+        </Text>
       </Screen>
     );
   }
 
-  const firstDay = new Date(history.selected.year, history.selected.month - 1, 1);
+  const firstDay = new Date(
+    history.selected.year,
+    history.selected.month - 1,
+    1,
+  );
   const startWeekday = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(history.selected.year, history.selected.month, 0).getDate();
-  const pagesByDate = new Map((history.data?.days ?? []).map((day) => [day.date, day.pagesRead]));
+  const daysInMonth = new Date(
+    history.selected.year,
+    history.selected.month,
+    0,
+  ).getDate();
+  const pagesByDate = new Map(
+    (history.data?.days ?? []).map((day) => [day.date, day.pagesRead]),
+  );
   const calendarCells: { key: string; day?: number; pages?: number }[] = [];
 
   for (let index = 0; index < startWeekday; index += 1) {
@@ -92,7 +133,9 @@ export default function HistoryScreen() {
     calendarCells.push({ key: `tail-${calendarCells.length}` });
   }
 
-  const selectedSessions = selectedDay ? sessionsByDay.get(selectedDay) ?? [] : [];
+  const selectedSessions = selectedDay
+    ? (sessionsByDay.get(selectedDay) ?? [])
+    : [];
 
   function intensityColor(pages = 0) {
     if (pages <= 0) return "#F3E9D7";
@@ -139,8 +182,19 @@ export default function HistoryScreen() {
               >
                 Mes anterior
               </Button>
-              <Text style={[styles.monthLabel, { color: appTheme.colors.textOnDark }]}>
-                {monthFormatter.format(new Date(history.selected.year, history.selected.month - 1, 1))}
+              <Text
+                style={[
+                  styles.monthLabel,
+                  { color: appTheme.colors.textOnDark },
+                ]}
+              >
+                {monthFormatter.format(
+                  new Date(
+                    history.selected.year,
+                    history.selected.month - 1,
+                    1,
+                  ),
+                )}
               </Text>
               <Button
                 mode="outlined"
@@ -151,91 +205,126 @@ export default function HistoryScreen() {
                 Mes siguiente
               </Button>
             </View>
- 
+
             <Card mode="outlined" style={styles.calendarCard}>
               <Card.Content>
-              <Text style={styles.calendarTitle}>Calendario de intensidad</Text>
-              <View style={styles.weekRow}>
-                {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
-                  <Text key={weekDay} style={styles.weekDayLabel}>
-                    {weekDay}
-                  </Text>
-                ))}
-              </View>
-              <View style={styles.calendarGrid}>
-                {calendarCells.map((cell) => (
-                  <Pressable
-                    key={cell.key}
-                    disabled={!cell.day || !cell.pages}
-                    onPress={() => setSelectedDay(cell.key)}
-                    style={[
-                      styles.dayCell,
-                      { backgroundColor: intensityColor(cell.pages) },
-                      selectedDay === cell.key ? styles.dayCellSelected : null,
-                    ]}
-                  >
-                    <Text
+                <Text style={styles.calendarTitle}>
+                  Calendario de intensidad
+                </Text>
+                <View style={styles.weekRow}>
+                  {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
+                    <Text key={weekDay} style={styles.weekDayLabel}>
+                      {weekDay}
+                    </Text>
+                  ))}
+                </View>
+                <View style={styles.calendarGrid}>
+                  {calendarCells.map((cell) => (
+                    <Pressable
+                      key={cell.key}
+                      disabled={!cell.day || !cell.pages}
+                      onPress={() => setSelectedDay(cell.key)}
                       style={[
-                        styles.dayCellText,
-                        (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
+                        styles.dayCell,
+                        { backgroundColor: intensityColor(cell.pages) },
+                        selectedDay === cell.key
+                          ? styles.dayCellSelected
+                          : null,
                       ]}
                     >
-                      {cell.day ?? ""}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={styles.legendRow}>
-                {[
-                  { label: "0", color: intensityColor(0) },
-                  { label: "1-10", color: intensityColor(10) },
-                  { label: "11-25", color: intensityColor(25) },
-                  { label: "26-40", color: intensityColor(40) },
-                  { label: "41+", color: intensityColor(50) },
-                ].map((item) => (
-                  <View key={item.label} style={styles.legendItem}>
-                    <View style={[styles.legendSwatch, { backgroundColor: item.color }]} />
-                    <Text style={styles.legendText}>{item.label}</Text>
-                  </View>
-                ))}
-              </View>
-              {selectedDay ? (
-                <View style={styles.sessionsBlock}>
-                  <Text style={styles.sessionsTitle}>
-                    Sesiones del {dateFormatter.format(new Date(selectedDay))}
-                  </Text>
-                  {selectedSessions.length > 0 ? (
-                    selectedSessions.map((session) => (
-                      <View key={session.id} style={styles.sessionMiniCard}>
-                        <View style={styles.sessionMiniHeader}>
-                          <Text style={styles.sessionMiniTitle} numberOfLines={1}>
-                            {session.title}
-                          </Text>
-                          <Pressable
-                            hitSlop={10}
-                            onPress={() => onDeleteSession({ id: session.id, title: session.title })}
-                            disabled={deleteSession.isPending}
-                            accessibilityLabel="Eliminar sesión"
-                          >
-                            <Ionicons name="trash-outline" size={16} color={theme.colors.textSoft} />
-                          </Pressable>
-                        </View>
-                        <Text style={styles.sessionMiniMeta} numberOfLines={1}>
-                          {session.author || "Autor desconocido"}
-                        </Text>
-                        <Text style={styles.sessionMiniMeta}>
-                          Paginas: {Math.max(0, (session.previousPage ?? session.currentPage - session.pagesRead) + 1)} - {session.currentPage}
-                        </Text>
-                        <Text style={styles.sessionMiniMeta}>
-                          Hora: {timeFormatter.format(new Date(session.recordedAt))}
-                        </Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.sessionEmptyText}>No hay detalle de sesiones para ese día.</Text>
-                  )}
+                      <Text
+                        style={[
+                          styles.dayCellText,
+                          (cell.pages ?? 0) >= 26
+                            ? styles.dayCellTextOnDark
+                            : null,
+                        ]}
+                      >
+                        {cell.day ?? ""}
+                      </Text>
+                    </Pressable>
+                  ))}
                 </View>
-              ) : null}
+                <View style={styles.legendRow}>
+                  {[
+                    { label: "0", color: intensityColor(0) },
+                    { label: "1-10", color: intensityColor(10) },
+                    { label: "11-25", color: intensityColor(25) },
+                    { label: "26-40", color: intensityColor(40) },
+                    { label: "41+", color: intensityColor(50) },
+                  ].map((item) => (
+                    <View key={item.label} style={styles.legendItem}>
+                      <View
+                        style={[
+                          styles.legendSwatch,
+                          { backgroundColor: item.color },
+                        ]}
+                      />
+                      <Text style={styles.legendText}>{item.label}</Text>
+                    </View>
+                  ))}
+                </View>
+                {selectedDay ? (
+                  <View style={styles.sessionsBlock}>
+                    <Text style={styles.sessionsTitle}>
+                      Sesiones del {dateFormatter.format(new Date(selectedDay))}
+                    </Text>
+                    {selectedSessions.length > 0 ? (
+                      selectedSessions.map((session) => (
+                        <View key={session.id} style={styles.sessionMiniCard}>
+                          <View style={styles.sessionMiniHeader}>
+                            <Text
+                              style={styles.sessionMiniTitle}
+                              numberOfLines={1}
+                            >
+                              {session.title}
+                            </Text>
+                            <Pressable
+                              hitSlop={10}
+                              onPress={() =>
+                                onDeleteSession({
+                                  id: session.id,
+                                  title: session.title,
+                                })
+                              }
+                              disabled={deleteSession.isPending}
+                              accessibilityLabel="Eliminar sesión"
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={16}
+                                color={theme.colors.textSoft}
+                              />
+                            </Pressable>
+                          </View>
+                          <Text
+                            style={styles.sessionMiniMeta}
+                            numberOfLines={1}
+                          >
+                            {session.author || "Autor desconocido"}
+                          </Text>
+                          <Text style={styles.sessionMiniMeta}>
+                            Paginas:{" "}
+                            {Math.max(
+                              0,
+                              (session.previousPage ??
+                                session.currentPage - session.pagesRead) + 1,
+                            )}{" "}
+                            - {session.currentPage}
+                          </Text>
+                          <Text style={styles.sessionMiniMeta}>
+                            Hora:{" "}
+                            {timeFormatter.format(new Date(session.recordedAt))}
+                          </Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.sessionEmptyText}>
+                        No hay detalle de sesiones para ese día.
+                      </Text>
+                    )}
+                  </View>
+                ) : null}
               </Card.Content>
             </Card>
           </View>
@@ -260,7 +349,11 @@ export default function HistoryScreen() {
               {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
             </Text>
             <View style={styles.confirmActionsRow}>
-              <Button mode="outlined" onPress={closeConfirmModal} style={styles.confirmCancelBtn}>
+              <Button
+                mode="outlined"
+                onPress={closeConfirmModal}
+                style={styles.confirmCancelBtn}
+              >
                 Cancelar
               </Button>
               <Button
@@ -474,4 +567,3 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 });
-

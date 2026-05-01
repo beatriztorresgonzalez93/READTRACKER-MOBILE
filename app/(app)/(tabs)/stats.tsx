@@ -1,10 +1,19 @@
 // Panel de estadisticas de lectura y progreso global.
-import { ScrollView, StyleSheet, Text, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    useColorScheme,
+} from "react-native";
 import { Card } from "react-native-paper";
 
 import { useBooksFeed, useBooksSummary } from "@/features/books/use-books";
-import { useReadingSessionsList, useReadingStats } from "@/features/readingSessions/use-history";
+import {
+    useReadingSessionsList,
+    useReadingStats,
+} from "@/features/readingSessions/use-history";
 import { usePurchases } from "@/features/wishlist/use-wishlist";
 import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
@@ -44,13 +53,21 @@ export default function StatsScreen() {
   const purchases = usePurchases();
 
   const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "short" });
-  const moneyFormatter = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
+  const moneyFormatter = new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+  });
 
   if (stats.isLoading && !stats.data && summary.isLoading && !summary.data) {
     return <AppLoader />;
   }
 
-  if (stats.isError || summary.isError || purchases.isError || sessions.isError) {
+  if (
+    stats.isError ||
+    summary.isError ||
+    purchases.isError ||
+    sessions.isError
+  ) {
     return (
       <Screen>
         <EmptyState
@@ -65,7 +82,10 @@ export default function StatsScreen() {
   const now = new Date();
   const dayOfYear = Math.max(
     1,
-    Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86_400_000) + 1,
+    Math.floor(
+      (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
+        86_400_000,
+    ) + 1,
   );
   const monthsElapsed = Math.max(1, now.getMonth() + 1);
   const pagesPerSession =
@@ -84,10 +104,16 @@ export default function StatsScreen() {
       }) ?? [];
     return {
       sessions: monthSessions.length,
-      pages: monthSessions.reduce((acc, item) => acc + Math.max(0, item.pagesRead ?? 0), 0),
+      pages: monthSessions.reduce(
+        (acc, item) => acc + Math.max(0, item.pagesRead ?? 0),
+        0,
+      ),
     };
   });
-  const maxReadingSessions = Math.max(...readingByMonth.map((item) => item.sessions), 1);
+  const maxReadingSessions = Math.max(
+    ...readingByMonth.map((item) => item.sessions),
+    1,
+  );
 
   const purchasesByMonth = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
@@ -98,7 +124,9 @@ export default function StatsScreen() {
       }) ?? [];
 
     const amount = monthPurchases.reduce((acc, item) => {
-      const parsed = Number.parseFloat((item.price ?? "").replace(",", ".").replace(/[^\d.]/g, ""));
+      const parsed = Number.parseFloat(
+        (item.price ?? "").replace(",", ".").replace(/[^\d.]/g, ""),
+      );
       return Number.isFinite(parsed) ? acc + parsed : acc;
     }, 0);
 
@@ -107,54 +135,118 @@ export default function StatsScreen() {
       amount,
     };
   });
-  const yearlyPurchaseAmount = purchasesByMonth.reduce((acc, item) => acc + item.amount, 0);
-  const topRatedBooks = (topRatedFeed.data?.pages.flatMap((page) => page.items) ?? [])
+  const yearlyPurchaseAmount = purchasesByMonth.reduce(
+    (acc, item) => acc + item.amount,
+    0,
+  );
+  const topRatedBooks = (
+    topRatedFeed.data?.pages.flatMap((page) => page.items) ?? []
+  )
     .filter((book) => (book.rating ?? 0) > 0)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 5);
 
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        <Card mode="contained" style={[styles.heroPanel, isDark && styles.panelDarkMode]}>
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card
+          mode="contained"
+          style={[styles.heroPanel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.titleRow}>
-              <Ionicons name="stats-chart" size={18} color={theme.colors.primary} />
+              <Ionicons
+                name="stats-chart"
+                size={18}
+                color={theme.colors.primary}
+              />
               <Text style={styles.heroTitle}>Resumen de lectura</Text>
             </View>
-            <Text style={styles.heroSubtitle}>Tu progreso global de este año.</Text>
+            <Text style={styles.heroSubtitle}>
+              Tu progreso global de este año.
+            </Text>
             <View style={styles.metricPillsRow}>
-              <MetricPill label="Racha actual" value={stats.data?.currentStreak ?? 0} icon="flame-outline" />
-              <MetricPill label="Mejor racha" value={stats.data?.bestStreak ?? 0} icon="trophy-outline" />
-              <MetricPill label="Páginas" value={stats.data?.yearlyPages ?? 0} icon="book-outline" />
-              <MetricPill label="Sesiones" value={stats.data?.yearlySessions ?? 0} icon="time-outline" />
-              <MetricPill label="Leídos" value={summary.data?.leido ?? 0} icon="checkmark-done-outline" />
-              <MetricPill label="Leyendo" value={summary.data?.leyendo ?? 0} icon="bookmark-outline" />
-              <MetricPill label="Comprados" value={purchases.data?.length ?? 0} icon="bag-handle-outline" />
+              <MetricPill
+                label="Racha actual"
+                value={stats.data?.currentStreak ?? 0}
+                icon="flame-outline"
+              />
+              <MetricPill
+                label="Mejor racha"
+                value={stats.data?.bestStreak ?? 0}
+                icon="trophy-outline"
+              />
+              <MetricPill
+                label="Páginas"
+                value={stats.data?.yearlyPages ?? 0}
+                icon="book-outline"
+              />
+              <MetricPill
+                label="Sesiones"
+                value={stats.data?.yearlySessions ?? 0}
+                icon="time-outline"
+              />
+              <MetricPill
+                label="Leídos"
+                value={summary.data?.leido ?? 0}
+                icon="checkmark-done-outline"
+              />
+              <MetricPill
+                label="Leyendo"
+                value={summary.data?.leyendo ?? 0}
+                icon="bookmark-outline"
+              />
+              <MetricPill
+                label="Comprados"
+                value={purchases.data?.length ?? 0}
+                icon="bag-handle-outline"
+              />
             </View>
           </Card.Content>
         </Card>
 
-        <Card mode="contained" style={[styles.panel, isDark && styles.panelDarkMode]}>
+        <Card
+          mode="contained"
+          style={[styles.panel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.titleRow}>
-              <Ionicons name="speedometer-outline" size={16} color={theme.colors.primary} />
+              <Ionicons
+                name="speedometer-outline"
+                size={16}
+                color={theme.colors.primary}
+              />
               <Text style={styles.panelTitle}>Ritmo de lectura</Text>
             </View>
             <View style={styles.rhythmGrid}>
-              <View style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}>
+              <View
+                style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}
+              >
                 <Text style={styles.rhythmLabel}>Páginas/sesión</Text>
-                <Text style={styles.rhythmValue}>{pagesPerSession.toFixed(1)}</Text>
+                <Text style={styles.rhythmValue}>
+                  {pagesPerSession.toFixed(1)}
+                </Text>
               </View>
-              <View style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}>
+              <View
+                style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}
+              >
                 <Text style={styles.rhythmLabel}>Sesiones/mes</Text>
-                <Text style={styles.rhythmValue}>{sessionsPerMonth.toFixed(1)}</Text>
+                <Text style={styles.rhythmValue}>
+                  {sessionsPerMonth.toFixed(1)}
+                </Text>
               </View>
-              <View style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}>
+              <View
+                style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}
+              >
                 <Text style={styles.rhythmLabel}>Páginas/día</Text>
                 <Text style={styles.rhythmValue}>{pagesPerDay.toFixed(1)}</Text>
               </View>
-              <View style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}>
+              <View
+                style={[styles.rhythmCard, isDark && styles.innerCardDarkMode]}
+              >
                 <Text style={styles.rhythmLabel}>Proyección anual</Text>
                 <Text style={styles.rhythmValue}>{yearlyPagesProjection}</Text>
               </View>
@@ -162,7 +254,10 @@ export default function StatsScreen() {
           </Card.Content>
         </Card>
 
-        <Card mode="contained" style={[styles.panel, isDark && styles.panelDarkMode]}>
+        <Card
+          mode="contained"
+          style={[styles.panel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.genreHeaderRow}>
               <View style={styles.genreHeaderLine} />
@@ -170,19 +265,42 @@ export default function StatsScreen() {
               <View style={styles.genreHeaderLine} />
             </View>
             {genreTop.length === 0 ? (
-              <Text style={styles.panelText}>Sin datos de géneros todavía.</Text>
+              <Text style={styles.panelText}>
+                Sin datos de géneros todavía.
+              </Text>
             ) : (
               (() => {
-                const totalGenres = genreTop.reduce((acc, item) => acc + item.count, 0);
+                const totalGenres = genreTop.reduce(
+                  (acc, item) => acc + item.count,
+                  0,
+                );
                 return genreTop.map((item, index) => {
-                  const pct = totalGenres > 0 ? Math.round((item.count / totalGenres) * 100) : 0;
+                  const pct =
+                    totalGenres > 0
+                      ? Math.round((item.count / totalGenres) * 100)
+                      : 0;
                   return (
-                    <View key={item.genre} style={[styles.genreRow, index === genreTop.length - 1 && styles.genreRowLast]}>
-                      <Text style={styles.genreLabel} numberOfLines={1} ellipsizeMode="tail">
+                    <View
+                      key={item.genre}
+                      style={[
+                        styles.genreRow,
+                        index === genreTop.length - 1 && styles.genreRowLast,
+                      ]}
+                    >
+                      <Text
+                        style={styles.genreLabel}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {item.genre}
                       </Text>
                       <View style={styles.genreTrack}>
-                        <View style={[styles.genreFill, { width: `${Math.max(6, pct)}%` }]} />
+                        <View
+                          style={[
+                            styles.genreFill,
+                            { width: `${Math.max(6, pct)}%` },
+                          ]}
+                        />
                       </View>
                       <Text style={styles.genrePct}>{pct}%</Text>
                     </View>
@@ -193,10 +311,17 @@ export default function StatsScreen() {
           </Card.Content>
         </Card>
 
-        <Card mode="contained" style={[styles.panel, isDark && styles.panelDarkMode]}>
+        <Card
+          mode="contained"
+          style={[styles.panel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.titleRow}>
-              <Ionicons name="star-outline" size={16} color={theme.colors.primary} />
+              <Ionicons
+                name="star-outline"
+                size={16}
+                color={theme.colors.primary}
+              />
               <Text style={styles.panelTitle}>Top 5 libros por valoración</Text>
             </View>
             {topRatedBooks.length === 0 ? (
@@ -205,12 +330,22 @@ export default function StatsScreen() {
               topRatedBooks.map((book, index) => (
                 <View key={book.id} style={styles.rankRow}>
                   <Text style={styles.rankIndex}>{index + 1}.</Text>
-                  <Text style={styles.rankTitle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text
+                    style={styles.rankTitle}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {book.title}
                   </Text>
                   <View style={styles.rankScoreWrap}>
-                    <Ionicons name="star" size={12} color={theme.colors.accent} />
-                    <Text style={styles.rankScore}>{(book.rating ?? 0).toFixed(1)}</Text>
+                    <Ionicons
+                      name="star"
+                      size={12}
+                      color={theme.colors.accent}
+                    />
+                    <Text style={styles.rankScore}>
+                      {(book.rating ?? 0).toFixed(1)}
+                    </Text>
                   </View>
                 </View>
               ))
@@ -218,15 +353,26 @@ export default function StatsScreen() {
           </Card.Content>
         </Card>
 
-        <Card mode="contained" style={[styles.panel, isDark && styles.panelDarkMode]}>
+        <Card
+          mode="contained"
+          style={[styles.panel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.titleRow}>
-              <Ionicons name="bar-chart-outline" size={16} color={theme.colors.primary} />
-              <Text style={styles.panelTitle}>Actividad de lectura por mes</Text>
+              <Ionicons
+                name="bar-chart-outline"
+                size={16}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.panelTitle}>
+                Actividad de lectura por mes
+              </Text>
             </View>
             {readingByMonth.map((item, index) => (
               <View key={`read-${index}`} style={styles.barRow}>
-                <Text style={styles.barLabel}>{monthFormatter.format(new Date(2026, index, 1))}</Text>
+                <Text style={styles.barLabel}>
+                  {monthFormatter.format(new Date(2026, index, 1))}
+                </Text>
                 <View style={styles.barTrack}>
                   <View
                     style={[
@@ -244,24 +390,50 @@ export default function StatsScreen() {
           </Card.Content>
         </Card>
 
-        <Card mode="contained" style={[styles.panel, isDark && styles.panelDarkMode]}>
+        <Card
+          mode="contained"
+          style={[styles.panel, isDark && styles.panelDarkMode]}
+        >
           <Card.Content>
             <View style={styles.titleRow}>
-              <Ionicons name="cart-outline" size={16} color={theme.colors.primary} />
+              <Ionicons
+                name="cart-outline"
+                size={16}
+                color={theme.colors.primary}
+              />
               <Text style={styles.panelTitle}>Compras por mes</Text>
             </View>
-            <Text style={styles.panelSubtitle}>Total estimado anual: {moneyFormatter.format(yearlyPurchaseAmount)}</Text>
+            <Text style={styles.panelSubtitle}>
+              Total estimado anual:{" "}
+              {moneyFormatter.format(yearlyPurchaseAmount)}
+            </Text>
             {purchasesByMonth.map((item, index) => (
-              <View key={`m-${index}`} style={[styles.purchaseRow, isDark && styles.innerCardDarkMode]}>
-                <View style={[styles.purchaseMonthPill, isDark && styles.purchaseMonthPillDarkMode]}>
-                  <Text style={styles.purchaseMonthText}>{monthFormatter.format(new Date(2026, index, 1))}</Text>
+              <View
+                key={`m-${index}`}
+                style={[styles.purchaseRow, isDark && styles.innerCardDarkMode]}
+              >
+                <View
+                  style={[
+                    styles.purchaseMonthPill,
+                    isDark && styles.purchaseMonthPillDarkMode,
+                  ]}
+                >
+                  <Text style={styles.purchaseMonthText}>
+                    {monthFormatter.format(new Date(2026, index, 1))}
+                  </Text>
                 </View>
                 <View style={styles.purchaseMeta}>
                   <View style={styles.purchaseCountWrap}>
-                    <Ionicons name="bag-handle-outline" size={13} color={theme.colors.primary} />
+                    <Ionicons
+                      name="bag-handle-outline"
+                      size={13}
+                      color={theme.colors.primary}
+                    />
                     <Text style={styles.purchaseCount}>{item.count}</Text>
                   </View>
-                  <Text style={styles.purchaseAmount}>{moneyFormatter.format(item.amount)}</Text>
+                  <Text style={styles.purchaseAmount}>
+                    {moneyFormatter.format(item.amount)}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -560,4 +732,3 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 });
-

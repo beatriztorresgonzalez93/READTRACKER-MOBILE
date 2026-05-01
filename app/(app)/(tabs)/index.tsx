@@ -1,7 +1,7 @@
 // Pantalla principal de biblioteca con filtros, resumen y coleccion.
 import { Ionicons } from "@expo/vector-icons";
-import Constants from "expo-constants";
 import { FlashList } from "@shopify/flash-list";
+import Constants from "expo-constants";
 import { Link } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -23,8 +23,8 @@ import {
   Searchbar,
   Text,
 } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   useBooksFeed,
@@ -274,7 +274,8 @@ function AcquisitionCard({ item }: { item: PurchaseItem }) {
 }
 
 function LibraryAcquisitionsFooter() {
-  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
+  const ListComponent: any =
+    Constants.appOwnership === "expo" ? FlatList : FlashList;
   const appTheme = useAppTheme();
   const purchases = usePurchases();
   const items = purchases.data ?? [];
@@ -288,7 +289,10 @@ function LibraryAcquisitionsFooter() {
 
   return (
     <View style={styles.acquisitionsSection}>
-      <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
+      <Text
+        variant="titleLarge"
+        style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}
+      >
         Ultimas adquisiciones
       </Text>
       {purchases.isLoading && !purchases.data ? (
@@ -302,19 +306,31 @@ function LibraryAcquisitionsFooter() {
           <Pressable
             style={styles.webCarouselArrow}
             onPress={() => {
-              const next = Math.max(0, acquisitionsOffset - ACQUISITION_CARD_WIDTH);
-              acquisitionsScrollRef.current?.scrollTo({ x: next, animated: true });
+              const next = Math.max(
+                0,
+                acquisitionsOffset - ACQUISITION_CARD_WIDTH,
+              );
+              acquisitionsScrollRef.current?.scrollTo({
+                x: next,
+                animated: true,
+              });
             }}
             accessibilityLabel="Desplazar adquisiciones a la izquierda"
           >
-            <Ionicons name="chevron-back" size={18} color={theme.colors.textOnDark} />
+            <Ionicons
+              name="chevron-back"
+              size={18}
+              color={theme.colors.textOnDark}
+            />
           </Pressable>
           <ScrollView
             ref={acquisitionsScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.acquisitionsListContent}
-            onScroll={(event) => setAcquisitionsOffset(event.nativeEvent.contentOffset.x)}
+            onScroll={(event) =>
+              setAcquisitionsOffset(event.nativeEvent.contentOffset.x)
+            }
             scrollEventThrottle={16}
           >
             {items.map((item, index) => (
@@ -331,11 +347,18 @@ function LibraryAcquisitionsFooter() {
             style={styles.webCarouselArrow}
             onPress={() => {
               const next = acquisitionsOffset + ACQUISITION_CARD_WIDTH;
-              acquisitionsScrollRef.current?.scrollTo({ x: next, animated: true });
+              acquisitionsScrollRef.current?.scrollTo({
+                x: next,
+                animated: true,
+              });
             }}
             accessibilityLabel="Desplazar adquisiciones a la derecha"
           >
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textOnDark} />
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.colors.textOnDark}
+            />
           </Pressable>
         </View>
       ) : (
@@ -426,7 +449,9 @@ export default function LibraryScreen() {
   const leyendoPreview = useLeyendoPreview();
   const sessionsQuery = useReadingSessionsList();
   const searchDraft = useLibraryPreferencesStore((state) => state.searchDraft);
-  const setSearchDraft = useLibraryPreferencesStore((state) => state.setSearchDraft);
+  const setSearchDraft = useLibraryPreferencesStore(
+    (state) => state.setSearchDraft,
+  );
   const debouncedSearch = useDebouncedValue(searchDraft, 400);
   const status = useLibraryPreferencesStore((state) => state.status);
   const setStatus = useLibraryPreferencesStore((state) => state.setStatus);
@@ -437,8 +462,12 @@ export default function LibraryScreen() {
   const sort = useLibraryPreferencesStore((state) => state.sort);
   const setSort = useLibraryPreferencesStore((state) => state.setSort);
   const showFilters = useLibraryPreferencesStore((state) => state.showFilters);
-  const toggleShowFilters = useLibraryPreferencesStore((state) => state.toggleShowFilters);
-  const clearFilters = useLibraryPreferencesStore((state) => state.clearFilters);
+  const toggleShowFilters = useLibraryPreferencesStore(
+    (state) => state.toggleShowFilters,
+  );
+  const clearFilters = useLibraryPreferencesStore(
+    (state) => state.clearFilters,
+  );
   const [genreModalOpen, setGenreModalOpen] = useState(false);
   const [sortModalOpen, setSortModalOpen] = useState(false);
   const collectionScrollRef = useRef<ScrollView>(null);
@@ -463,7 +492,10 @@ export default function LibraryScreen() {
       const at = Date.parse(session.recordedAt || session.createdAt);
       const current = map.get(session.bookId);
       if (!current || at > current.at) {
-        map.set(session.bookId, { currentPage: Math.max(0, session.currentPage), at });
+        map.set(session.bookId, {
+          currentPage: Math.max(0, session.currentPage),
+          at,
+        });
       }
     }
     return map;
@@ -522,12 +554,12 @@ export default function LibraryScreen() {
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
-        refreshControl={(
+        refreshControl={
           <RefreshControl
             refreshing={booksFeed.isRefetching}
             onRefresh={booksFeed.refetch}
           />
-        )}
+        }
         ListHeaderComponent={
           <View style={styles.listHeaderOuter}>
             <View style={{ height: insets.top + 70 }} />
@@ -674,7 +706,13 @@ export default function LibraryScreen() {
               {collectionSlice.length > 0 ? (
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
-                    <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
+                    <Text
+                      variant="titleLarge"
+                      style={[
+                        styles.sectionTitle,
+                        { color: appTheme.colors.textOnDark },
+                      ]}
+                    >
                       Colección
                     </Text>
                   </View>
@@ -683,25 +721,39 @@ export default function LibraryScreen() {
                       <Pressable
                         style={styles.webCarouselArrow}
                         onPress={() => {
-                          const next = Math.max(0, collectionOffset - COLLECTION_CARD_WIDTH);
-                          collectionScrollRef.current?.scrollTo({ x: next, animated: true });
+                          const next = Math.max(
+                            0,
+                            collectionOffset - COLLECTION_CARD_WIDTH,
+                          );
+                          collectionScrollRef.current?.scrollTo({
+                            x: next,
+                            animated: true,
+                          });
                         }}
                         accessibilityLabel="Desplazar colección a la izquierda"
                       >
-                        <Ionicons name="chevron-back" size={18} color={theme.colors.textOnDark} />
+                        <Ionicons
+                          name="chevron-back"
+                          size={18}
+                          color={theme.colors.textOnDark}
+                        />
                       </Pressable>
                       <ScrollView
                         ref={collectionScrollRef}
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.collectionListContent}
-                        onScroll={(event) => setCollectionOffset(event.nativeEvent.contentOffset.x)}
+                        onScroll={(event) =>
+                          setCollectionOffset(event.nativeEvent.contentOffset.x)
+                        }
                         scrollEventThrottle={16}
                       >
                         {collectionSlice.map((item, index) => (
                           <Animated.View
                             key={`c-${item.id}`}
-                            entering={FadeInDown.delay(index * 35).duration(260)}
+                            entering={FadeInDown.delay(index * 35).duration(
+                              260,
+                            )}
                             exiting={FadeOutLeft.duration(180)}
                           >
                             <CollectionBookCard book={item} />
@@ -712,11 +764,18 @@ export default function LibraryScreen() {
                         style={styles.webCarouselArrow}
                         onPress={() => {
                           const next = collectionOffset + COLLECTION_CARD_WIDTH;
-                          collectionScrollRef.current?.scrollTo({ x: next, animated: true });
+                          collectionScrollRef.current?.scrollTo({
+                            x: next,
+                            animated: true,
+                          });
                         }}
                         accessibilityLabel="Desplazar colección a la derecha"
                       >
-                        <Ionicons name="chevron-forward" size={18} color={theme.colors.textOnDark} />
+                        <Ionicons
+                          name="chevron-forward"
+                          size={18}
+                          color={theme.colors.textOnDark}
+                        />
                       </Pressable>
                     </View>
                   ) : (
@@ -726,7 +785,13 @@ export default function LibraryScreen() {
                       keyExtractor={(item: { id: string }) => `c-${item.id}`}
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.collectionListContent}
-                      renderItem={({ item, index }: { item: any; index: number }) => (
+                      renderItem={({
+                        item,
+                        index,
+                      }: {
+                        item: any;
+                        index: number;
+                      }) => (
                         <Animated.View
                           entering={FadeInDown.delay(index * 35).duration(260)}
                           exiting={FadeOutLeft.duration(180)}
@@ -741,7 +806,13 @@ export default function LibraryScreen() {
 
               {readingBooks.length > 0 ? (
                 <View style={styles.section}>
-                  <Text variant="titleLarge" style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}>
+                  <Text
+                    variant="titleLarge"
+                    style={[
+                      styles.sectionTitle,
+                      { color: appTheme.colors.textOnDark },
+                    ]}
+                  >
                     Leyendo ahora
                   </Text>
                   <View style={styles.readingStack}>
