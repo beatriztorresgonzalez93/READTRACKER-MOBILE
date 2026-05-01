@@ -55,6 +55,7 @@ export default function PurchasesScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
       />
     </Screen>
   );

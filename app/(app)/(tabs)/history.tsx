@@ -244,6 +244,7 @@ export default function HistoryScreen() {
         renderItem={() => null}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
 
       <Modal

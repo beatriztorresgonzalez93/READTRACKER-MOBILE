@@ -313,6 +313,7 @@ export default function WishlistScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
 
       <Modal visible={formOpen} transparent animationType="fade" onRequestClose={() => setFormOpen(false)}>

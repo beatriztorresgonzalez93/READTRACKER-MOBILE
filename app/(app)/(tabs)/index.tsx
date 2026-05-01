@@ -369,7 +369,6 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
-  const isDesktopWeb = isWeb && width >= 1024;
   const gridColumns = isWeb
     ? width >= 1500
       ? 5
@@ -474,11 +473,10 @@ export default function LibraryScreen() {
       <ListComponent
         data={books}
         keyExtractor={(item: { id: string }) => item.id}
-        nestedScrollEnabled={!isDesktopWeb}
-        scrollEnabled={!isDesktopWeb}
-        showsVerticalScrollIndicator={!isDesktopWeb}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
-        refreshControl={isDesktopWeb ? undefined : (
+        refreshControl={(
           <RefreshControl
             refreshing={booksFeed.isRefetching}
             onRefresh={booksFeed.refetch}
