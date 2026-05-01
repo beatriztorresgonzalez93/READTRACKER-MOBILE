@@ -548,8 +548,8 @@ export default function LibraryScreen() {
                   onChangeText={setSearchDraft}
                   style={styles.searchBarFlex}
                   inputStyle={styles.searchInput}
-                  placeholderTextColor={theme.colors.textSoft}
-                  iconColor={theme.colors.textSoft}
+                  placeholderTextColor={theme.colors.text}
+                  iconColor={theme.colors.text}
                   elevation={0}
                 />
                 <Pressable
@@ -759,7 +759,7 @@ export default function LibraryScreen() {
               ) : null}
 
               <View style={styles.section}>
-                <Text variant="titleLarge" style={styles.sectionTitle}>
+                <Text variant="titleLarge" style={styles.sectionTitleStrong}>
                   Tus libros
                 </Text>
               </View>
@@ -1069,8 +1069,8 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_400Regular",
     minHeight: 40,
     fontSize: 14,
-    color: theme.colors.textSoft,
-    opacity: 0.9,
+    color: theme.colors.text,
+    opacity: 1,
   },
   filterIconBtn: {
     width: 44,
@@ -1141,7 +1141,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     textTransform: "none",
-    color: theme.colors.textOnDark,
+    color: theme.colors.text,
   },
   clearFiltersLabel: {
     fontSize: 12,
@@ -1158,6 +1158,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: "Fraunces_700Bold",
     color: theme.colors.textOnDark,
+    letterSpacing: 0.2,
+  },
+  sectionTitleStrong: {
+    fontFamily: "Fraunces_700Bold",
+    color: theme.colors.text,
     letterSpacing: 0.2,
   },
   collectionListContent: {

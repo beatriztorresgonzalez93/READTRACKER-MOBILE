@@ -59,18 +59,20 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
 
 const styles = StyleSheet.create({
   root: {
-    alignSelf: "stretch",
+    alignSelf: "center",
     width: "100%",
-    paddingBottom: 8,
-    backgroundColor: theme.colors.bgPanel,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.colors.border,
+    paddingBottom: 0,
+    backgroundColor: "transparent",
   },
   inner: {
     width: "100%",
     maxWidth: 1120,
     alignSelf: "center",
     paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: theme.colors.bgPanel,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
   },
   row: {
     flexDirection: "row",
