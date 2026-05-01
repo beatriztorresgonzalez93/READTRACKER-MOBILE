@@ -346,6 +346,7 @@ export default function BookDetailScreen() {
   return (
     <Screen
       edges={["bottom", "left", "right"]}
+      webBackgroundColor={theme.colors.bgPanel}
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
       <View style={styles.hero}>

@@ -7,11 +7,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export type ScreenProps = ViewProps & {
   /** Si se omite, se respetan los cuatro insets. En biblioteca se excluye `top` para cabecera a pantalla completa. */
   edges?: Edges;
+  /** Solo web: permite ajustar el color del fondo exterior (laterales). */
+  webBackgroundColor?: string;
 };
 
-export function Screen({ children, style, edges }: ScreenProps) {
+export function Screen({ children, style, edges, webBackgroundColor }: ScreenProps) {
   const theme = useAppTheme();
-  const webUnifiedBg = theme.colors.bgSoft;
+  const webUnifiedBg = webBackgroundColor ?? theme.colors.bgSoft;
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
