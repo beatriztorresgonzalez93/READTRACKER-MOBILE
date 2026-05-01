@@ -345,11 +345,11 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 4,
+    gap: 6,
   },
   dayCell: {
-    width: "13%",
-    aspectRatio: 1,
+    width: "12.6%",
+    aspectRatio: 1.35,
     borderRadius: theme.radius.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_400Regular",
   },
   legendRow: {
-    marginTop: 0,
+    marginTop: 14,
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,

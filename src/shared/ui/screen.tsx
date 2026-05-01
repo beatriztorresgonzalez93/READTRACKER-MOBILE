@@ -11,10 +11,11 @@ export type ScreenProps = ViewProps & {
 
 export function Screen({ children, style, edges }: ScreenProps) {
   const theme = useAppTheme();
+  const webUnifiedBg = theme.colors.bgSoft;
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: theme.colors.bg,
+      backgroundColor: Platform.OS === "web" ? webUnifiedBg : theme.colors.bg,
     },
     content: {
       flex: 1,
@@ -25,6 +26,7 @@ export function Screen({ children, style, edges }: ScreenProps) {
       width: "100%",
       maxWidth: 1120,
       alignSelf: "center",
+      backgroundColor: webUnifiedBg,
     },
   });
 

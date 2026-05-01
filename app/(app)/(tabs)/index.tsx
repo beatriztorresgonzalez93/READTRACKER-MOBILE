@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { FlashList } from "@shopify/flash-list";
 import { Link } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -278,6 +278,9 @@ function LibraryAcquisitionsFooter() {
   const appTheme = useAppTheme();
   const purchases = usePurchases();
   const items = purchases.data ?? [];
+  const isWeb = Platform.OS === "web";
+  const acquisitionsScrollRef = useRef<ScrollView>(null);
+  const [acquisitionsOffset, setAcquisitionsOffset] = useState(0);
 
   if (purchases.isError) {
     return null;
@@ -294,6 +297,47 @@ function LibraryAcquisitionsFooter() {
         <Text style={styles.acquisitionsHint}>
           Cuando marques deseos como comprados apareceran aqui.
         </Text>
+      ) : isWeb ? (
+        <View style={styles.webCarouselWrap}>
+          <Pressable
+            style={styles.webCarouselArrow}
+            onPress={() => {
+              const next = Math.max(0, acquisitionsOffset - ACQUISITION_CARD_WIDTH);
+              acquisitionsScrollRef.current?.scrollTo({ x: next, animated: true });
+            }}
+            accessibilityLabel="Desplazar adquisiciones a la izquierda"
+          >
+            <Ionicons name="chevron-back" size={18} color={theme.colors.textOnDark} />
+          </Pressable>
+          <ScrollView
+            ref={acquisitionsScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.acquisitionsListContent}
+            onScroll={(event) => setAcquisitionsOffset(event.nativeEvent.contentOffset.x)}
+            scrollEventThrottle={16}
+          >
+            {items.map((item, index) => (
+              <Animated.View
+                key={`acq-${item.id}`}
+                entering={FadeInDown.delay(index * 35).duration(240)}
+                exiting={FadeOutLeft.duration(180)}
+              >
+                <AcquisitionCard item={item} />
+              </Animated.View>
+            ))}
+          </ScrollView>
+          <Pressable
+            style={styles.webCarouselArrow}
+            onPress={() => {
+              const next = acquisitionsOffset + ACQUISITION_CARD_WIDTH;
+              acquisitionsScrollRef.current?.scrollTo({ x: next, animated: true });
+            }}
+            accessibilityLabel="Desplazar adquisiciones a la derecha"
+          >
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textOnDark} />
+          </Pressable>
+        </View>
       ) : (
         <ListComponent
           horizontal
@@ -397,6 +441,8 @@ export default function LibraryScreen() {
   const clearFilters = useLibraryPreferencesStore((state) => state.clearFilters);
   const [genreModalOpen, setGenreModalOpen] = useState(false);
   const [sortModalOpen, setSortModalOpen] = useState(false);
+  const collectionScrollRef = useRef<ScrollView>(null);
+  const [collectionOffset, setCollectionOffset] = useState(0);
 
   const listQuery = useMemo<LibraryBooksQuery>(
     () => ({
@@ -632,21 +678,64 @@ export default function LibraryScreen() {
                       Colección
                     </Text>
                   </View>
-                  <ListComponent
-                    horizontal
-                    data={collectionSlice}
-                    keyExtractor={(item: { id: string }) => `c-${item.id}`}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.collectionListContent}
-                    renderItem={({ item, index }: { item: any; index: number }) => (
-                      <Animated.View
-                        entering={FadeInDown.delay(index * 35).duration(260)}
-                        exiting={FadeOutLeft.duration(180)}
+                  {isWeb ? (
+                    <View style={styles.webCarouselWrap}>
+                      <Pressable
+                        style={styles.webCarouselArrow}
+                        onPress={() => {
+                          const next = Math.max(0, collectionOffset - COLLECTION_CARD_WIDTH);
+                          collectionScrollRef.current?.scrollTo({ x: next, animated: true });
+                        }}
+                        accessibilityLabel="Desplazar colección a la izquierda"
                       >
-                        <CollectionBookCard book={item} />
-                      </Animated.View>
-                    )}
-                  />
+                        <Ionicons name="chevron-back" size={18} color={theme.colors.textOnDark} />
+                      </Pressable>
+                      <ScrollView
+                        ref={collectionScrollRef}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.collectionListContent}
+                        onScroll={(event) => setCollectionOffset(event.nativeEvent.contentOffset.x)}
+                        scrollEventThrottle={16}
+                      >
+                        {collectionSlice.map((item, index) => (
+                          <Animated.View
+                            key={`c-${item.id}`}
+                            entering={FadeInDown.delay(index * 35).duration(260)}
+                            exiting={FadeOutLeft.duration(180)}
+                          >
+                            <CollectionBookCard book={item} />
+                          </Animated.View>
+                        ))}
+                      </ScrollView>
+                      <Pressable
+                        style={styles.webCarouselArrow}
+                        onPress={() => {
+                          const next = collectionOffset + COLLECTION_CARD_WIDTH;
+                          collectionScrollRef.current?.scrollTo({ x: next, animated: true });
+                        }}
+                        accessibilityLabel="Desplazar colección a la derecha"
+                      >
+                        <Ionicons name="chevron-forward" size={18} color={theme.colors.textOnDark} />
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <ListComponent
+                      horizontal
+                      data={collectionSlice}
+                      keyExtractor={(item: { id: string }) => `c-${item.id}`}
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.collectionListContent}
+                      renderItem={({ item, index }: { item: any; index: number }) => (
+                        <Animated.View
+                          entering={FadeInDown.delay(index * 35).duration(260)}
+                          exiting={FadeOutLeft.duration(180)}
+                        >
+                          <CollectionBookCard book={item} />
+                        </Animated.View>
+                      )}
+                    />
+                  )}
                 </View>
               ) : null}
 
@@ -875,6 +964,21 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 4,
     paddingRight: 8,
+  },
+  webCarouselWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  webCarouselArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.cardElevated,
+    alignItems: "center",
+    justifyContent: "center",
   },
   acquisitionsHint: {
     color: theme.colors.textMutedOnDark,
