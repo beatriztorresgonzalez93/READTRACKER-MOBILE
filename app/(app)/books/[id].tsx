@@ -77,6 +77,7 @@ function Stars({ rating }: { rating?: number | null }) {
 
 export default function BookDetailScreen() {
   const { width } = useWindowDimensions();
+  const pageWidth = Platform.OS === "web" ? Math.min(width, 1120) : width;
   const pagerRef = useRef<ScrollView>(null);
   const reviewScrollRef = useRef<ScrollView>(null);
   const params = useLocalSearchParams<{ id: string }>();
@@ -327,12 +328,12 @@ export default function BookDetailScreen() {
   function moveToTab(tab: DetailTab) {
     setActiveTab(tab);
     const idx = DETAIL_TABS.indexOf(tab);
-    pagerRef.current?.scrollTo({ x: idx * width, animated: true });
+    pagerRef.current?.scrollTo({ x: idx * pageWidth, animated: true });
   }
 
   function onPagerEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const x = event.nativeEvent.contentOffset.x;
-    const idx = Math.round(x / width);
+    const idx = Math.round(x / pageWidth);
     setActiveTab(DETAIL_TABS[idx] ?? "Información");
   }
 
@@ -405,7 +406,7 @@ export default function BookDetailScreen() {
         onMomentumScrollEnd={onPagerEnd}
         style={styles.pager}
       >
-        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <View style={styles.labelWithIcon}>
@@ -503,7 +504,7 @@ export default function BookDetailScreen() {
           </Card>
         </ScrollView>
 
-        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <View style={styles.labelWithIcon}>
@@ -615,7 +616,7 @@ export default function BookDetailScreen() {
           </Card>
         </ScrollView>
 
-        <ScrollView style={{ width }} contentContainerStyle={styles.tabContent}>
+        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <Text style={styles.blockLabel}>Similares</Text>

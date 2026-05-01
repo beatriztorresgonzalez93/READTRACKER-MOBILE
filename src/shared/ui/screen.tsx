@@ -1,7 +1,7 @@
 // Contenedor base de pantalla con Safe Area y fondo tematico.
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Edges } from "react-native-safe-area-context";
-import { StyleSheet, View, type ViewProps } from "react-native";
+import { Platform, StyleSheet, View, type ViewProps } from "react-native";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export type ScreenProps = ViewProps & {
@@ -21,11 +21,18 @@ export function Screen({ children, style, edges }: ScreenProps) {
       paddingHorizontal: 16,
       paddingTop: 12,
     },
+    contentWeb: {
+      width: "100%",
+      maxWidth: 1120,
+      alignSelf: "center",
+    },
   });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={edges}>
-      <View style={[styles.content, style]}>{children}</View>
+      <View style={[styles.content, Platform.OS === "web" && styles.contentWeb, style]}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 }

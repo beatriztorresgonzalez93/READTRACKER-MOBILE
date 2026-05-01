@@ -287,6 +287,9 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginBottom: 12,
+    width: "100%",
+    maxWidth: 980,
+    alignSelf: "center",
   },
   listContent: {
     paddingBottom: 24,
