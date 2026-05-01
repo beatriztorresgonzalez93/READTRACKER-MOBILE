@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
-import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Searchbar, Text } from "react-native-paper";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
@@ -28,6 +28,7 @@ const PRIORITY_OPTIONS = [
 ];
 
 export default function WishlistScreen() {
+  const isWeb = Platform.OS === "web";
   const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
   const itemsQuery = useWishlistItems();
   const createItem = useCreateWishlistItem();
@@ -223,35 +224,69 @@ export default function WishlistScreen() {
                 iconColor={theme.colors.textSoft}
                 elevation={0}
               />
-              <View style={styles.controlsRow}>
-                <Button
-                  mode="outlined"
-                  compact
-                  onPress={() => setStoreModalOpen(true)}
-                  style={styles.controlBtn}
-                  labelStyle={styles.controlBtnLabel}
-                >
-                  {storeFilterLabel}
-                </Button>
-                <Button
-                  mode="outlined"
-                  compact
-                  onPress={() => setSortModalOpen(true)}
-                  style={styles.controlBtn}
-                  labelStyle={styles.controlBtnLabel}
-                >
-                  {sortLabel}
-                </Button>
-              </View>
-              <Button
-                mode="contained"
-                style={styles.addWishBtn}
-                labelStyle={styles.addWishBtnLabel}
-                onPress={onOpenNewForm}
-                icon="plus"
-              >
-                Añadir deseo
-              </Button>
+              {isWeb ? (
+                <View style={styles.controlsRow}>
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setStoreModalOpen(true)}
+                    style={styles.controlBtn}
+                    labelStyle={styles.controlBtnLabel}
+                  >
+                    {storeFilterLabel}
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setSortModalOpen(true)}
+                    style={styles.controlBtn}
+                    labelStyle={styles.controlBtnLabel}
+                  >
+                    {sortLabel}
+                  </Button>
+                  <Button
+                    mode="contained"
+                    style={[styles.controlBtn, styles.addWishBtnInline]}
+                    labelStyle={styles.addWishBtnLabel}
+                    onPress={onOpenNewForm}
+                    icon="plus"
+                  >
+                    Añadir deseo
+                  </Button>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.controlsRow}>
+                    <Button
+                      mode="outlined"
+                      compact
+                      onPress={() => setStoreModalOpen(true)}
+                      style={styles.controlBtn}
+                      labelStyle={styles.controlBtnLabel}
+                    >
+                      {storeFilterLabel}
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      compact
+                      onPress={() => setSortModalOpen(true)}
+                      style={styles.controlBtn}
+                      labelStyle={styles.controlBtnLabel}
+                    >
+                      {sortLabel}
+                    </Button>
+                  </View>
+                  <Button
+                    mode="contained"
+                    style={styles.addWishBtn}
+                    labelStyle={styles.addWishBtnLabel}
+                    onPress={onOpenNewForm}
+                    icon="plus"
+                  >
+                    Añadir deseo
+                  </Button>
+                </>
+              )}
             </View>
           </View>
         }
@@ -511,6 +546,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#8C6239",
   },
+  addWishBtnInline: {
+    flex: 1,
+  },
   addWishBtnLabel: {
     color: theme.colors.textOnDark,
   },
@@ -609,6 +647,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   formModalCard: {
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
     maxHeight: "84%",
     borderRadius: 18,
     borderWidth: 1,
@@ -668,6 +709,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   confirmCard: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.borderOnCard,

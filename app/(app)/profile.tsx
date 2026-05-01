@@ -6,6 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -183,15 +184,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.bg,
     paddingHorizontal: 10,
+    ...(Platform.OS === "web"
+      ? { alignItems: "center", paddingHorizontal: 16 }
+      : null),
   },
   sheet: {
     flex: 1,
+    width: "100%",
+    maxWidth: 1120,
     backgroundColor: theme.colors.card,
     borderColor: "#BE9A6A",
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingTop: 14,
+    ...(Platform.OS === "web" ? { maxHeight: "96%" } : null),
   },
   sheetHeader: {
     flexDirection: "row",

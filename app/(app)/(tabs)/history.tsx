@@ -534,6 +534,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   confirmCard: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.borderOnCard,

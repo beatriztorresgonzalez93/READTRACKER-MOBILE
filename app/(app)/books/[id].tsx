@@ -1528,6 +1528,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(26, 11, 6, 0.45)",
   },
   confirmSheet: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     marginHorizontal: 24,
     backgroundColor: "#230A05",
     borderRadius: 12,

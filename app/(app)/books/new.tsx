@@ -311,7 +311,7 @@ export default function NewBookScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    paddingTop: 10,
+    paddingTop: 22,
   },
   content: {
     gap: 12,

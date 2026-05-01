@@ -23,7 +23,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
         <View style={styles.row}>
         {showBackButton ? (
           <Pressable onPress={() => router.back()} style={styles.leading} hitSlop={12} accessibilityLabel="Volver">
-            <Ionicons name="chevron-back" size={28} color={theme.colors.accent} />
+            <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
           </Pressable>
         ) : null}
         <View style={styles.brand}>
@@ -36,7 +36,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
               ) : (
-                <Ionicons name="person-circle-outline" size={28} color={theme.colors.accent} />
+                <Ionicons name="person-circle-outline" size={28} color={theme.colors.text} />
               )}
             </Pressable>
           </Link>
@@ -48,7 +48,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
               Alert.alert("Proximamente", "Funcionalidad disponible en la siguiente iteracion.")
             }
           >
-            <Ionicons name="notifications-outline" size={24} color={theme.colors.accent} />
+            <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
           </Pressable>
         </View>
         </View>
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: 16,
     paddingBottom: 8,
-    backgroundColor: theme.colors.bgPanel,
+    backgroundColor: theme.colors.bgSoft,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.border,
   },
@@ -94,14 +94,14 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Fraunces_700Bold",
     fontSize: 20,
-    color: theme.colors.accent,
+    color: theme.colors.text,
     letterSpacing: 1.2,
   },
   subtitle: {
     fontSize: 10,
     letterSpacing: 2,
     fontFamily: "Fraunces_400Regular",
-    color: theme.colors.textMutedOnDark,
+    color: theme.colors.textSoft,
     marginTop: 2,
   },
   right: {
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: theme.colors.accent,
+    borderColor: theme.colors.text,
     backgroundColor: theme.colors.card,
   },
 });

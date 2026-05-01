@@ -193,7 +193,7 @@ export default function EditBookScreen() {
   if (detail.isLoading && !detail.data) return <AppLoader />;
 
   return (
-    <Screen>
+    <Screen style={styles.screen}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "android" ? "height" : "padding"}
@@ -335,6 +335,9 @@ export default function EditBookScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    paddingTop: 22,
+  },
   content: {
     gap: 12,
     paddingBottom: 24,
