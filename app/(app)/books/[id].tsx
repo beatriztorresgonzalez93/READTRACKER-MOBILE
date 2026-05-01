@@ -19,6 +19,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { Card, Chip, Text } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   useBookDetail,
@@ -77,6 +78,7 @@ function Stars({ rating }: { rating?: number | null }) {
 
 export default function BookDetailScreen() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const pageWidth = Platform.OS === "web" ? Math.min(width, 1120) : width;
   const pagerRef = useRef<ScrollView>(null);
   const reviewScrollRef = useRef<ScrollView>(null);
@@ -348,6 +350,7 @@ export default function BookDetailScreen() {
       edges={["bottom", "left", "right"]}
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
+      <View style={{ height: insets.top + 72 }} />
       <View style={styles.hero}>
         <View style={styles.heroTop}>
           <BookCover
