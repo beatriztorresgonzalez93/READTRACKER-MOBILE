@@ -44,6 +44,7 @@ export default function ProtectedLayout() {
         options={{
           title: "",
           headerShown: true,
+          headerTransparent: true,
           headerShadowVisible: false,
           header: () => <ScriptoriumHeader showBackButton />,
         }}
@@ -53,6 +54,7 @@ export default function ProtectedLayout() {
         options={{
           title: "",
           headerShown: true,
+          headerTransparent: true,
           headerShadowVisible: false,
           presentation: "modal",
           header: () => <ScriptoriumHeader showBackButton />,
@@ -63,6 +65,7 @@ export default function ProtectedLayout() {
         options={{
           title: "",
           headerShown: true,
+          headerTransparent: true,
           headerShadowVisible: false,
           presentation: "modal",
           header: () => <ScriptoriumHeader showBackButton />,
