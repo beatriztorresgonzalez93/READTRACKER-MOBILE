@@ -1399,6 +1399,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(26, 11, 6, 0.45)",
   },
   genreSheet: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     marginHorizontal: 16,
     maxHeight: "85%",
     backgroundColor: theme.colors.card,
