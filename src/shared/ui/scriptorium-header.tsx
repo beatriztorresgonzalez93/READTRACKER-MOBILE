@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingBottom: 0,
     backgroundColor:
-      Platform.OS === "web" ? theme.colors.cardElevated : "transparent",
+      Platform.OS === "web" ? theme.colors.bgSoft : "transparent",
   },
   inner: {
     width: "100%",

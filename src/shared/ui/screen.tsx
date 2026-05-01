@@ -11,7 +11,7 @@ export type ScreenProps = ViewProps & {
 
 export function Screen({ children, style, edges }: ScreenProps) {
   const theme = useAppTheme();
-  const webUnifiedBg = theme.colors.cardElevated;
+  const webUnifiedBg = theme.colors.bgSoft;
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
