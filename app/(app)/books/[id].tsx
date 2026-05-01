@@ -1365,7 +1365,7 @@ const styles = StyleSheet.create({
   },
   pager: {
     flex: 1,
-    backgroundColor: theme.colors.bgSoft,
+    backgroundColor: theme.colors.bgPanel,
   },
   tabContent: {
     padding: 12,
