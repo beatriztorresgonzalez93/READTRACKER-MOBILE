@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -62,7 +62,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: "100%",
     paddingBottom: 0,
-    backgroundColor: "transparent",
+    backgroundColor:
+      Platform.OS === "web" ? theme.colors.cardElevated : "transparent",
   },
   inner: {
     width: "100%",

@@ -44,7 +44,7 @@ export default function ProtectedLayout() {
         options={{
           title: "",
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: false,
           headerShadowVisible: false,
           header: () => <ScriptoriumHeader showBackButton />,
         }}
