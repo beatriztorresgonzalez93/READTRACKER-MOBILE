@@ -406,7 +406,11 @@ export default function BookDetailScreen() {
         onMomentumScrollEnd={onPagerEnd}
         style={styles.pager}
       >
-        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
+        <ScrollView
+          style={{ width: pageWidth }}
+          contentContainerStyle={styles.tabContent}
+          showsVerticalScrollIndicator={false}
+        >
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <View style={styles.labelWithIcon}>
@@ -504,7 +508,11 @@ export default function BookDetailScreen() {
           </Card>
         </ScrollView>
 
-        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
+        <ScrollView
+          style={{ width: pageWidth }}
+          contentContainerStyle={styles.tabContent}
+          showsVerticalScrollIndicator={false}
+        >
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <View style={styles.labelWithIcon}>
@@ -616,7 +624,11 @@ export default function BookDetailScreen() {
           </Card>
         </ScrollView>
 
-        <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.tabContent}>
+        <ScrollView
+          style={{ width: pageWidth }}
+          contentContainerStyle={styles.tabContent}
+          showsVerticalScrollIndicator={false}
+        >
           <Card mode="contained" style={styles.block}>
             <Card.Content>
               <Text style={styles.blockLabel}>Similares</Text>
@@ -1588,6 +1600,10 @@ const styles = StyleSheet.create({
   },
   markSheet: {
     marginHorizontal: 20,
+    width: "100%",
+    maxWidth: 860,
+    maxHeight: "82%",
+    alignSelf: "center",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#9C723F",
@@ -1639,7 +1655,7 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_400Regular",
   },
   reviewBody: {
-    maxHeight: 460,
+    maxHeight: 420,
   },
   reviewBodyContent: {
     gap: 10,

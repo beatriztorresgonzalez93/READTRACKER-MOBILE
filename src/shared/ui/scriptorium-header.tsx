@@ -19,7 +19,8 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
   const avatarUri = user?.avatarUrl?.trim() ? user.avatarUrl : null;
   return (
     <View style={[styles.root, { paddingTop: insets.top + 6 }]}>
-      <View style={styles.row}>
+      <View style={styles.inner}>
+        <View style={styles.row}>
         {showBackButton ? (
           <Pressable onPress={() => router.back()} style={styles.leading} hitSlop={12} accessibilityLabel="Volver">
             <Ionicons name="chevron-back" size={28} color={theme.colors.accent} />
@@ -50,6 +51,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
             <Ionicons name="notifications-outline" size={24} color={theme.colors.accent} />
           </Pressable>
         </View>
+        </View>
       </View>
     </View>
   );
@@ -59,11 +61,16 @@ const styles = StyleSheet.create({
   root: {
     alignSelf: "stretch",
     width: "100%",
-    paddingHorizontal: 16,
     paddingBottom: 8,
     backgroundColor: theme.colors.bgPanel,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.border,
+  },
+  inner: {
+    width: "100%",
+    maxWidth: 1120,
+    alignSelf: "center",
+    paddingHorizontal: 16,
   },
   row: {
     flexDirection: "row",

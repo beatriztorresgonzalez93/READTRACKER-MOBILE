@@ -201,6 +201,7 @@ export default function EditBookScreen() {
         <ScrollView
           ref={formScrollRef}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
             isKeyboardVisible ? styles.contentKeyboardOpen : null,
