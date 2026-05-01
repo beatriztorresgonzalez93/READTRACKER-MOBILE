@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
     backgroundColor: theme.colors.bgSoft,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: Platform.OS === "web" ? 0 : StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.border,
   },
   row: {

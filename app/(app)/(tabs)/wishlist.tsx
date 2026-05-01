@@ -690,9 +690,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "center",
-    paddingHorizontal: 26,
+    paddingHorizontal: Platform.OS === "web" ? 14 : 26,
   },
   selectorCard: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.borderOnCard,
