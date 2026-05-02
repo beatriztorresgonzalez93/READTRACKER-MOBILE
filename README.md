@@ -104,8 +104,11 @@ Atajos:
 
 - Lint: `npm run lint`
 - Typecheck: `npm run typecheck`
-- Test unit/integration (CI): `npm run test:ci`
-- Cobertura: `npm run test:coverage`
+- Tests **app (Expo)** con Jest (lo que usa CI): `npm run test:ci`
+- Cobertura app: `npm run test:coverage`
+- Tests **backend** (`server/`, Vitest): `npm run test:server`  
+  (No ejecutes `vitest`/`npx vitest` desde la raíz del monorepo: mezcla tests del servidor con el cliente y da errores de módulos CJS/ESM.)
+- E2E backend con DB real (opcional): `npm run test:server:e2e` (requiere `DATABASE_URL` en entorno)
 
 ## E2E con Maestro (Windows + Expo Go)
 

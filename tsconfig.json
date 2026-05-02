@@ -15,5 +15,6 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.d.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "server"]
 }

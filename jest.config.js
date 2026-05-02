@@ -5,5 +5,5 @@ module.exports = {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@store/(.*)$": "<rootDir>/store/$1",
   },
-  testPathIgnorePatterns: ["/node_modules/", "/android/", "/ios/"],
+  testPathIgnorePatterns: ["/node_modules/", "/android/", "/ios/", "/server/"],
 };
