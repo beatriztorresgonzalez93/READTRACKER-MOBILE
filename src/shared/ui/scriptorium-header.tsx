@@ -2,11 +2,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
+import { showNotificationsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { theme } from "@/shared/ui/theme";
 
 export type ScriptoriumHeaderProps = {
@@ -30,7 +31,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
           billing.data.isPro ? styles.proChipActive : null,
         ]}
         hitSlop={8}
-        accessibilityLabel="Plan Pro: trial y pago"
+        accessibilityLabel="Plan Pro: prueba y compra única"
       >
         <Text style={styles.proChipText} numberOfLines={1}>
           {billing.data.isPro
@@ -71,10 +72,8 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
           <Pressable
             hitSlop={12}
             style={styles.iconBtn}
-            accessibilityLabel="Avisos"
-            onPress={() =>
-              Alert.alert("Proximamente", "Funcionalidad disponible en la siguiente iteracion.")
-            }
+            accessibilityLabel="Notificaciones (próximamente)"
+            onPress={showNotificationsComingSoonAlert}
           >
             <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
           </Pressable>

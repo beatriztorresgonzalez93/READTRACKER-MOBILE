@@ -6,11 +6,12 @@ export function trialDaysLabel(): string {
 }
 
 export const subscriptionCopy = {
-  trialLead: `Prueba gratuita de ${trialDaysLabel()}: acceso completo. Después puedes activar Pro con un pago único para seguir con estadísticas avanzadas.`,
+  trialLead: `Prueba gratuita de ${trialDaysLabel()}: acceso completo a la app. Después puedes activar Pro con un solo pago y conservarla para siempre, como una licencia de por vida.`,
   trialShort: `Incluye ${trialDaysLabel()} de prueba gratuita al crear cuenta.`,
   proTitle: "Scriptorium Pro",
-  proSubtitle: "Pago único. Sin suscripción mensual.",
-  proBenefitStats: "Estadísticas avanzadas de lectura tras la prueba.",
+  proSubtitle: "Un solo pago. Tuya para siempre. Sin suscripción.",
+  proBenefits:
+    "Desbloqueas la app completa de forma permanente: biblioteca, lectura, estadísticas y todo lo que añadamos en Pro.",
   nativePayHint:
     "El pago con tarjeta en la app móvil se completa en la versión web por seguridad. Usa la misma cuenta.",
 } as const;

@@ -18,6 +18,7 @@ import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { useBillingStatus, useRefreshBillingStatus } from "@/features/billing/use-billing";
 import { env } from "@/shared/config/env";
 import { AppLoader } from "@/shared/ui/app-loader";
+import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
@@ -116,15 +117,15 @@ export default function UpgradeScreen() {
             </Text>
           ) : (
             <Text style={styles.cardBody}>
-              La prueba ha terminado. Activa Pro para seguir desbloqueando funciones premium (por
-              ejemplo estadísticas avanzadas).
+              La prueba ha terminado. Activa Pro con un solo pago para seguir usando la app al completo,
+              sin límites de tiempo ni cuotas mensuales.
             </Text>
           )}
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Qué incluye Pro</Text>
-          <Text style={styles.cardBody}>{subscriptionCopy.proBenefitStats}</Text>
+          <Text style={styles.cardBody}>{subscriptionCopy.proBenefits}</Text>
           <Text style={styles.cardMuted}>{subscriptionCopy.trialLead}</Text>
         </View>
 
@@ -156,6 +157,15 @@ export default function UpgradeScreen() {
             {env.webAppOrigin ? `URL: ${env.webAppOrigin}/upgrade` : "Configura EXPO_PUBLIC_WEB_APP_ORIGIN."}
           </Text>
         ) : null}
+
+        <Pressable
+          style={styles.legalFootnote}
+          onPress={showLegalDocsComingSoonAlert}
+          accessibilityRole="button"
+          accessibilityLabel="Condiciones de uso y privacidad, próximamente"
+        >
+          <Text style={styles.legalFootnoteText}>Condiciones y privacidad (próximamente)</Text>
+        </Pressable>
       </ScrollView>
 
       <ProUpgradeModal
@@ -250,6 +260,17 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     textAlign: "center",
     lineHeight: 18,
+  },
+  legalFootnote: {
+    alignSelf: "center",
+    paddingVertical: 8,
+  },
+  legalFootnoteText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontFamily: "Fraunces_700Bold",
+    textDecorationLine: "underline",
+    textAlign: "center",
   },
   errorText: {
     color: "#B42318",

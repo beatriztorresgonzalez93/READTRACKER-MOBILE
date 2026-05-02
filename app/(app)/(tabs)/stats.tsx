@@ -1,6 +1,5 @@
 // Panel de estadisticas de lectura y progreso global.
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
 import {
     Pressable,
     ScrollView,
@@ -13,8 +12,7 @@ import { Card } from "react-native-paper";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBooksFeed, useBooksSummary } from "@/features/books/use-books";
-import { ProUpgradeModal } from "@/features/billing/pro-upgrade-modal";
-import { useBillingStatus, useRefreshBillingStatus } from "@/features/billing/use-billing";
+import { useBillingStatus } from "@/features/billing/use-billing";
 import {
     useReadingSessionsList,
     useReadingStats,
@@ -49,9 +47,7 @@ function MetricPill({
 export default function StatsScreen() {
   const isDark = useColorScheme() !== "light";
   const { token, isAuthenticated, isBootstrapping } = useAuth();
-  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const billing = useBillingStatus();
-  const refreshBilling = useRefreshBillingStatus();
   const billingCanFetch = !isBootstrapping && isAuthenticated && Boolean(token?.trim());
   const stats = useReadingStats();
   const sessions = useReadingSessionsList();
@@ -93,40 +89,6 @@ export default function StatsScreen() {
 
   if (!billing.data) {
     return <AppLoader />;
-  }
-
-  const isLocked = billing.data.needsPayment;
-
-  if (isLocked) {
-    return (
-      <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-        <View style={styles.proLockCard}>
-          <View style={styles.titleRow}>
-            <Ionicons name="lock-closed-outline" size={18} color={theme.colors.primary} />
-            <Text style={styles.panelTitle}>Estadísticas Pro</Text>
-          </View>
-          <Text style={styles.panelText}>
-            Tu periodo de prueba ha terminado. Activa Pro con pago único para seguir viendo tus estadísticas.
-          </Text>
-          {billing.data.trialEndsAt ? (
-            <Text style={styles.panelSubtitle}>
-              Trial finalizado el {new Date(billing.data.trialEndsAt).toLocaleDateString("es-ES")}
-            </Text>
-          ) : null}
-          <Pressable style={styles.unlockBtn} onPress={() => setUpgradeModalVisible(true)}>
-            <Text style={styles.unlockBtnText}>Activar Pro</Text>
-          </Pressable>
-        </View>
-        <ProUpgradeModal
-          visible={upgradeModalVisible}
-          onClose={() => setUpgradeModalVisible(false)}
-          onSuccess={() => {
-            refreshBilling();
-            setUpgradeModalVisible(false);
-          }}
-        />
-      </Screen>
-    );
   }
 
   if (
@@ -215,14 +177,6 @@ export default function StatsScreen() {
 
   return (
     <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <ProUpgradeModal
-        visible={upgradeModalVisible}
-        onClose={() => setUpgradeModalVisible(false)}
-        onSuccess={() => {
-          refreshBilling();
-          setUpgradeModalVisible(false);
-        }}
-      />
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -688,27 +642,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSoft,
     fontSize: 12,
     marginBottom: 8,
-  },
-  proLockCard: {
-    marginTop: 16,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 16,
-    gap: 10
-  },
-  unlockBtn: {
-    marginTop: 8,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 12,
-    alignItems: "center"
-  },
-  unlockBtnText: {
-    color: theme.colors.onPrimary,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 15
   },
   rhythmGrid: {
     flexDirection: "row",

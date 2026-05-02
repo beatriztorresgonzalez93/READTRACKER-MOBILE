@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -84,36 +84,45 @@ export function ProUpgradeModal({ visible, onClose, onSuccess }: ProUpgradeModal
     <Modal transparent visible={visible} animationType="fade" onRequestClose={handleClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Activar Scriptorium Pro</Text>
-          <Text style={styles.subtitle}>Pago único. Acceso permanente a funciones Pro.</Text>
-          {!env.stripePublishableKey ? (
-            <Text style={styles.errorText}>Falta EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY en tu `.env`.</Text>
-          ) : null}
-          {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.title}>Activar Scriptorium Pro</Text>
+            <Text style={styles.subtitle}>
+              Pago único: conservas la app completa para siempre (sin cuotas mensuales).
+            </Text>
+            {!env.stripePublishableKey ? (
+              <Text style={styles.errorText}>Falta EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY en tu `.env`.</Text>
+            ) : null}
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-          {!clientSecret ? (
-            <Pressable style={styles.primaryBtn} onPress={handlePreparePayment}>
-              {createIntent.isPending ? (
-                <ActivityIndicator color={theme.colors.onPrimary} />
-              ) : (
-                <Text style={styles.primaryBtnText}>Continuar al pago</Text>
-              )}
+            {!clientSecret ? (
+              <Pressable style={styles.primaryBtn} onPress={handlePreparePayment}>
+                {createIntent.isPending ? (
+                  <ActivityIndicator color={theme.colors.onPrimary} />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Continuar al pago</Text>
+                )}
+              </Pressable>
+            ) : stripePromise ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <CheckoutForm
+                  onError={setErrorMsg}
+                  onSuccess={() => {
+                    onSuccess();
+                    handleClose();
+                  }}
+                />
+              </Elements>
+            ) : null}
+
+            <Pressable style={styles.secondaryBtn} onPress={handleClose}>
+              <Text style={styles.secondaryBtnText}>Cerrar</Text>
             </Pressable>
-          ) : stripePromise ? (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm
-                onError={setErrorMsg}
-                onSuccess={() => {
-                  onSuccess();
-                  handleClose();
-                }}
-              />
-            </Elements>
-          ) : null}
-
-          <Pressable style={styles.secondaryBtn} onPress={handleClose}>
-            <Text style={styles.secondaryBtnText}>Cerrar</Text>
-          </Pressable>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -131,12 +140,20 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 540,
+    maxHeight: "90%",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    padding: 16,
-    gap: 12
+    paddingHorizontal: 16,
+    paddingVertical: 12
+  },
+  scroll: {
+    flex: 1
+  },
+  scrollContent: {
+    gap: 12,
+    paddingBottom: 8
   },
   title: {
     fontFamily: "Fraunces_700Bold",

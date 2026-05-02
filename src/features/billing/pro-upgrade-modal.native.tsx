@@ -12,7 +12,7 @@ export function ProUpgradeModal({ visible, onClose }: ProUpgradeModalProps) {
     if (!visible) return;
     Alert.alert(
       "Pago disponible en web",
-      "La activación Pro con Stripe está disponible en la versión web.",
+      "La compra única de Pro (app completa para siempre) se completa con Stripe en la versión web.",
       [{ text: "Aceptar", onPress: onClose }]
     );
   }, [visible, onClose]);

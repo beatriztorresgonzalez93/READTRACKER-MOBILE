@@ -50,6 +50,10 @@ Como usuario, puedes:
   - Alta/baja de deseos
   - Marcado como comprado
   - Registro y listado de adquisiciones
+- **Plan Pro (compra unica)**
+  - Periodo de prueba gratuita con acceso completo a la app (`EXPO_PUBLIC_PRO_TRIAL_DAYS`)
+  - Tras la prueba: un solo pago activa **Scriptorium Pro** de forma permanente para esa cuenta (sin cuota mensual), con acceso a **toda la app**
+  - Si la prueba termina sin pago, la navegacion principal queda bloqueada hasta activar Pro; siguen disponibles la pantalla **Upgrade** y el **perfil** (p. ej. para cerrar sesion)
 
 ## Estructura principal
 
@@ -63,19 +67,19 @@ Como usuario, puedes:
 
 ## Instalacion y configuracion
 
-1) Instalar dependencias:
+1. Instalar dependencias:
 
 ```bash
 npm install
 ```
 
-2) Crear archivo de entorno:
+2. Crear archivo de entorno:
 
 ```bash
 cp .env.example .env
 ```
 
-3) Configurar backend en `.env`:
+3. Configurar backend en `.env`:
 
 ```env
 EXPO_PUBLIC_API_BASE_URL=https://readtracker-api.onrender.com/api/v1
@@ -88,8 +92,12 @@ EXPO_PUBLIC_PRO_TRIAL_DAYS=30
 
 - El backend debe tener `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`.
 - La app usa `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` para mostrar el checkout en web.
-- Flujo actual Pro: trial gratis y luego pago único para desbloquear estadísticas Pro.
-- En **móvil**, el botón de pago abre el navegador en `/upgrade` de tu web; define `EXPO_PUBLIC_WEB_APP_ORIGIN` con la URL de Vercel (sin `/` final).
+- **Modelo de producto:** prueba gratuita con app completa; despues **un pago unico** (Payment Intent de tipo “lifetime” en backend) que marca la cuenta como **Pro** sin renovaciones automaticas. Equivale comercialmente a una **licencia perpetua de uso** de la app para esa cuenta, en la medida en que sigas ofreciendo el servicio.
+- En **movil**, el boton de pago abre el navegador en `/upgrade` de tu web; define `EXPO_PUBLIC_WEB_APP_ORIGIN` con la URL de Vercel (sin `/` final).
+
+### Textos legales / condiciones
+
+No hay en este repo condiciones generales ni politica de privacidad definitivas: para produccion conviene publicar documentos revisados por asesoria juridica y enlazarlos desde registro, checkout y perfil. Como **referencia de producto** (borrador, sin valor legal) esta `docs/compra-pro-licencia-perpetua-borrador-es.md`.
 
 ## Ejecutar la app
 

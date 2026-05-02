@@ -2,13 +2,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
+import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
@@ -93,6 +94,17 @@ export default function LoginScreen() {
       lineHeight: 21,
       color: theme.colors.text,
     },
+    legalFootnote: {
+      alignSelf: "center",
+      marginTop: -4,
+      marginBottom: 4,
+    },
+    legalFootnoteText: {
+      fontSize: 13,
+      color: theme.colors.primary,
+      fontWeight: "600",
+      textDecorationLine: "underline",
+    },
   });
 
   return (
@@ -108,6 +120,14 @@ export default function LoginScreen() {
             <Ionicons name="gift-outline" size={22} color={theme.colors.primary} />
             <Text style={styles.trialBannerText}>{subscriptionCopy.trialLead}</Text>
           </View>
+          <Pressable
+            style={styles.legalFootnote}
+            onPress={showLegalDocsComingSoonAlert}
+            accessibilityRole="button"
+            accessibilityLabel="Condiciones de uso y privacidad, próximamente"
+          >
+            <Text style={styles.legalFootnoteText}>Condiciones y privacidad (próximamente)</Text>
+          </Pressable>
           <AppInput
             label="Correo"
             value={email}
