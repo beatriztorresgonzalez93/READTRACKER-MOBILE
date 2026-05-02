@@ -5,10 +5,13 @@ import { createBillingPaymentIntent, getBillingStatus } from "@/shared/api/billi
 
 export function useBillingStatus() {
   const { token, isAuthenticated } = useAuth();
+  const tokenReady = Boolean(token?.trim());
   return useQuery({
     queryKey: ["billing", "status", token],
     queryFn: () => getBillingStatus(token as string),
-    enabled: isAuthenticated && Boolean(token)
+    enabled: isAuthenticated && tokenReady,
+    retry: 2,
+    staleTime: 60_000
   });
 }
 

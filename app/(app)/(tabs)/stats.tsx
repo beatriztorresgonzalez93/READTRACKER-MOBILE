@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Card } from "react-native-paper";
 
+import { useAuth } from "@/features/auth/use-auth";
 import { useBooksFeed, useBooksSummary } from "@/features/books/use-books";
 import { ProUpgradeModal } from "@/features/billing/pro-upgrade-modal";
 import { useBillingStatus, useRefreshBillingStatus } from "@/features/billing/use-billing";
@@ -47,9 +48,11 @@ function MetricPill({
 
 export default function StatsScreen() {
   const isDark = useColorScheme() !== "light";
+  const { token, isAuthenticated, isBootstrapping } = useAuth();
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const billing = useBillingStatus();
   const refreshBilling = useRefreshBillingStatus();
+  const billingCanFetch = !isBootstrapping && isAuthenticated && Boolean(token?.trim());
   const stats = useReadingStats();
   const sessions = useReadingSessionsList();
   const summary = useBooksSummary();
@@ -65,19 +68,31 @@ export default function StatsScreen() {
     currency: "EUR",
   });
 
-  if (billing.isLoading || (stats.isLoading && !stats.data && summary.isLoading && !summary.data)) {
+  if (
+    !billingCanFetch ||
+    (billingCanFetch && billing.status !== "success" && billing.status !== "error") ||
+    (billing.isLoading || (stats.isLoading && !stats.data && summary.isLoading && !summary.data))
+  ) {
     return <AppLoader />;
   }
 
-  if (billing.isError || !billing.data) {
+  if (billing.status === "error") {
+    const hint =
+      billing.error instanceof Error
+        ? billing.error.message
+        : "Revisa la conexión e inténtalo de nuevo.";
     return (
       <Screen>
         <EmptyState
           title="No se pudo cargar tu plan"
-          description="Revisa la conexión e inténtalo de nuevo."
+          description={hint}
         />
       </Screen>
     );
+  }
+
+  if (!billing.data) {
+    return <AppLoader />;
   }
 
   const isLocked = billing.data.needsPayment;
