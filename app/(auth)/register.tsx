@@ -2,14 +2,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
-import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
@@ -97,16 +96,12 @@ export default function RegisterScreen() {
       lineHeight: 21,
       color: theme.colors.text,
     },
-    legalFootnote: {
-      alignSelf: "center",
-      marginTop: -4,
-      marginBottom: 4,
-    },
-    legalFootnoteText: {
-      fontSize: 13,
-      color: theme.colors.primary,
-      fontWeight: "600",
-      textDecorationLine: "underline",
+    legalNotice: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: theme.colors.textMutedOnDark,
+      textAlign: "center",
+      marginTop: -2,
     },
   });
 
@@ -123,14 +118,6 @@ export default function RegisterScreen() {
             <Ionicons name="gift-outline" size={22} color={theme.colors.primary} />
             <Text style={styles.trialBannerText}>{subscriptionCopy.trialLead}</Text>
           </View>
-          <Pressable
-            style={styles.legalFootnote}
-            onPress={showLegalDocsComingSoonAlert}
-            accessibilityRole="button"
-            accessibilityLabel="Condiciones de uso y privacidad, próximamente"
-          >
-            <Text style={styles.legalFootnoteText}>Condiciones y privacidad (próximamente)</Text>
-          </Pressable>
           <AppInput
             label="Nombre"
             value={name}
@@ -170,6 +157,10 @@ export default function RegisterScreen() {
             onPress={onSubmit}
             disabled={isSubmitting}
           />
+          <Text style={styles.legalNotice}>
+            Al registrarte, aceptas los Términos de servicio y la Política de privacidad, incluida la política de Uso
+            de Cookies. (próximamente)
+          </Text>
           <View style={styles.registerRow}>
             <Text style={styles.registerHint}>Ya tienes cuenta?</Text>
             <Link href={"/(auth)/login" as never} style={styles.link}>

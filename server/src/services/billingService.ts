@@ -54,7 +54,7 @@ export class BillingService {
       amount: env.proOneTimePriceCents,
       currency: env.stripeCurrency,
       customer: stripeCustomerId,
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card"],
       metadata: {
         userId,
         product: "readtracker_pro_lifetime"
