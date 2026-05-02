@@ -1,12 +1,15 @@
 // Pantalla de inicio de sesion con validacion de formulario.
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
+import { formatFirebaseAuthError } from "@/shared/lib/firebase-auth-errors";
+import { showAppAlert } from "@/shared/lib/show-app-alert";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { Screen } from "@/shared/ui/screen";
@@ -18,11 +21,27 @@ export default function LoginScreen() {
     password: z.string().min(1, "La contraseña es obligatoria."),
   });
   const theme = useAppTheme();
-  const { login } = useAuth();
+  const { login, isAuthenticated, syncError, clearSyncError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === "web" && typeof document !== "undefined") {
+        requestAnimationFrame(() => {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        });
+      }
+    }, [])
+  );
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(app)/(tabs)" as never);
+    }
+  }, [isAuthenticated]);
 
   async function onSubmit() {
     const parsed = loginSchema.safeParse({ email, password });
@@ -38,10 +57,10 @@ export default function LoginScreen() {
 
     try {
       setIsSubmitting(true);
+      clearSyncError();
       await login(parsed.data);
-      router.replace("/(app)/(tabs)" as never);
     } catch (error) {
-      Alert.alert("No se pudo iniciar sesión", (error as Error).message);
+      showAppAlert("No se pudo iniciar sesión", formatFirebaseAuthError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -93,6 +112,19 @@ export default function LoginScreen() {
       lineHeight: 21,
       color: theme.colors.text,
     },
+    syncErrorBox: {
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.accent,
+      backgroundColor: theme.colors.bgSoft,
+      marginBottom: 4,
+    },
+    syncErrorText: {
+      color: theme.colors.textOnDark,
+      fontSize: 14,
+      lineHeight: 20,
+    },
   });
 
   return (
@@ -108,6 +140,11 @@ export default function LoginScreen() {
             <Ionicons name="gift-outline" size={22} color={theme.colors.primary} />
             <Text style={styles.trialBannerText}>{subscriptionCopy.trialLead}</Text>
           </View>
+          {syncError ? (
+            <View style={styles.syncErrorBox} accessibilityRole="alert">
+              <Text style={styles.syncErrorText}>{syncError}</Text>
+            </View>
+          ) : null}
           <AppInput
             label="Correo"
             value={email}

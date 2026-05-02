@@ -38,6 +38,9 @@ type AuthContextValue = {
   token: string | null;
   isBootstrapping: boolean;
   isAuthenticated: boolean;
+  /** Error al enlazar Firebase con el perfil en la API (p. ej. email ya existente en BD). */
+  syncError: string | null;
+  clearSyncError: () => void;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   updateUserProfile: (payload: {
@@ -55,6 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const clearSyncError = useCallback(() => {
+    setSyncError(null);
+  }, []);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -73,7 +81,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(idToken);
           const me = await apiGetMe(idToken);
           setUser(me);
-        } catch {
+          setSyncError(null);
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : "No se pudo sincronizar tu cuenta con el servidor.";
+          setSyncError(message);
+          try {
+            await signOut(auth);
+          } catch {
+            /* ignore */
+          }
           await clearStoredToken();
           setToken(null);
           setUser(null);
@@ -142,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearStoredToken();
     setToken(null);
     setUser(null);
+    setSyncError(null);
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -150,12 +168,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isBootstrapping,
       isAuthenticated: Boolean(token && user),
+      syncError,
+      clearSyncError,
       login,
       register,
       updateUserProfile,
       logout
     }),
-    [token, user, isBootstrapping, login, register, updateUserProfile, logout]
+    [token, user, isBootstrapping, syncError, clearSyncError, login, register, updateUserProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

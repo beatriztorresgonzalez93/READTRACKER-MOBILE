@@ -1,5 +1,6 @@
 // Agrupa y configura la navegacion del flujo de autenticacion.
 import { Stack } from "expo-router";
+import { Platform } from "react-native";
 
 export default function AuthLayout() {
   return (
@@ -7,6 +8,12 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: true,
         headerTitleAlign: "center",
+        ...(Platform.OS === "web"
+          ? {
+              // Evita pantallas inactivas con aria-hidden que roban foco y bloquean clics en web.
+              detachInactiveScreens: false,
+            }
+          : {}),
       }}
     >
       <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
