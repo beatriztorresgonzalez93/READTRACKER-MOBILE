@@ -10,11 +10,9 @@ export type User = {
   created_at?: string;
   registeredAt?: string;
   registered_at?: string;
-};
-
-export type AuthResponse = {
-  token: string;
-  user: User;
+  trialEndsAt?: string | null;
+  isPro?: boolean;
+  proActivatedAt?: string | null;
 };
 
 export type LoginPayload = {

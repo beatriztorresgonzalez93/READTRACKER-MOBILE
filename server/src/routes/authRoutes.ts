@@ -1,13 +1,11 @@
-// Endpoints de autenticación.
+// Endpoints de perfil autenticado (token Firebase).
 import { Router } from "express";
+import type { RequestHandler } from "express";
 import { AuthController } from "../controllers/authController";
-import { requireAuth } from "../middlewares/requireAuth";
 
-export const createAuthRouter = (controller: AuthController) => {
+export const createAuthRouter = (controller: AuthController, requireAuth: RequestHandler) => {
   const router = Router();
 
-  router.post("/register", controller.register);
-  router.post("/login", controller.login);
   router.get("/me", requireAuth, controller.me);
   router.patch("/me", requireAuth, controller.patchMe);
 

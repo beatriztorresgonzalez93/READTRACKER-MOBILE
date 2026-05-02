@@ -14,7 +14,7 @@ import { WishlistController } from "./controllers/wishlistController";
 import { ReadingSessionsController } from "./controllers/readingSessionsController";
 import { BillingController } from "./controllers/billingController";
 import { errorHandler } from "./middlewares/errorHandler";
-import { requireAuth } from "./middlewares/requireAuth";
+import { createRequireAuth } from "./middlewares/requireAuth";
 import { BooksRepository } from "./repositories/booksRepository";
 import { UsersRepository } from "./repositories/usersRepository";
 import { WishlistRepository } from "./repositories/wishlistRepository";
@@ -106,6 +106,7 @@ export const createApp = () => {
   const booksController = new BooksController(booksService);
   const usersRepository = new UsersRepository();
   const authService = new AuthService(usersRepository);
+  const requireAuthMw = createRequireAuth(authService);
   const authController = new AuthController(authService);
   const coversService = new CoversService();
   const coversController = new CoversController(coversService);
@@ -136,12 +137,12 @@ export const createApp = () => {
   });
 
   app.use("/api/v1/covers", createCoversRouter(coversController));
-  app.use("/api/v1/auth", createAuthRouter(authController));
-  app.use("/api/v1/books", createBooksRouter(booksController));
-  app.use("/api/v1/wishlist", createWishlistRouter(wishlistController));
-  app.use("/api/v1/reading-sessions", createReadingSessionsRouter(readingSessionsController));
-  app.use("/api/v1/billing", createBillingRouter(billingController));
-  app.get("/api/v1/acquisitions", requireAuth, wishlistController.listAcquisitions);
+  app.use("/api/v1/auth", createAuthRouter(authController, requireAuthMw));
+  app.use("/api/v1/books", createBooksRouter(booksController, requireAuthMw));
+  app.use("/api/v1/wishlist", createWishlistRouter(wishlistController, requireAuthMw));
+  app.use("/api/v1/reading-sessions", createReadingSessionsRouter(readingSessionsController, requireAuthMw));
+  app.use("/api/v1/billing", createBillingRouter(billingController, requireAuthMw));
+  app.get("/api/v1/acquisitions", requireAuthMw, wishlistController.listAcquisitions);
 
   app.use((_req, res) => {
     sendApiError(res, 404, "NOT_FOUND", "Ruta no encontrada");

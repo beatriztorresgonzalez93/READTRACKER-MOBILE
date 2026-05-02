@@ -1,41 +1,6 @@
-// Cliente de endpoints de autenticacion y perfil de usuario.
+// Cliente de endpoints de perfil de usuario (sesión = Firebase ID token).
 import { apiRequest } from "@/shared/api/client";
-import type { AuthResponse, LoginPayload, RegisterPayload, User } from "@/shared/types/auth";
-
-type AuthEnvelope = {
-  data?: AuthResponse;
-  token?: string;
-  user?: User;
-};
-
-function unwrapAuthResponse(payload: AuthEnvelope | AuthResponse): AuthResponse {
-  if ("data" in payload && payload.data?.token) {
-    return payload.data;
-  }
-  if ("token" in payload && payload.token && payload.user) {
-    return {
-      token: payload.token,
-      user: payload.user,
-    };
-  }
-  return payload as AuthResponse;
-}
-
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  const response = await apiRequest<AuthEnvelope | AuthResponse>("/auth/login", {
-    method: "POST",
-    body: payload,
-  });
-  return unwrapAuthResponse(response);
-}
-
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const response = await apiRequest<AuthEnvelope | AuthResponse>("/auth/register", {
-    method: "POST",
-    body: payload,
-  });
-  return unwrapAuthResponse(response);
-}
+import type { User } from "@/shared/types/auth";
 
 export async function getMe(token: string): Promise<User> {
   const response = await apiRequest<{ data?: User } | User>("/auth/me", { token });
@@ -63,9 +28,9 @@ export async function updateMe(token: string, payload: UpdateMePayload): Promise
         name: payload.name,
         first_name: payload.firstName,
         last_name: payload.lastName,
-        avatar_url: payload.avatarUrl,
-      },
-    },
+        avatar_url: payload.avatarUrl
+      }
+    }
   ];
 
   const errors: string[] = [];
@@ -74,7 +39,7 @@ export async function updateMe(token: string, payload: UpdateMePayload): Promise
       const response = await apiRequest<{ data?: User } | User>(attempt.path, {
         method: attempt.method,
         token,
-        body: attempt.body,
+        body: attempt.body
       });
       if ("data" in response && response.data) return response.data;
       return response as User;
@@ -85,4 +50,3 @@ export async function updateMe(token: string, payload: UpdateMePayload): Promise
 
   throw new Error(errors[0] ?? "No se pudo actualizar el perfil.");
 }
-

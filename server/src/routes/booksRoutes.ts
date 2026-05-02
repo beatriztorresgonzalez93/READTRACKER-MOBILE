@@ -1,10 +1,10 @@
 // Define endpoints REST de libros y conecta middlewares/controlador.
 import { Router } from "express";
+import type { RequestHandler } from "express";
 import { BooksController } from "../controllers/booksController";
-import { requireAuth } from "../middlewares/requireAuth";
 import { validateCreateBook, validateUpdateBook } from "../middlewares/validateBookPayload";
 
-export const createBooksRouter = (controller: BooksController) => {
+export const createBooksRouter = (controller: BooksController, requireAuth: RequestHandler) => {
   const router = Router();
   router.use(requireAuth);
 

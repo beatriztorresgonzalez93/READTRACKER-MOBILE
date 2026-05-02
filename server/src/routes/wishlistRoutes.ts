@@ -1,10 +1,10 @@
 // Rutas REST de lista de deseos (por usuario autenticado).
 import { Router } from "express";
+import type { RequestHandler } from "express";
 import { WishlistController } from "../controllers/wishlistController";
-import { requireAuth } from "../middlewares/requireAuth";
 import { validateCreateWishlistItem } from "../middlewares/validateWishlistPayload";
 
-export const createWishlistRouter = (controller: WishlistController) => {
+export const createWishlistRouter = (controller: WishlistController, requireAuth: RequestHandler) => {
   const router = Router();
   router.use(requireAuth);
 

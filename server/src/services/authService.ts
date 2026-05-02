@@ -1,55 +1,45 @@
-// Lógica de negocio para registro/login y perfil del usuario autenticado.
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+// Lógica de negocio para usuario autenticado con Firebase y perfil local.
+import type { DecodedIdToken } from "firebase-admin/auth";
 import { env } from "../config/env";
 import { UsersRepository } from "../repositories/usersRepository";
-import { AuthResult, AuthUser, LoginDto, RegisterDto, UpdateProfileDto } from "../types/auth";
+import { AuthUser, UpdateProfileDto } from "../types/auth";
 
-const TOKEN_EXPIRES_IN = "7d";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export class AuthService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  private signToken(user: AuthUser): string {
-    return jwt.sign({ sub: user.id, email: user.email }, env.jwtSecret, {
-      expiresIn: TOKEN_EXPIRES_IN
-    });
-  }
-
-  async register(data: RegisterDto): Promise<AuthResult> {
-    const email = data.email.trim().toLowerCase();
-    const existing = await this.usersRepository.findByEmail(email);
-    if (existing) {
-      throw new Error("Ya existe una cuenta con ese email");
+  /**
+   * Resuelve o crea el usuario local enlazado al UID de Firebase.
+   */
+  async ensureLocalUserFromFirebase(decoded: DecodedIdToken): Promise<string> {
+    const uid = decoded.uid;
+    const emailRaw = decoded.email?.trim().toLowerCase();
+    if (!emailRaw) {
+      throw new Error("La cuenta de Firebase no tiene email");
     }
 
-    const passwordHash = await bcrypt.hash(data.password, 10);
+    const existingUid = await this.usersRepository.findByFirebaseUid(uid);
+    if (existingUid) {
+      return existingUid.id;
+    }
+
+    const existingEmail = await this.usersRepository.findByEmail(emailRaw);
+    if (existingEmail) {
+      throw new Error(
+        "Ya existe una cuenta local con ese email. Usa la misma cuenta de Firebase o contacta soporte."
+      );
+    }
+
+    const nameFromToken = (decoded.name ?? emailRaw.split("@")[0] ?? "Usuario").trim() || "Usuario";
     const trialEndsAt = new Date(Date.now() + env.proTrialDays * DAY_IN_MS);
-    const user = await this.usersRepository.create(data.name.trim(), email, passwordHash, trialEndsAt);
-    return {
-      token: this.signToken(user),
-      user
-    };
-  }
-
-  async login(data: LoginDto): Promise<AuthResult> {
-    const email = data.email.trim().toLowerCase();
-    const user = await this.usersRepository.findByEmail(email);
-    if (!user) {
-      throw new Error("Email o contraseña incorrectos");
-    }
-
-    const isValid = await bcrypt.compare(data.password, user.passwordHash);
-    if (!isValid) {
-      throw new Error("Email o contraseña incorrectos");
-    }
-
-    const { passwordHash: _passwordHash, ...safeUser } = user;
-    return {
-      token: this.signToken(safeUser),
-      user: safeUser
-    };
+    const created = await this.usersRepository.createFromFirebase({
+      firebaseUid: uid,
+      email: emailRaw,
+      name: nameFromToken,
+      trialEndsAt
+    });
+    return created.id;
   }
 
   async getProfile(userId: string): Promise<AuthUser | null> {

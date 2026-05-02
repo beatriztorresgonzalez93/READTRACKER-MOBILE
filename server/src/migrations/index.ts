@@ -6,6 +6,7 @@ import { migration002WishlistTables } from "./002_wishlist_tables";
 import { migration003ReadingSessions } from "./003_reading_sessions";
 import { migration004UserProfileFields } from "./004_user_profile_fields";
 import { migration005BillingFields } from "./005_billing_fields";
+import { migration006FirebaseUid } from "./006_firebase_uid";
 import { Migration } from "./types";
 
 const migrations: Migration[] = [
@@ -13,7 +14,8 @@ const migrations: Migration[] = [
   migration002WishlistTables,
   migration003ReadingSessions,
   migration004UserProfileFields,
-  migration005BillingFields
+  migration005BillingFields,
+  migration006FirebaseUid
 ];
 
 export const runMigrations = async (pool: Pool) => {

@@ -4,10 +4,21 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const isProduction = (process.env.NODE_ENV ?? "").toLowerCase() === "production";
-const jwtSecretFromEnv = process.env.JWT_SECRET ?? "";
-// Fail-fast: en prod nunca arrancamos con secreto por defecto o vacío.
-if (isProduction && (!jwtSecretFromEnv.trim() || jwtSecretFromEnv === "change-this-secret-in-production")) {
-  throw new Error("JWT_SECRET seguro es obligatorio en producción");
+
+const firebaseProjectId = (process.env.FIREBASE_PROJECT_ID ?? "").trim();
+const firebaseClientEmail = (process.env.FIREBASE_CLIENT_EMAIL ?? "").trim();
+const firebasePrivateKey = (process.env.FIREBASE_PRIVATE_KEY ?? "")
+  .replace(/\\n/g, "\n")
+  .trim();
+
+// En producción exigimos credenciales de Firebase Admin para validar ID tokens.
+if (
+  isProduction &&
+  (!firebaseProjectId || !firebaseClientEmail || !firebasePrivateKey)
+) {
+  throw new Error(
+    "FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY son obligatorios en producción"
+  );
 }
 
 function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
@@ -60,7 +71,9 @@ export const env = {
   rateLimitWindowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMaxRequests: parseNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 120),
   databaseUrl: process.env.DATABASE_URL ?? "",
-  jwtSecret: jwtSecretFromEnv || "change-this-secret-in-production",
+  firebaseProjectId,
+  firebaseClientEmail,
+  firebasePrivateKey,
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   stripeCurrency: (process.env.STRIPE_CURRENCY ?? "eur").toLowerCase(),

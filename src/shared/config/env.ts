@@ -16,6 +16,12 @@ export const env = {
   stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
   /** Base URL sin barra final, ej. https://tu-app.vercel.app */
   webAppOrigin: normalizeWebOrigin(process.env.EXPO_PUBLIC_WEB_APP_ORIGIN),
-  proTrialDays: parseTrialDays(process.env.EXPO_PUBLIC_PRO_TRIAL_DAYS)
+  proTrialDays: parseTrialDays(process.env.EXPO_PUBLIC_PRO_TRIAL_DAYS),
+  firebaseApiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "",
+  firebaseAuthDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
+  firebaseProjectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "",
+  firebaseStorageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "",
+  firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? ""
 };
 

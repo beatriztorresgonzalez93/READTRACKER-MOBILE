@@ -1,9 +1,8 @@
 // Tests HTTP de contrato, auth y errores para los endpoints principales.
 import express from "express";
-import jwt from "jsonwebtoken";
+import type { RequestHandler } from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { env } from "../src/config/env";
 import { AuthController } from "../src/controllers/authController";
 import { BillingController } from "../src/controllers/billingController";
 import { BooksController } from "../src/controllers/booksController";
@@ -15,14 +14,23 @@ import { createBillingRouter } from "../src/routes/billingRoutes";
 import { createBooksRouter } from "../src/routes/booksRoutes";
 import { createReadingSessionsRouter } from "../src/routes/readingSessionsRoutes";
 import { createWishlistRouter } from "../src/routes/wishlistRoutes";
+import { sendApiError } from "../src/utils/apiResponse";
 
-const buildToken = (userId = "user-1") =>
-  jwt.sign({ sub: userId, email: "user@test.com" }, env.jwtSecret, { expiresIn: "1h" });
+/** Simula usuario autenticado sin Firebase (solo para tests de contrato HTTP). */
+const stubRequireAuth: RequestHandler = (_req, res, next) => {
+  const header = _req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
+    sendApiError(res, 401, "AUTH_REQUIRED", "No autorizado");
+    return;
+  }
+  res.locals.userId = "user-1";
+  next();
+};
+
+const AUTH = "Bearer integration-test-token";
 
 describe("HTTP integration: contract + auth + errors", () => {
   const authServiceMock = {
-    register: vi.fn(),
-    login: vi.fn(),
     getProfile: vi.fn(),
     updateProfile: vi.fn()
   };
@@ -56,14 +64,17 @@ describe("HTTP integration: contract + auth + errors", () => {
 
   const app = express();
   app.use(express.json());
-  app.use("/api/v1/auth", createAuthRouter(new AuthController(authServiceMock as never)));
-  app.use("/api/v1/books", createBooksRouter(new BooksController(booksServiceMock as never)));
-  app.use("/api/v1/wishlist", createWishlistRouter(new WishlistController(wishlistServiceMock as never)));
+  app.use("/api/v1/auth", createAuthRouter(new AuthController(authServiceMock as never), stubRequireAuth));
+  app.use("/api/v1/books", createBooksRouter(new BooksController(booksServiceMock as never), stubRequireAuth));
+  app.use(
+    "/api/v1/wishlist",
+    createWishlistRouter(new WishlistController(wishlistServiceMock as never), stubRequireAuth)
+  );
   app.use(
     "/api/v1/reading-sessions",
-    createReadingSessionsRouter(new ReadingSessionsController(readingSessionsServiceMock as never))
+    createReadingSessionsRouter(new ReadingSessionsController(readingSessionsServiceMock as never), stubRequireAuth)
   );
-  app.use("/api/v1/billing", createBillingRouter(new BillingController(billingServiceMock as never)));
+  app.use("/api/v1/billing", createBillingRouter(new BillingController(billingServiceMock as never), stubRequireAuth));
   app.use((_req, res) => {
     res.status(404).json({ code: "NOT_FOUND", message: "Ruta no encontrada", error: "Ruta no encontrada" });
   });
@@ -71,35 +82,6 @@ describe("HTTP integration: contract + auth + errors", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("returns stable 400 contract for invalid register payload", async () => {
-    const response = await request(app).post("/api/v1/auth/register").send({
-      name: "Test",
-      email: "test@test.com",
-      password: "123"
-    });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({
-      code: "INVALID_REGISTER_PAYLOAD",
-      message: "Nombre, email y contraseña (mínimo 6 caracteres) son obligatorios",
-      error: "Nombre, email y contraseña (mínimo 6 caracteres) son obligatorios"
-    });
-  });
-
-  it("returns 401 INVALID_CREDENTIALS on auth login failure", async () => {
-    authServiceMock.login.mockRejectedValueOnce(new Error("Email o contraseña incorrectos"));
-
-    const response = await request(app).post("/api/v1/auth/login").send({
-      email: "test@test.com",
-      password: "wrong-password"
-    });
-
-    expect(response.status).toBe(401);
-    expect(response.body).toMatchObject({
-      code: "INVALID_CREDENTIALS"
-    });
   });
 
   it("PATCH /auth/me returns 200 when authorized", async () => {
@@ -114,7 +96,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .patch("/api/v1/auth/me")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({ name: "Ana", lastName: "López" });
 
     expect(response.status).toBe(200);
@@ -141,7 +123,7 @@ describe("HTTP integration: contract + auth + errors", () => {
   it("returns 400 for invalid create book payload", async () => {
     const response = await request(app)
       .post("/api/v1/books")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         title: "",
         author: "Frank Herbert",
@@ -171,7 +153,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .get("/api/v1/books")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.data)).toBe(true);
@@ -193,7 +175,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .post("/api/v1/books")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         title: "Dune",
         author: "Frank Herbert",
@@ -214,7 +196,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .put("/api/v1/books/book-missing")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({ title: "Nuevo título" });
 
     expect(response.status).toBe(404);
@@ -224,7 +206,7 @@ describe("HTTP integration: contract + auth + errors", () => {
   it("returns 400 for invalid update payload with unknown fields", async () => {
     const response = await request(app)
       .put("/api/v1/books/book-1")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({ foo: "bar" });
 
     expect(response.status).toBe(400);
@@ -239,11 +221,11 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const okResponse = await request(app)
       .delete("/api/v1/books/book-1")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     const notFoundResponse = await request(app)
       .delete("/api/v1/books/book-missing")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(okResponse.status).toBe(200);
     expect(okResponse.body.data).toMatchObject({ id: "book-1" });
@@ -254,7 +236,7 @@ describe("HTTP integration: contract + auth + errors", () => {
   it("returns 400 for invalid reading session payload", async () => {
     const response = await request(app)
       .post("/api/v1/reading-sessions")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         bookId: "book-1",
         currentPage: "twenty"
@@ -269,7 +251,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .post("/api/v1/reading-sessions")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         bookId: "book-missing",
         currentPage: 20
@@ -295,7 +277,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .post("/api/v1/reading-sessions")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         bookId: "book-1",
         previousPage: 10,
@@ -315,7 +297,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .delete("/api/v1/reading-sessions/session-unknown")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(response.status).toBe(404);
     expect(response.body.code).toBe("SESSION_NOT_FOUND");
@@ -326,7 +308,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .get("/api/v1/reading-sessions")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(response.status).toBe(500);
     expect(response.body).toMatchObject({
@@ -337,7 +319,7 @@ describe("HTTP integration: contract + auth + errors", () => {
   it("returns 400 for invalid wishlist create payload", async () => {
     const response = await request(app)
       .post("/api/v1/wishlist")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         title: "",
         author: "Autor"
@@ -358,7 +340,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .get("/api/v1/billing/status")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({
@@ -376,7 +358,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .post("/api/v1/billing/create-payment-intent")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({
@@ -412,10 +394,10 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const listResponse = await request(app)
       .get("/api/v1/wishlist")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
     const acquisitionsResponse = await request(app)
       .get("/api/v1/wishlist/acquisitions")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(listResponse.status).toBe(200);
     expect(listResponse.body.data[0]).toMatchObject({ id: "wish-1" });
@@ -437,7 +419,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .post("/api/v1/wishlist")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         title: "The Hobbit",
         author: "Tolkien",
@@ -456,7 +438,7 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const response = await request(app)
       .put("/api/v1/wishlist/missing")
-      .set("Authorization", `Bearer ${buildToken()}`)
+      .set("Authorization", AUTH)
       .send({
         title: "Title",
         author: "Author",
@@ -482,10 +464,10 @@ describe("HTTP integration: contract + auth + errors", () => {
 
     const okResponse = await request(app)
       .post("/api/v1/wishlist/wish-1/purchase")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
     const missingResponse = await request(app)
       .post("/api/v1/wishlist/missing/purchase")
-      .set("Authorization", `Bearer ${buildToken()}`);
+      .set("Authorization", AUTH);
 
     expect(okResponse.status).toBe(200);
     expect(okResponse.body.data.id).toBe("acq-1");

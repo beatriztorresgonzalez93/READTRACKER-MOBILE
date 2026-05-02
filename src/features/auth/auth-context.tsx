@@ -1,24 +1,21 @@
-// Gestiona sesion, usuario autenticado y acciones de autenticacion.
+// Gestiona sesión Firebase Auth y perfil de usuario desde la API.
 import * as SecureStore from "expo-secure-store";
+import {
+  createUserWithEmailAndPassword,
+  onIdTokenChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  type User as FirebaseUser
+} from "firebase/auth";
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
-import {
-  getMe,
-  login as apiLogin,
-  register as apiRegister,
-  updateMe as apiUpdateMe,
-} from "@/shared/api/auth-api";
+import { getFirebaseAuth } from "@/shared/config/firebase";
+import { getMe as apiGetMe, updateMe as apiUpdateMe } from "@/shared/api/auth-api";
 import type { LoginPayload, RegisterPayload, User } from "@/shared/types/auth";
 
 const TOKEN_KEY = "readtracker_auth_token";
-
-async function getStoredToken(): Promise<string | null> {
-  if (Platform.OS === "web") {
-    return globalThis.localStorage?.getItem(TOKEN_KEY) ?? null;
-  }
-  return SecureStore.getItemAsync(TOKEN_KEY);
-}
 
 async function setStoredToken(token: string): Promise<void> {
   if (Platform.OS === "web") {
@@ -59,38 +56,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
-  const bootstrap = useCallback(async () => {
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
     try {
-      const storedToken = await getStoredToken();
-      if (!storedToken) return;
-      const me = await getMe(storedToken);
-      setToken(storedToken);
-      setUser(me);
+      const auth = getFirebaseAuth();
+      unsubscribe = onIdTokenChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+        try {
+          if (!firebaseUser) {
+            await clearStoredToken();
+            setToken(null);
+            setUser(null);
+            return;
+          }
+          const idToken = await firebaseUser.getIdToken();
+          await setStoredToken(idToken);
+          setToken(idToken);
+          const me = await apiGetMe(idToken);
+          setUser(me);
+        } catch {
+          await clearStoredToken();
+          setToken(null);
+          setUser(null);
+        } finally {
+          setIsBootstrapping(false);
+        }
+      });
     } catch {
-      await clearStoredToken();
-      setToken(null);
-      setUser(null);
-    } finally {
       setIsBootstrapping(false);
     }
+    return () => unsubscribe?.();
   }, []);
 
-  useEffect(() => {
-    void bootstrap();
-  }, [bootstrap]);
-
   const login = useCallback(async (payload: LoginPayload) => {
-    const response = await apiLogin(payload);
-    await setStoredToken(response.token);
-    setToken(response.token);
-    setUser(response.user);
+    const auth = getFirebaseAuth();
+    await signInWithEmailAndPassword(auth, payload.email, payload.password);
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
-    const response = await apiRegister(payload);
-    await setStoredToken(response.token);
-    setToken(response.token);
-    setUser(response.user);
+    const auth = getFirebaseAuth();
+    const cred = await createUserWithEmailAndPassword(auth, payload.email, payload.password);
+    await updateProfile(cred.user, { displayName: payload.name });
   }, []);
 
   const updateUserProfile = useCallback(
@@ -100,12 +105,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastName?: string;
       avatarUrl?: string | null;
     }) => {
-      if (!token || !user) {
+      const auth = getFirebaseAuth();
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser || !user) {
         throw new Error("Sesion no disponible.");
       }
 
       try {
-        const updated = await apiUpdateMe(token, payload);
+        const idToken = await firebaseUser.getIdToken();
+        const updated = await apiUpdateMe(idToken, payload);
         setUser((prev) => {
           const base = { ...(prev ?? user), ...updated };
           return {
@@ -113,18 +121,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ...(payload.firstName !== undefined ? { firstName: payload.firstName } : {}),
             ...(payload.lastName !== undefined ? { lastName: payload.lastName } : {}),
             ...(payload.name !== undefined ? { name: payload.name } : {}),
-            ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {}),
+            ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {})
           };
         });
+        setToken(idToken);
       } catch {
-        // If backend profile endpoint is unavailable, keep UX functional locally.
         setUser((prev) => ({ ...(prev ?? user), ...payload }));
       }
     },
-    [token, user],
+    [user]
   );
 
   const logout = useCallback(async () => {
+    try {
+      const auth = getFirebaseAuth();
+      await signOut(auth);
+    } catch {
+      /* ignore */
+    }
     await clearStoredToken();
     setToken(null);
     setUser(null);
@@ -139,11 +153,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       updateUserProfile,
-      logout,
+      logout
     }),
-    [token, user, isBootstrapping, login, register, updateUserProfile, logout],
+    [token, user, isBootstrapping, login, register, updateUserProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-

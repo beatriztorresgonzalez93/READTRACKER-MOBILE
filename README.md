@@ -27,14 +27,14 @@ Como usuario, puedes:
 - Expo Router para navegacion por rutas
 - React Query para estado remoto
 - Zustand para estado local/persistente
-- Expo Secure Store para JWT
+- Firebase Auth (sesión en cliente) + ID token hacia la API
 
 ## Funcionalidades implementadas
 
 - **Autenticacion**
-  - Login y registro
-  - Persistencia segura de sesion
-  - Restauracion de usuario con `GET /auth/me`
+  - Login y registro con **Firebase Auth** (email/contraseña)
+  - La API valida **ID tokens de Firebase** (Firebase Admin en el servidor)
+  - Persistencia de sesión Firebase + perfil con `GET /auth/me`
 - **Biblioteca**
   - Listado paginado de libros
   - Busqueda y filtros
@@ -87,6 +87,10 @@ EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 EXPO_PUBLIC_WEB_APP_ORIGIN=https://tu-app.vercel.app
 EXPO_PUBLIC_PRO_TRIAL_DAYS=30
 ```
+
+Rellena las variables **Firebase** del `.env` según `.env.example` (necesarias para login/registro).
+
+En **servidor** (`server/.env`): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (cuenta de servicio), más `DATABASE_URL` y Stripe.
 
 ### Stripe (modo prueba)
 
