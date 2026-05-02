@@ -1,7 +1,6 @@
 // Panel de estadisticas de lectura y progreso global.
 import { Ionicons } from "@expo/vector-icons";
 import {
-    Pressable,
     ScrollView,
     StyleSheet,
     Text,
