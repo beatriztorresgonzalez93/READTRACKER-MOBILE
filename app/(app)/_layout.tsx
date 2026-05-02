@@ -32,6 +32,16 @@ export default function ProtectedLayout() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
+        name="upgrade"
+        options={{
+          title: "",
+          headerShown: true,
+          headerTransparent: false,
+          headerShadowVisible: false,
+          header: () => <ScriptoriumHeader showBackButton />,
+        }}
+      />
+      <Stack.Screen
         name="profile"
         options={{
           headerShown: false,

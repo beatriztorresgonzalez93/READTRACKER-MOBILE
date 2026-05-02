@@ -1,10 +1,12 @@
 // Pantalla de inicio de sesion con validacion de formulario.
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { Screen } from "@/shared/ui/screen";
@@ -74,6 +76,23 @@ export default function LoginScreen() {
       color: theme.colors.primary,
       fontWeight: "700",
     },
+    trialBanner: {
+      flexDirection: "row",
+      gap: 10,
+      alignItems: "flex-start",
+      padding: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.bgSoft,
+      marginBottom: 4,
+    },
+    trialBannerText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 21,
+      color: theme.colors.text,
+    },
   });
 
   return (
@@ -85,6 +104,10 @@ export default function LoginScreen() {
         <View style={styles.wrapper}>
           <Text style={styles.title}>Scriptorium</Text>
           <Text style={styles.subtitle}>Inicia sesión para ver tu biblioteca</Text>
+          <View style={styles.trialBanner} accessibilityRole="text">
+            <Ionicons name="gift-outline" size={22} color={theme.colors.primary} />
+            <Text style={styles.trialBannerText}>{subscriptionCopy.trialLead}</Text>
+          </View>
           <AppInput
             label="Correo"
             value={email}

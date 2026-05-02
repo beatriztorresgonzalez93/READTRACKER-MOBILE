@@ -6,6 +6,7 @@ import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { useBillingStatus } from "@/features/billing/use-billing";
 import { theme } from "@/shared/ui/theme";
 
 export type ScriptoriumHeaderProps = {
@@ -16,7 +17,33 @@ export type ScriptoriumHeaderProps = {
 export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderProps) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const billing = useBillingStatus();
   const avatarUri = user?.avatarUrl?.trim() ? user.avatarUrl : null;
+
+  const proChip =
+    billing.status === "success" && billing.data ? (
+      <Pressable
+        onPress={() => router.push("/upgrade")}
+        style={[
+          styles.proChip,
+          billing.data.needsPayment ? styles.proChipUrgent : null,
+          billing.data.isPro ? styles.proChipActive : null,
+        ]}
+        hitSlop={8}
+        accessibilityLabel="Plan Pro: trial y pago"
+      >
+        <Text style={styles.proChipText} numberOfLines={1}>
+          {billing.data.isPro
+            ? "Pro"
+            : billing.data.needsPayment
+              ? "Activar"
+              : billing.data.trialActive
+                ? "Prueba"
+                : "Pro"}
+        </Text>
+      </Pressable>
+    ) : null;
+
   return (
     <View style={[styles.root, { paddingTop: insets.top + 6 }]}>
       <View style={styles.inner}>
@@ -31,6 +58,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
           <Text style={styles.subtitle}>✦ BIBLIOTECA PERSONAL ✦</Text>
         </View>
         <View style={styles.right}>
+          {proChip}
           <Link href={"/(app)/profile" as never} asChild>
             <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Perfil">
               {avatarUri ? (
@@ -107,7 +135,31 @@ const styles = StyleSheet.create({
   right: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    flexShrink: 0,
+  },
+  proChip: {
+    maxWidth: Platform.OS === "web" ? 120 : 96,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.textSoft,
+    backgroundColor: theme.colors.card,
+  },
+  proChipUrgent: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.bgSoft,
+  },
+  proChipActive: {
+    borderColor: theme.colors.accent,
+    backgroundColor: theme.colors.bgSoft,
+  },
+  proChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.colors.text,
+    textAlign: "center",
   },
   iconBtn: {
     padding: 4,

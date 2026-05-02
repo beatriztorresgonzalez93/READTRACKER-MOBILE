@@ -80,6 +80,8 @@ cp .env.example .env
 ```env
 EXPO_PUBLIC_API_BASE_URL=https://readtracker-api.onrender.com/api/v1
 EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+EXPO_PUBLIC_WEB_APP_ORIGIN=https://tu-app.vercel.app
+EXPO_PUBLIC_PRO_TRIAL_DAYS=30
 ```
 
 ### Stripe (modo prueba)
@@ -87,6 +89,7 @@ EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 - El backend debe tener `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`.
 - La app usa `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` para mostrar el checkout en web.
 - Flujo actual Pro: trial gratis y luego pago único para desbloquear estadísticas Pro.
+- En **móvil**, el botón de pago abre el navegador en `/upgrade` de tu web; define `EXPO_PUBLIC_WEB_APP_ORIGIN` con la URL de Vercel (sin `/` final).
 
 ## Ejecutar la app
 
