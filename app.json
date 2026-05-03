@@ -42,7 +42,13 @@
       ],
       "expo-secure-store",
       "@react-native-community/datetimepicker",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ReadTracker necesita acceso a tus fotos para subir portadas de libros."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,

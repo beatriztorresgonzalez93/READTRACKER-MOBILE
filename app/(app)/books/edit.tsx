@@ -18,12 +18,14 @@ import {
   useBookDetail,
   useUpdateBook,
 } from "@/features/books/use-books";
+import { useAuth } from "@/features/auth/use-auth";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { pickImageAndUploadBookCover } from "@/shared/lib/upload-book-cover";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 const editBookSchema = z.object({
@@ -44,6 +46,7 @@ const editBookSchema = z.object({
 
 export default function EditBookScreen() {
   const appTheme = useAppTheme();
+  const { token } = useAuth();
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id ?? "";
   const detail = useBookDetail(bookId);
@@ -59,6 +62,7 @@ export default function EditBookScreen() {
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [selectedCoverUrl, setSelectedCoverUrl] = useState("");
   const [isSearchingCover, setIsSearchingCover] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const hydratedBookIdRef = useRef<string | null>(null);
   const formScrollRef = useRef<ScrollView>(null);
   const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
@@ -136,6 +140,26 @@ export default function EditBookScreen() {
       Alert.alert("No se pudo buscar portada", (error as Error).message);
     } finally {
       setIsSearchingCover(false);
+    }
+  }
+
+  async function onUploadCover() {
+    if (!token) {
+      Alert.alert("Sesión", "Inicia sesión para subir una portada.");
+      return;
+    }
+    try {
+      setIsUploadingCover(true);
+      const publicUrl = await pickImageAndUploadBookCover(token);
+      const merged = [publicUrl, ...coverOptions.filter((u) => u !== publicUrl)];
+      setCoverOptions(merged);
+      setSelectedCoverUrl(publicUrl);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo subir la imagen";
+      if (message === "Selección cancelada") return;
+      Alert.alert("Subida de portada", message);
+    } finally {
+      setIsUploadingCover(false);
     }
   }
 
@@ -273,19 +297,36 @@ export default function EditBookScreen() {
           placeholder="Ej: Planeta"
         />
         <Text style={styles.coverHelp}>
-          La portada se busca automáticamente por título y autor.
+          Busca una portada online o sube una imagen (el servidor genera acceso seguro a almacenamiento S3).
         </Text>
-        <Pressable
-          onPress={onSearchCover}
-          style={({ pressed }) => [
-            styles.coverSearchBtn,
-            pressed && styles.coverSearchBtnPressed,
-          ]}
-        >
-          <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
-            {isSearchingCover ? "Buscando portada..." : "Buscar portada"}
-          </Text>
-        </Pressable>
+        <View style={styles.coverActionsRow}>
+          <Pressable
+            onPress={onUploadCover}
+            disabled={isUploadingCover || isSearchingCover}
+            style={({ pressed }) => [
+              styles.coverActionBtn,
+              pressed && styles.coverSearchBtnPressed,
+              (isUploadingCover || isSearchingCover) && styles.coverActionBtnDisabled,
+            ]}
+          >
+            <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
+              {isUploadingCover ? "Subiendo..." : "Subir imagen"}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={onSearchCover}
+            disabled={isUploadingCover || isSearchingCover}
+            style={({ pressed }) => [
+              styles.coverActionBtn,
+              pressed && styles.coverSearchBtnPressed,
+              (isUploadingCover || isSearchingCover) && styles.coverActionBtnDisabled,
+            ]}
+          >
+            <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
+              {isSearchingCover ? "Buscando..." : "Buscar online"}
+            </Text>
+          </Pressable>
+        </View>
         {coverOptions.length > 0 ? (
           <View style={styles.coverPickerBlock}>
             <Text style={[styles.coverPickerLabel, { color: appTheme.colors.textOnDark }]}>Elige una portada</Text>
@@ -362,13 +403,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontFamily: "Fraunces_400Regular",
   },
-  coverSearchBtn: {
+  coverActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  coverActionBtn: {
+    flex: 1,
+    minWidth: 0,
     borderWidth: 1,
     borderColor: theme.colors.accent,
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
+  },
+  coverActionBtnDisabled: {
+    opacity: 0.55,
   },
   coverSearchBtnPressed: {
     opacity: 0.85,

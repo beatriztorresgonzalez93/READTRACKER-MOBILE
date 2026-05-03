@@ -78,8 +78,22 @@ export const env = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   stripeCurrency: (process.env.STRIPE_CURRENCY ?? "eur").toLowerCase(),
   proOneTimePriceCents: parseNumber(process.env.PRO_ONE_TIME_PRICE_CENTS, 1999),
-  proTrialDays: parseNumber(process.env.PRO_TRIAL_DAYS, 30)
+  proTrialDays: parseNumber(process.env.PRO_TRIAL_DAYS, 30),
+  /** S3: subida de portadas (presign). Opcional; si falta, POST /uploads/cover responde 503. */
+  awsRegion: (process.env.AWS_REGION ?? "").trim(),
+  s3Bucket: (process.env.S3_BUCKET ?? process.env.AWS_S3_BUCKET ?? "").trim(),
+  awsAccessKeyId: (process.env.AWS_ACCESS_KEY_ID ?? "").trim(),
+  awsSecretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY ?? "").trim()
 };
+
+export function isS3UploadsConfigured(): boolean {
+  return Boolean(
+    env.awsRegion &&
+      env.s3Bucket &&
+      env.awsAccessKeyId &&
+      env.awsSecretAccessKey
+  );
+}
 
 if (env.isProduction) {
   // Protección extra: bloquear configuración de CORS apuntando solo a localhost.
