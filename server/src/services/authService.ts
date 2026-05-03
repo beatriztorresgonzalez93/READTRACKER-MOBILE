@@ -26,13 +26,8 @@ export class AuthService {
 
     const existingRow = await this.usersRepository.findIdAndFirebaseUidByEmailNormalized(emailRaw);
     if (existingRow) {
-      const linked = await this.usersRepository.tryLinkFirebaseUid(existingRow.id, uid);
-      if (linked) {
-        return existingRow.id;
-      }
-      throw new Error(
-        "Ese email ya está enlazado a otra cuenta de Firebase. Inicia sesión con esa cuenta o contacta soporte."
-      );
+      await this.usersRepository.setFirebaseUid(existingRow.id, uid);
+      return existingRow.id;
     }
 
     const nameFromToken = (decoded.name ?? emailRaw.split("@")[0] ?? "Usuario").trim() || "Usuario";

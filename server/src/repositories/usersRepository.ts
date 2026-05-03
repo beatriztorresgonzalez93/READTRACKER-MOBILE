@@ -68,23 +68,11 @@ export class UsersRepository {
   }
 
   /**
-   * Enlaza firebase_uid a una fila sin UID (migración JWT→Firebase) o confirma el mismo UID.
-   * Devuelve false si ya hay otro firebase_uid distinto (conflicto).
+   * Fija el UID de Firebase en el usuario local. Tras un login con ID token,
+   * Firebase ya verificó el email: sustituye UID antiguo o repara migración JWT.
    */
-  async tryLinkFirebaseUid(userId: string, firebaseUid: string): Promise<boolean> {
-    const result = await pool.query<{ id: string }>(
-      `UPDATE users
-       SET firebase_uid = $1
-       WHERE id = $2
-         AND (
-           firebase_uid IS NULL
-           OR TRIM(firebase_uid) = ''
-           OR firebase_uid = $1
-         )
-       RETURNING id`,
-      [firebaseUid, userId]
-    );
-    return Boolean(result.rows[0]);
+  async setFirebaseUid(userId: string, firebaseUid: string): Promise<void> {
+    await pool.query(`UPDATE users SET firebase_uid = $1 WHERE id = $2`, [firebaseUid, userId]);
   }
 
   async findByFirebaseUid(firebaseUid: string): Promise<AuthUser | null> {
