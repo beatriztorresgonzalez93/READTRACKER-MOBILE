@@ -553,7 +553,7 @@ export default function LibraryScreen() {
         keyExtractor={(item: { id: string }) => item.id}
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior={isWeb ? "never" : "automatic"}
         refreshControl={
           <RefreshControl
             refreshing={booksFeed.isRefetching}
@@ -562,7 +562,8 @@ export default function LibraryScreen() {
         }
         ListHeaderComponent={
           <View style={styles.listHeaderOuter}>
-            <View style={{ height: insets.top + 70 }} />
+            {/* Web: cabecera transparente — espacio manual. Nativo: el stack reserva altura del header. */}
+            <View style={{ height: isWeb ? insets.top + 72 : 0 }} />
             <View style={[styles.listHeader, isWeb && styles.listHeaderWeb]}>
               <StatsStrip
                 total={summary.data?.total ?? 0}
@@ -830,7 +831,10 @@ export default function LibraryScreen() {
               ) : null}
 
               <View style={styles.section}>
-                <Text variant="titleLarge" style={styles.sectionTitleStrong}>
+                <Text
+                  variant="titleLarge"
+                  style={[styles.sectionTitleStrong, { color: appTheme.colors.textOnDark }]}
+                >
                   Tus libros
                 </Text>
               </View>
@@ -1233,7 +1237,6 @@ const styles = StyleSheet.create({
   },
   sectionTitleStrong: {
     fontFamily: "Fraunces_700Bold",
-    color: theme.colors.text,
     letterSpacing: 0.2,
   },
   collectionListContent: {

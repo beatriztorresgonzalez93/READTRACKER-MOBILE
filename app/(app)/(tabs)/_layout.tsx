@@ -90,7 +90,8 @@ export default function AppTabsLayout() {
         name="index"
         options={{
           title: "Biblioteca",
-          headerTransparent: true,
+          // Solo web: cabecera flotante; en iOS/Android el contenido no debe solaparse con status bar ni header.
+          headerTransparent: isWeb,
           tabBarIcon: ({ color, size }) => <Ionicons name="library-outline" color={color} size={size} />,
         }}
       />
