@@ -1,12 +1,17 @@
 // E2E backend con DB real para validar flujo crítico de sesiones y progreso.
+import path from "path";
 import request from "supertest";
+import dotenv from "dotenv";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+/** Cargar server/.env antes de leer DATABASE_URL (Vitest no lo inyecta solo). */
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 vi.mock("../src/config/firebaseAdmin", () => ({
   verifyFirebaseIdToken: vi.fn()
 }));
 
-const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
 const describeDb = hasDatabaseUrl ? describe : describe.skip;
 
 describeDb("HTTP E2E with real database", () => {
