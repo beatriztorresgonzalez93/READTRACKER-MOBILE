@@ -4,6 +4,8 @@ import { FirebaseError } from "firebase/app";
 export function formatFirebaseAuthError(error: unknown): string {
   if (error instanceof FirebaseError) {
     switch (error.code) {
+      case "auth/operation-not-allowed":
+        return "El proveedor Correo/contraseña no está activado en Firebase. Consola Firebase → Authentication → Sign-in method.";
       case "auth/email-already-in-use":
         return "Ese correo ya está registrado en Firebase. Inicia sesión o usa otro correo.";
       case "auth/invalid-email":

@@ -33,13 +33,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!response.ok) {
     const fallback = `Request failed with status ${response.status}`;
+    const raw = await response.text();
+    let parsed: ApiErrorBody | null = null;
     try {
-      const payload = (await response.json()) as ApiErrorBody;
-      throw new Error(payload.message ?? payload.error ?? fallback);
+      parsed = raw.trim() ? (JSON.parse(raw) as ApiErrorBody) : null;
     } catch {
-      const errorText = await response.text();
-      throw new Error(errorText || fallback);
+      /* cuerpo no JSON */
     }
+    const message = parsed?.message ?? parsed?.error ?? (raw.trim() ? raw.slice(0, 500) : fallback);
+    throw new Error(message || fallback);
   }
 
   if (response.status === 204) {
