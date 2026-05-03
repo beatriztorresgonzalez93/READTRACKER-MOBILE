@@ -24,10 +24,14 @@ export class AuthService {
       return existingUid.id;
     }
 
-    const existingEmail = await this.usersRepository.findByEmail(emailRaw);
-    if (existingEmail) {
+    const existingRow = await this.usersRepository.findIdAndFirebaseUidByEmailNormalized(emailRaw);
+    if (existingRow) {
+      const linked = await this.usersRepository.tryLinkFirebaseUid(existingRow.id, uid);
+      if (linked) {
+        return existingRow.id;
+      }
       throw new Error(
-        "Ya existe una cuenta local con ese email. Usa la misma cuenta de Firebase o contacta soporte."
+        "Ese email ya está enlazado a otra cuenta de Firebase. Inicia sesión con esa cuenta o contacta soporte."
       );
     }
 
