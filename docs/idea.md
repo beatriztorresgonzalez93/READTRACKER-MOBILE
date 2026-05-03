@@ -1,8 +1,8 @@
-# Idea del proyecto: NoteFlow
+# Idea del proyecto: ReadTracker (Scriptorium)
 
 ## Problema que resuelve
 
-Muchos lectores anotan ideas, progreso y pendientes en apps distintas (notas, listas de deseos, historial), lo que fragmenta su flujo y dificulta mantener el habito de lectura. NoteFlow centraliza en una sola app movil el registro de lecturas, la gestion de libros pendientes y el seguimiento del progreso para que el usuario tenga trazabilidad completa de su vida lectora.
+Muchos lectores anotan ideas, progreso y pendientes en apps distintas (notas, listas de deseos, historial), lo que fragmenta su flujo y dificulta mantener el habito de lectura. ReadTracker centraliza en una sola app el registro de lecturas, la gestion de libros pendientes y el seguimiento del progreso para que el usuario tenga trazabilidad completa de su vida lectora (app nativa **y** web Expo contra la misma API).
 
 ## Usuario objetivo y uso en el dia a dia
 
@@ -17,12 +17,14 @@ Uso diario esperado:
 
 ## Funcionalidades principales (MVP)
 
-- Autenticacion: registro, login y persistencia segura de sesion.
-- Biblioteca personal: listado de libros y vista de detalle.
+- Autenticacion con **Firebase Auth** (email/contrasena); la API valida **ID tokens** con Firebase Admin.
+- Biblioteca personal: listado (paginado), busqueda, filtros y vista de detalle; alta y edicion de libro.
+- Portadas: **busqueda online** via API (`GET /covers/search`, Open Library + Google Books en servidor); **subida opcional** a **AWS S3** con URL firmada tras autenticacion Firebase.
 - Registro de sesiones de lectura y actualizacion de progreso.
 - Historial de lectura por fechas/sesiones.
 - Wishlist con creacion, edicion, eliminacion y marcado como comprado.
 - Estadisticas basicas de lectura (sesiones, paginas, rachas, promedios).
+- Modelo **Scriptorium Pro**: prueba gratuita + pago unico con **Stripe** (Payment Intent + webhook) para desbloquear la app de forma permanente para esa cuenta.
 
 ## Funcionalidades opcionales (futuras)
 
@@ -31,4 +33,4 @@ Uso diario esperado:
 - Recomendaciones de libros basadas en historial.
 - Sincronizacion multi-dispositivo con modo offline-first.
 - Exportacion de reportes de lectura (PDF/CSV).
-- Integraciones con catalogos externos (Google Books/Open Library).
+- Catalogos externos mas profundos (metadatos automaticos al escanear ISBN, mas fuentes, etc.; la busqueda basica de portadas ya esta cubierta por la API).

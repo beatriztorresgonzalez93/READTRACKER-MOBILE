@@ -29,7 +29,7 @@ Por eso, cuando el proyecto necesita modulos nativos avanzados o configuraciones
 
 ## Sistemas de diseno
 
-Para NoteFlow se elige **React Native Paper** como sistema de diseno principal.
+Para ReadTracker / Scriptorium se elige **React Native Paper** como sistema de diseno principal.
 
 Justificacion:
 

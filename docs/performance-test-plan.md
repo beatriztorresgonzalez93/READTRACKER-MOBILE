@@ -24,6 +24,11 @@ Validar que la app mantiene buena fluidez con listas grandes (50+ items) y que e
    - Scroll vertical completo varias veces.
    - Esperado: animaciones fluidas al cargar/filtrar.
 
+## Alta/edición de libro (opcional)
+1. Pantalla nueva/edición con lista de resultados de portadas y scroll.
+2. En **web**, escribir en titulo/autor y comprobar que la capitalizacion configurable (`AppInput`) se comporta como en nativo.
+3. Esperado: sin tirones al abrir modal de portadas ni al hacer scroll en grid de resultados.
+
 ## Casos de tema claro/oscuro
 1. Cambiar tema del sistema (claro/oscuro) y relanzar pantalla activa.
 2. Revisar contraste en:

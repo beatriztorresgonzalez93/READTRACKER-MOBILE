@@ -1,10 +1,12 @@
 # Gestion del proyecto
 
+El codigo vive en el repo **READTRACKER-MOBILE**; el estado de CI (`lint`, `typecheck`, tests) se ve en el badge del `README.md` raiz (GitHub Actions).
+
 ## Enlace al tablero de Trello
 
 - Tablero: [Anadir enlace de Trello aqui](https://trello.com/)
 
-> Nota: sustituir el enlace por la URL real del tablero antes de la entrega.
+> Nota: sustituir el enlace por la URL real del tablero cuando lo uses para coordinacion.
 
 ## Como se esta gestionando el trabajo
 

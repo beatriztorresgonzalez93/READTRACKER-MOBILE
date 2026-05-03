@@ -6,11 +6,11 @@
 > Si aparece en verde, la ultima ejecucion fue correcta. Si aparece en rojo, alguna validacion fallo.
 > Puedes hacer clic en el badge para ver el detalle de cada ejecucion.
 
-Aplicacion movil de ReadTracker construida con React Native + Expo y conectada a la API del proyecto web.
+Aplicacion **ReadTracker / Scriptorium** en React Native + Expo: misma API backend para **app nativa**, **Expo Web** (p. ej. Vercel) y flujo Pro unificado.
 
 ## Que es esta app y para que sirve
 
-ReadTracker Mobile es una app para llevar tu lectura al dia de forma simple.
+ReadTracker es una app para llevar tu lectura al dia de forma simple.
 Te ayuda a organizar tus libros, recordar por que pagina vas y ver tu progreso con el tiempo.
 
 Como usuario, puedes:
@@ -27,7 +27,11 @@ Como usuario, puedes:
 - Expo Router para navegacion por rutas
 - React Query para estado remoto
 - Zustand para estado local/persistente
-- Firebase Auth (sesión en cliente) + ID token hacia la API
+- React Native Paper (componentes MD3)
+- **Firebase Auth** (cliente) + **Firebase Admin** en la API (validación de ID token)
+- **PostgreSQL** (p. ej. Neon) para datos de usuario, libros, sesiones, wishlist y facturación
+- **Stripe** (Payment Intent + webhook) para activar **Scriptorium Pro**
+- **AWS S3** (opcional): subida de portadas con **URL firmada** (`PUT` directo al bucket tras validar Firebase en la API)
 
 ## Funcionalidades implementadas
 
@@ -54,6 +58,12 @@ Como usuario, puedes:
   - Periodo de prueba gratuita con acceso completo a la app (`EXPO_PUBLIC_PRO_TRIAL_DAYS`)
   - Tras la prueba: un solo pago activa **Scriptorium Pro** de forma permanente para esa cuenta (sin cuota mensual), con acceso a **toda la app**
   - Si la prueba termina sin pago, la navegacion principal queda bloqueada hasta activar Pro; siguen disponibles la pantalla **Upgrade** y el **perfil** (p. ej. para cerrar sesion)
+- **Libros: portadas**
+  - **Buscar online**: la app llama a `GET /api/v1/covers/search` (servidor usa Open Library y Google Books con `User-Agent` adecuado); evita llamadas directas desde el navegador que suelen fallar (CORS / 503).
+  - **Subir imagen**: `POST /api/v1/uploads/cover` (Bearer = ID token Firebase) devuelve URL firmada para `PUT` a **S3**; la URL publica del objeto se guarda como `coverUrl`. En **web**, el bucket debe tener **CORS** que permita `PUT` desde el origen de Vercel (ver `server/.env.example`).
+- **Formularios (titulo, autor, etc.)**
+  - En **nativo**, `autoCapitalize` lo aplica el teclado.
+  - En **web**, `AppInput` aplica una normalización JS (`apply-web-autocapitalize`) porque los navegadores de escritorio ignoran en la práctica esa pista.
 
 ## Estructura principal
 
@@ -61,8 +71,11 @@ Como usuario, puedes:
   - `app/(auth)/`: login y registro
   - `app/(app)/(tabs)/`: biblioteca, historial, stats, wishlist, perfil
   - `app/(app)/books/[id].tsx`: detalle del libro
+  - `app/(app)/books/new.tsx`, `edit.tsx`: alta y edición de libro
 - `src/features/`: modulos por dominio
 - `src/shared/`: API client, hooks y UI compartida
+- `server/`: API Express (TypeScript), migraciones SQL, Vitest
+- `docs/`: idea de producto, planes de prueba, borrador legal Pro (ver abajo)
 - `e2e/`: flows de Maestro
 
 ## Instalacion y configuracion
@@ -90,7 +103,20 @@ EXPO_PUBLIC_PRO_TRIAL_DAYS=30
 
 Rellena las variables **Firebase** del `.env` según `.env.example` (necesarias para login/registro).
 
-En **servidor** (`server/.env`): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (cuenta de servicio), más `DATABASE_URL` y Stripe.
+En **servidor** (`server/.env`; copia desde `server/.env.example`):
+
+- **Obligatorias en producción:** Firebase Admin, `DATABASE_URL`, orígenes CORS (`CLIENT_ORIGIN` o `CLIENT_ORIGINS`), Stripe si usas cobros.
+- **Opcional — subida de portadas S3:** `AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Sin ellas, `POST /uploads/cover` responde 503 y solo funcionan portadas por URL externa / búsqueda online.
+
+### Donde va cada secreto (dos frontends, un backend)
+
+| Secreto / variable | ¿Render (API)? | ¿Vercel (web estática)? |
+|-------------------|----------------|-------------------------|
+| `DATABASE_URL`, Firebase Admin, Stripe **secret**, webhook | Sí | No |
+| Claves **AWS** S3 | Sí | **No** (nunca en el cliente) |
+| `EXPO_PUBLIC_*` (API URL, Firebase web, Stripe **publishable**) | No | Sí |
+
+Si tienes **dos dominios web** (p. ej. Vercel producción + otro), incluye **ambos** en `CLIENT_ORIGINS` (API) y en **CORS del bucket S3** (`AllowedOrigins`) si usas subida de fotos desde la web.
 
 ### Stripe (modo prueba)
 
@@ -102,6 +128,17 @@ En **servidor** (`server/.env`): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`,
 ### Textos legales / condiciones
 
 No hay en este repo condiciones generales ni politica de privacidad definitivas: para produccion conviene publicar documentos revisados por asesoria juridica y enlazarlos desde registro, checkout y perfil. Como **referencia de producto** (borrador, sin valor legal) esta `docs/compra-pro-licencia-perpetua-borrador-es.md`.
+
+## Documentacion en `docs/`
+
+| Archivo | Contenido |
+|---------|-----------|
+| `idea.md` | Problema, usuario objetivo y alcance MVP del producto |
+| `project-management.md` | Enlace Trello y flujo Kanban sugerido |
+| `test-plan-production.md` | Prioridades de tests funcionales |
+| `performance-test-plan.md` | Listas grandes y contraste claro/oscuro |
+| `react-native-teoria.md` | Notas de contexto RN / Expo |
+| `compra-pro-licencia-perpetua-borrador-es.md` | Borrador comercial Pro (no legal) |
 
 ## Ejecutar la app
 
