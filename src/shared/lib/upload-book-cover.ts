@@ -35,7 +35,7 @@ export async function pickImageAndUploadBookCover(token: string): Promise<string
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ["images"],
     allowsEditing: true,
     aspect: [2, 3],
     quality: 0.85,
