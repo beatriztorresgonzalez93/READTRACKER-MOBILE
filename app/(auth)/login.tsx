@@ -2,8 +2,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -16,6 +17,17 @@ import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function LoginScreen() {
+  const scrollRef = useRef<ScrollView>(null);
+  const headerHeight = useHeaderHeight();
+
+  function scrollPasswordFieldIntoView() {
+    const scroll = () => scrollRef.current?.scrollToEnd({ animated: true });
+    requestAnimationFrame(() => {
+      scroll();
+      setTimeout(scroll, Platform.OS === "android" ? 120 : 60);
+      setTimeout(scroll, 280);
+    });
+  }
   const loginSchema = z.object({
     email: z.string().trim().email("Introduce un correo valido."),
     password: z.string().min(1, "La contraseña es obligatoria."),
@@ -67,10 +79,12 @@ export default function LoginScreen() {
   }
 
   const styles = StyleSheet.create({
-    wrapper: {
-      flex: 1,
-      justifyContent: "center",
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "flex-start",
       gap: 12,
+      paddingTop: 8,
+      paddingBottom: 160,
     },
     title: {
       fontWeight: "800",
@@ -131,9 +145,17 @@ export default function LoginScreen() {
     <Screen>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "android" ? "height" : "padding"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
       >
-        <View style={styles.wrapper}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled
+        >
           <Text style={styles.title}>Scriptorium</Text>
           <Text style={styles.subtitle}>Inicia sesión para ver tu biblioteca</Text>
           <View style={styles.trialBanner} accessibilityRole="text">
@@ -168,6 +190,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             placeholder="********"
             error={errors.password}
+            onFocus={scrollPasswordFieldIntoView}
           />
           <AppButton label={isSubmitting ? "Entrando..." : "Entrar"} onPress={onSubmit} disabled={isSubmitting} />
           <View style={styles.registerRow}>
@@ -176,7 +199,7 @@ export default function LoginScreen() {
               Registrate
             </Link>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );

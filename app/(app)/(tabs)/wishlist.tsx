@@ -362,10 +362,35 @@ export default function WishlistScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
-              <AppInput label="Título" value={title} onChangeText={setTitle} placeholder="Título" />
-              <AppInput label="Autor" value={author} onChangeText={setAuthor} placeholder="Autor" />
-              <AppInput label="Precio" value={price} onChangeText={setPrice} placeholder="ej: 19,90 EUR" keyboardType="decimal-pad" />
-              <AppInput label="Tienda" value={store} onChangeText={setStore} placeholder="ej: Casa del Libro, Amazon..." />
+              <AppInput
+                label="Título"
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Título"
+                autoCapitalize="sentences"
+              />
+              <AppInput
+                label="Autor"
+                value={author}
+                onChangeText={setAuthor}
+                placeholder="Autor"
+                autoCapitalize="words"
+              />
+              <AppInput
+                label="Precio"
+                value={price}
+                onChangeText={setPrice}
+                placeholder="ej: 19,90 EUR"
+                autoCapitalize="none"
+                keyboardType="decimal-pad"
+              />
+              <AppInput
+                label="Tienda"
+                value={store}
+                onChangeText={setStore}
+                placeholder="ej: Casa del Libro, Amazon..."
+                autoCapitalize="sentences"
+              />
               <Button
                 mode="outlined"
                 onPress={() => setPriorityModalOpen(true)}

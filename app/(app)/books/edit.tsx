@@ -219,6 +219,7 @@ export default function EditBookScreen() {
             setTitle(value);
             if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
           }}
+          autoCapitalize="sentences"
           placeholder="Ej: Alas de hierro"
           error={errors.title}
         />
@@ -229,6 +230,7 @@ export default function EditBookScreen() {
             setAuthor(value);
             if (errors.author) setErrors((prev) => ({ ...prev, author: undefined }));
           }}
+          autoCapitalize="words"
           placeholder="Ej: Rebecca Yarros"
           error={errors.author}
         />
@@ -239,6 +241,7 @@ export default function EditBookScreen() {
             setPages(value);
             if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
           }}
+          autoCapitalize="none"
           keyboardType="number-pad"
           placeholder="Ej: 520"
           error={errors.pages}
@@ -250,6 +253,7 @@ export default function EditBookScreen() {
             setPublishedYear(value);
             if (errors.publishedYear) setErrors((prev) => ({ ...prev, publishedYear: undefined }));
           }}
+          autoCapitalize="none"
           keyboardType="number-pad"
           placeholder="Ej: 2025"
           error={errors.publishedYear}
@@ -258,12 +262,14 @@ export default function EditBookScreen() {
           label="Género"
           value={genre}
           onChangeText={setGenre}
+          autoCapitalize="sentences"
           placeholder="Ej: Fantasia"
         />
         <AppInput
           label="Editorial"
           value={publisher}
           onChangeText={setPublisher}
+          autoCapitalize="sentences"
           placeholder="Ej: Planeta"
         />
         <Text style={styles.coverHelp}>
@@ -317,6 +323,7 @@ export default function EditBookScreen() {
           value={description}
           onChangeText={setDescription}
           onFocus={scrollFormToBottom}
+          autoCapitalize="sentences"
           placeholder="Resumen breve del libro"
           multiline
           numberOfLines={4}

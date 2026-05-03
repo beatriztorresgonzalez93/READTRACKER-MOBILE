@@ -607,7 +607,13 @@ export default function LibraryScreen() {
 
               {showFilters ? (
                 <View style={styles.filtersBlock}>
-                  <Text variant="labelMedium" style={styles.filterSectionLabel}>
+                  <Text
+                    variant="labelMedium"
+                    style={[
+                      styles.filterSectionLabel,
+                      { color: appTheme.colors.textMutedOnDark },
+                    ]}
+                  >
                     Estado en lista
                   </Text>
                   <ScrollView
@@ -621,21 +627,33 @@ export default function LibraryScreen() {
                         compact
                         selected={status === opt.key}
                         onPress={() => setStatus(opt.key)}
-                        style={[
-                          styles.filterChip,
-                          status === opt.key && styles.filterChipSelected,
+                        style={{
+                          backgroundColor:
+                            status === opt.key
+                              ? appTheme.colors.primary
+                              : appTheme.colors.bgPanel,
+                        }}
+                        textStyle={[
+                          styles.filterChipLabel,
+                          {
+                            color:
+                              status === opt.key
+                                ? appTheme.colors.onPrimary
+                                : appTheme.colors.textOnDark,
+                          },
                         ]}
-                        textStyle={
-                          status === opt.key
-                            ? styles.filterChipTextSelected
-                            : styles.filterChipText
-                        }
                       >
                         {opt.label}
                       </Chip>
                     ))}
                   </ScrollView>
-                  <Text variant="labelMedium" style={styles.filterSectionLabel}>
+                  <Text
+                    variant="labelMedium"
+                    style={[
+                      styles.filterSectionLabel,
+                      { color: appTheme.colors.textMutedOnDark },
+                    ]}
+                  >
                     Coleccion
                   </Text>
                   <ScrollView
@@ -649,15 +667,21 @@ export default function LibraryScreen() {
                         compact
                         selected={shelf === opt.key}
                         onPress={() => setShelf(opt.key)}
-                        style={[
-                          styles.filterChip,
-                          shelf === opt.key && styles.filterChipSelected,
+                        style={{
+                          backgroundColor:
+                            shelf === opt.key
+                              ? appTheme.colors.primary
+                              : appTheme.colors.bgPanel,
+                        }}
+                        textStyle={[
+                          styles.filterChipLabel,
+                          {
+                            color:
+                              shelf === opt.key
+                                ? appTheme.colors.onPrimary
+                                : appTheme.colors.textOnDark,
+                          },
                         ]}
-                        textStyle={
-                          shelf === opt.key
-                            ? styles.filterChipTextSelected
-                            : styles.filterChipText
-                        }
                       >
                         {opt.label}
                       </Chip>
@@ -667,9 +691,17 @@ export default function LibraryScreen() {
                     <Button
                       mode="outlined"
                       compact
+                      textColor={appTheme.colors.textOnDark}
                       onPress={() => setGenreModalOpen(true)}
-                      style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={styles.actionBtnLabel}
+                      style={[
+                        styles.actionBtn,
+                        styles.actionBtnHalf,
+                        { borderColor: appTheme.colors.accent },
+                      ]}
+                      labelStyle={[
+                        styles.actionBtnLabel,
+                        { color: appTheme.colors.textOnDark },
+                      ]}
                       contentStyle={styles.actionBtnContent}
                     >
                       Género:{" "}
@@ -682,9 +714,17 @@ export default function LibraryScreen() {
                     <Button
                       mode="outlined"
                       compact
+                      textColor={appTheme.colors.textOnDark}
                       onPress={() => setSortModalOpen(true)}
-                      style={[styles.actionBtn, styles.actionBtnHalf]}
-                      labelStyle={styles.actionBtnLabel}
+                      style={[
+                        styles.actionBtn,
+                        styles.actionBtnHalf,
+                        { borderColor: appTheme.colors.accent },
+                      ]}
+                      labelStyle={[
+                        styles.actionBtnLabel,
+                        { color: appTheme.colors.textOnDark },
+                      ]}
                       contentStyle={styles.actionBtnContent}
                     >
                       Orden: {SORT_LABELS[sort]}
@@ -1165,7 +1205,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   filterSectionLabel: {
-    color: theme.colors.textMutedOnDark,
     marginTop: 2,
   },
   chipRow: {
@@ -1174,20 +1213,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingRight: 4,
   },
-  filterChip: {
-    backgroundColor: theme.colors.bgPanel,
-  },
-  filterChipSelected: {
-    backgroundColor: theme.colors.primary,
-  },
-  filterChipText: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  filterChipTextSelected: {
-    color: theme.colors.onPrimary,
+  filterChipLabel: {
     fontFamily: "Fraunces_700Bold",
     fontSize: 12,
     lineHeight: 16,
@@ -1200,7 +1226,6 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
   },
   actionBtn: {
-    borderColor: theme.colors.accent,
     borderRadius: 999,
   },
   actionBtnHalf: {
@@ -1216,7 +1241,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     textTransform: "none",
-    color: theme.colors.text,
   },
   clearFiltersLabel: {
     fontSize: 12,
