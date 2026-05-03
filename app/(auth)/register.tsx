@@ -3,10 +3,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
+import { useAuthFormScroll } from "@/features/auth/use-auth-form-scroll";
 import { useAuth } from "@/features/auth/use-auth";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { formatFirebaseAuthError } from "@/shared/lib/firebase-auth-errors";
@@ -17,17 +18,9 @@ import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function RegisterScreen() {
-  const scrollRef = useRef<ScrollView>(null);
+  const { scrollRef, scrollPasswordFieldIntoView } = useAuthFormScroll();
   const headerHeight = useHeaderHeight();
 
-  function scrollPasswordFieldIntoView() {
-    const scroll = () => scrollRef.current?.scrollToEnd({ animated: true });
-    requestAnimationFrame(() => {
-      scroll();
-      setTimeout(scroll, Platform.OS === "android" ? 120 : 60);
-      setTimeout(scroll, 280);
-    });
-  }
   const registerSchema = z.object({
     name: z.string().trim().min(1, "El nombre es obligatorio."),
     email: z.string().trim().email("Introduce un correo valido."),

@@ -6,7 +6,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,19 +13,18 @@ import {
 } from "react-native";
 import { z } from "zod";
 
+import { useAuth } from "@/features/auth/use-auth";
+import { BookCoverPicker } from "@/features/books/book-cover-picker";
+import { useBookCoverField } from "@/features/books/use-book-cover-field";
 import {
   useBookDetail,
   useUpdateBook,
 } from "@/features/books/use-books";
-import { useAuth } from "@/features/auth/use-auth";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { AppLoader } from "@/shared/ui/app-loader";
-import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
-import { searchCoverCandidates } from "@/shared/api/covers-api";
-import { pickImageAndUploadBookCover } from "@/shared/lib/upload-book-cover";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 const editBookSchema = z.object({
@@ -62,8 +60,6 @@ export default function EditBookScreen() {
   const [description, setDescription] = useState("");
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [selectedCoverUrl, setSelectedCoverUrl] = useState("");
-  const [isSearchingCover, setIsSearchingCover] = useState(false);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const hydratedBookIdRef = useRef<string | null>(null);
   const formScrollRef = useRef<ScrollView>(null);
   const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
@@ -84,6 +80,17 @@ export default function EditBookScreen() {
     }, 120);
   }
 
+  const coverField = useBookCoverField({
+    token,
+    title,
+    author,
+    coverOptions,
+    setCoverOptions,
+    setSelectedCoverUrl,
+    onMissingTitleForCover: () =>
+      setErrors((prev) => ({ ...prev, title: "Escribe el título para buscar portada." })),
+  });
+
   useEffect(() => {
     const b = detail.data;
     if (!b) return;
@@ -100,49 +107,6 @@ export default function EditBookScreen() {
     setSelectedCoverUrl(b.coverUrl ?? "");
     setCoverOptions(b.coverUrl ? [b.coverUrl] : []);
   }, [detail.data]);
-
-  async function onSearchCover() {
-    if (!title.trim()) {
-      setErrors((prev) => ({ ...prev, title: "Escribe el título para buscar portada." }));
-      return;
-    }
-    try {
-      setIsSearchingCover(true);
-      const options = await searchCoverCandidates(title.trim(), author.trim() || undefined);
-      if (options.length === 0) {
-        Alert.alert("Sin portada", "No encontramos portada para ese libro.");
-        setCoverOptions([]);
-        setSelectedCoverUrl("");
-        return;
-      }
-      setCoverOptions(options);
-      setSelectedCoverUrl(options[0]);
-    } catch (error) {
-      Alert.alert("No se pudo buscar portada", (error as Error).message);
-    } finally {
-      setIsSearchingCover(false);
-    }
-  }
-
-  async function onUploadCover() {
-    if (!token) {
-      Alert.alert("Sesión", "Inicia sesión para subir una portada.");
-      return;
-    }
-    try {
-      setIsUploadingCover(true);
-      const publicUrl = await pickImageAndUploadBookCover(token);
-      const merged = [publicUrl, ...coverOptions.filter((u) => u !== publicUrl)];
-      setCoverOptions(merged);
-      setSelectedCoverUrl(publicUrl);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "No se pudo subir la imagen";
-      if (message === "Selección cancelada") return;
-      Alert.alert("Subida de portada", message);
-    } finally {
-      setIsUploadingCover(false);
-    }
-  }
 
   async function onSave() {
     const parsed = editBookSchema.safeParse({
@@ -277,69 +241,16 @@ export default function EditBookScreen() {
           autoCapitalize="sentences"
           placeholder="Ej: Planeta"
         />
-        <Text style={styles.coverHelp}>
-          Busca una portada online o sube una imagen (el servidor genera acceso seguro a almacenamiento S3).
-        </Text>
-        <View style={styles.coverActionsRow}>
-          <Pressable
-            onPress={onUploadCover}
-            disabled={isUploadingCover || isSearchingCover}
-            style={({ pressed }) => [
-              styles.coverActionBtn,
-              pressed && styles.coverSearchBtnPressed,
-              (isUploadingCover || isSearchingCover) && styles.coverActionBtnDisabled,
-            ]}
-          >
-            <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
-              {isUploadingCover ? "Subiendo..." : "Subir imagen"}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={onSearchCover}
-            disabled={isUploadingCover || isSearchingCover}
-            style={({ pressed }) => [
-              styles.coverActionBtn,
-              pressed && styles.coverSearchBtnPressed,
-              (isUploadingCover || isSearchingCover) && styles.coverActionBtnDisabled,
-            ]}
-          >
-            <Text style={[styles.coverSearchLabel, { color: appTheme.colors.textOnDark }]}>
-              {isSearchingCover ? "Buscando..." : "Buscar online"}
-            </Text>
-          </Pressable>
-        </View>
-        {coverOptions.length > 0 ? (
-          <View style={styles.coverPickerBlock}>
-            <Text style={[styles.coverPickerLabel, { color: appTheme.colors.textOnDark }]}>Elige una portada</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.coverOptionsRow}
-            >
-              {coverOptions.map((uri) => {
-                const active = uri === selectedCoverUrl;
-                return (
-                  <Pressable
-                    key={uri}
-                    style={[
-                      styles.coverOptionBtn,
-                      active && styles.coverOptionBtnActive,
-                    ]}
-                    onPress={() => setSelectedCoverUrl(uri)}
-                  >
-                    <BookCover
-                      uri={uri}
-                      width={88}
-                      aspectRatio={1.45}
-                      borderRadius={6}
-                      accessibilityLabel="Opcion de portada"
-                    />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        ) : null}
+        <BookCoverPicker
+          accentLabelColor={appTheme.colors.textOnDark}
+          coverOptions={coverOptions}
+          selectedCoverUrl={selectedCoverUrl}
+          onSelectCover={setSelectedCoverUrl}
+          isSearchingCover={coverField.isSearchingCover}
+          isUploadingCover={coverField.isUploadingCover}
+          onSearchCover={coverField.onSearchCover}
+          onUploadCover={coverField.onUploadCover}
+        />
         <AppInput
           label="Sinopsis"
           value={description}
@@ -383,58 +294,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textMutedOnDark,
     marginBottom: 4,
     fontFamily: "Fraunces_400Regular",
-  },
-  coverActionsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  coverActionBtn: {
-    flex: 1,
-    minWidth: 0,
-    borderWidth: 1,
-    borderColor: theme.colors.accent,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  coverActionBtnDisabled: {
-    opacity: 0.55,
-  },
-  coverSearchBtnPressed: {
-    opacity: 0.85,
-  },
-  coverSearchLabel: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_700Bold",
-  },
-  coverHelp: {
-    color: theme.colors.textMutedOnDark,
-    fontSize: 13,
-    marginTop: -2,
-    fontFamily: "Fraunces_400Regular",
-  },
-  coverPickerBlock: {
-    gap: 8,
-  },
-  coverPickerLabel: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 13,
-  },
-  coverOptionsRow: {
-    gap: 10,
-    paddingRight: 4,
-  },
-  coverOptionBtn: {
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "transparent",
-    padding: 2,
-  },
-  coverOptionBtnActive: {
-    borderColor: theme.colors.accent,
-    backgroundColor: "rgba(232, 204, 122, 0.12)",
   },
   multiline: {
     minHeight: 96,
