@@ -25,6 +25,7 @@ import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { searchCoverCandidates } from "@/shared/api/covers-api";
 import { pickImageAndUploadBookCover } from "@/shared/lib/upload-book-cover";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
@@ -107,27 +108,7 @@ export default function EditBookScreen() {
     }
     try {
       setIsSearchingCover(true);
-      const query = [title.trim(), author.trim()].filter(Boolean).join(" ");
-      const endpoint = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`;
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new Error(`Google Books ${response.status}`);
-      const payload = (await response.json()) as {
-        items?: {
-          volumeInfo?: {
-            imageLinks?: { thumbnail?: string; smallThumbnail?: string };
-          };
-        }[];
-      };
-      const options = (payload.items ?? [])
-        .map(
-          (item) =>
-            item.volumeInfo?.imageLinks?.thumbnail ??
-            item.volumeInfo?.imageLinks?.smallThumbnail,
-        )
-        .filter((img): img is string => Boolean(img))
-        .map((img) => img.replace("http://", "https://"))
-        .filter((img, idx, arr) => arr.indexOf(img) === idx)
-        .slice(0, 8);
+      const options = await searchCoverCandidates(title.trim(), author.trim() || undefined);
       if (options.length === 0) {
         Alert.alert("Sin portada", "No encontramos portada para ese libro.");
         setCoverOptions([]);
