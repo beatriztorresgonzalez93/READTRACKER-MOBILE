@@ -107,7 +107,19 @@ export default function ProfileSheetScreen() {
       <View style={styles.sheet}>
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>Tu ficha</Text>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Cerrar ficha">
+          <Pressable
+            onPress={() => {
+              if (router.canDismiss()) {
+                router.dismiss();
+              } else if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(app)/(tabs)" as never);
+              }
+            }}
+            hitSlop={12}
+            accessibilityLabel="Cerrar ficha"
+          >
             <Ionicons name="close" size={26} color={theme.colors.text} />
           </Pressable>
         </View>

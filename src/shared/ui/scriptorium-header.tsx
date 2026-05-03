@@ -50,7 +50,18 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
       <View style={styles.inner}>
         <View style={styles.row}>
         {showBackButton ? (
-          <Pressable onPress={() => router.back()} style={styles.leading} hitSlop={12} accessibilityLabel="Volver">
+          <Pressable
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(app)/(tabs)" as never);
+              }
+            }}
+            style={styles.leading}
+            hitSlop={12}
+            accessibilityLabel="Volver"
+          >
             <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
           </Pressable>
         ) : null}
