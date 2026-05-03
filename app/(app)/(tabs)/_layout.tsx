@@ -1,7 +1,10 @@
 // Configura tabs principales y accesos rapidos de la seccion privada.
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import * as SystemUI from "expo-system-ui";
 import { Tabs, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
@@ -59,8 +62,18 @@ function AddBookCenterButton(_props: BottomTabBarButtonProps) {
 export default function AppTabsLayout() {
   const theme = useAppTheme();
   const isWeb = Platform.OS === "web";
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      void SystemUI.setBackgroundColorAsync(theme.colors.bgSoft);
+    }
+  }, [theme.colors.bgSoft]);
+
   return (
-    <Tabs
+    <>
+      {/* Cabecera clara: iconos del sistema oscuros; Android tinta la barra igual que el header */}
+      {!isWeb ? <StatusBar style="dark" /> : null}
+      <Tabs
       screenOptions={{
         headerShown: true,
         header: () => <ScriptoriumHeader />,
@@ -134,5 +147,6 @@ export default function AppTabsLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import { showNotificationsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export type ScriptoriumHeaderProps = {
   /** Mismo chrome con control para volver (stack: detalle / anadir libro). */
@@ -17,6 +18,8 @@ export type ScriptoriumHeaderProps = {
 
 export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderProps) {
   const insets = useSafeAreaInsets();
+  const appTheme = useAppTheme();
+  const headerBg = appTheme.colors.bgSoft;
   const { user } = useAuth();
   const billing = useBillingStatus();
   const avatarUri = user?.avatarUrl?.trim() ? user.avatarUrl : null;
@@ -46,8 +49,22 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
     ) : null;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 6 }]}>
-      <View style={styles.inner}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: insets.top + 6,
+          // Misma tinta bajo status bar / notch que la franja del titulo (antes era transparente en nativo).
+          backgroundColor: headerBg,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.inner,
+          { backgroundColor: headerBg, borderBottomColor: appTheme.colors.border },
+        ]}
+      >
         <View style={styles.row}>
         {showBackButton ? (
           <Pressable
@@ -100,8 +117,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: "100%",
     paddingBottom: 0,
-    backgroundColor:
-      Platform.OS === "web" ? theme.colors.bgSoft : "transparent",
   },
   inner: {
     width: "100%",
@@ -109,7 +124,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: 16,
     paddingBottom: 8,
-    backgroundColor: theme.colors.bgSoft,
     borderBottomWidth: Platform.OS === "web" ? 0 : StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.border,
   },
