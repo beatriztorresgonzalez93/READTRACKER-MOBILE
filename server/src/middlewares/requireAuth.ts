@@ -20,7 +20,10 @@ export function createRequireAuth(authService: AuthService): RequestHandler {
       next();
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      if (message.includes("Ya existe una cuenta local")) {
+      if (
+        message.includes("Ya existe una cuenta local") ||
+        message.includes("Ese email ya está enlazado a otra cuenta de Firebase")
+      ) {
         sendApiError(res, 409, "ACCOUNT_EMAIL_CONFLICT", message);
         return;
       }

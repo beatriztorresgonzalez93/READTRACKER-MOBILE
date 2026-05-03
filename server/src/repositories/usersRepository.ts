@@ -75,7 +75,12 @@ export class UsersRepository {
     const result = await pool.query<{ id: string }>(
       `UPDATE users
        SET firebase_uid = $1
-       WHERE id = $2 AND (firebase_uid IS NULL OR firebase_uid = $1)
+       WHERE id = $2
+         AND (
+           firebase_uid IS NULL
+           OR TRIM(firebase_uid) = ''
+           OR firebase_uid = $1
+         )
        RETURNING id`,
       [firebaseUid, userId]
     );
