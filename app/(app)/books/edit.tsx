@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
 } from "react-native";
 import { z } from "zod";
 
