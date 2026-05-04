@@ -775,7 +775,7 @@ export default function BookDetailScreen() {
                 keyboardType="number-pad"
                 placeholder="0"
                 placeholderTextColor="#9D7E5B"
-                style={styles.markInput}
+                style={[styles.markInput, styles.markPageInput]}
               />
               <Text style={styles.markTotal}>/ {totalPages}</Text>
             </View>
@@ -1670,8 +1670,11 @@ const styles = StyleSheet.create({
     color: "#F2D3A2",
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 28,
+    fontSize: 16,
     fontFamily: "Fraunces_700Bold",
+  },
+  markPageInput: {
+    fontSize: 28,
   },
   reviewInput: {
     minHeight: 120,

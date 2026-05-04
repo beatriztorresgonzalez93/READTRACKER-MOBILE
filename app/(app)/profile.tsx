@@ -70,10 +70,12 @@ export default function ProfileSheetScreen() {
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Permiso requerido", "Necesitamos permiso para acceder a tus fotos.");
-      return;
+    if (Platform.OS !== "web") {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permiso requerido", "Necesitamos permiso para acceder a tus fotos.");
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({

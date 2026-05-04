@@ -7,6 +7,7 @@ import {
     Alert,
     FlatList,
     Modal,
+    Platform,
     Pressable,
     StyleSheet,
     View,
@@ -25,7 +26,11 @@ import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function HistoryScreen() {
   const ListComponent: any =
-    Constants.appOwnership === "expo" ? FlatList : FlashList;
+    Platform.OS === "web"
+      ? FlatList
+      : Constants.appOwnership === "expo"
+        ? FlatList
+        : FlashList;
   const appTheme = useAppTheme();
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
