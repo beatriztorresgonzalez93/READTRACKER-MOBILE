@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { Link, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createElement, type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -928,34 +928,73 @@ export default function BookDetailScreen() {
               </View>
               {reviewDatePickerOpen ? (
                 <View style={styles.datePickerWrap}>
-                  <DateTimePicker
-                    value={reviewReadAtDate}
-                    mode="date"
-                    maximumDate={new Date()}
-                    display={
-                      Platform.OS === "ios"
-                        ? "inline"
-                        : Platform.OS === "android"
-                          ? "spinner"
-                          : "default"
-                    }
-                    {...(Platform.OS === "ios"
-                      ? {
-                          accentColor: "#9E7144",
-                          textColor: "#E4BC78",
-                          themeVariant: "dark" as const,
+                  {Platform.OS === "web" ? (
+                    <>
+                      {createElement("input", {
+                        type: "date",
+                        value: reviewReadAt,
+                        max: toReadAtValue(new Date()),
+                        onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                          const v = e.currentTarget.value;
+                          if (!v.trim()) return;
+                          const parsed = new Date(`${v}T12:00:00`);
+                          if (Number.isNaN(parsed.getTime())) return;
+                          const bounded = parsed > new Date() ? new Date() : parsed;
+                          setReviewReadAtDate(bounded);
+                          setReviewReadAt(toReadAtValue(bounded));
+                          setReviewDatePickerOpen(false);
+                        },
+                        style: {
+                          width: "100%",
+                          boxSizing: "border-box",
+                          padding: "10px 12px",
+                          fontSize: 16,
+                          borderRadius: 8,
+                          border: "1px solid #8C653A",
+                          backgroundColor: "#2F120A",
+                          color: "#F2D3A2",
+                          fontFamily: "Georgia, 'Times New Roman', serif",
+                        },
+                      })}
+                      <Pressable
+                        style={styles.datePickerDoneBtn}
+                        onPress={() => setReviewDatePickerOpen(false)}
+                      >
+                        <Text style={styles.datePickerDoneText}>Cerrar</Text>
+                      </Pressable>
+                    </>
+                  ) : (
+                    <>
+                      <DateTimePicker
+                        value={reviewReadAtDate}
+                        mode="date"
+                        maximumDate={new Date()}
+                        display={
+                          Platform.OS === "ios"
+                            ? "inline"
+                            : Platform.OS === "android"
+                              ? "spinner"
+                              : "default"
                         }
-                      : {})}
-                    onChange={onReviewDateValueChange}
-                  />
-                  {Platform.OS === "ios" ? (
-                    <Pressable
-                      style={styles.datePickerDoneBtn}
-                      onPress={() => setReviewDatePickerOpen(false)}
-                    >
-                      <Text style={styles.datePickerDoneText}>Aceptar fecha</Text>
-                    </Pressable>
-                  ) : null}
+                        {...(Platform.OS === "ios"
+                          ? {
+                              accentColor: "#9E7144",
+                              textColor: "#E4BC78",
+                              themeVariant: "dark" as const,
+                            }
+                          : {})}
+                        onChange={onReviewDateValueChange}
+                      />
+                      {Platform.OS === "ios" ? (
+                        <Pressable
+                          style={styles.datePickerDoneBtn}
+                          onPress={() => setReviewDatePickerOpen(false)}
+                        >
+                          <Text style={styles.datePickerDoneText}>Aceptar fecha</Text>
+                        </Pressable>
+                      ) : null}
+                    </>
+                  )}
                 </View>
               ) : null}
 
@@ -1601,6 +1640,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   statusSheet: {
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 440,
     marginHorizontal: 24,
     backgroundColor: theme.colors.cardElevated,
     borderRadius: 10,
