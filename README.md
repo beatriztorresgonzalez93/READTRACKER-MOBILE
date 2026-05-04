@@ -77,6 +77,19 @@ Funcionalidades para la persona lectora:
 - `docs/`: idea de producto, planes de prueba, borrador legal Pro (ver abajo)
 - `e2e/`: flows de Maestro
 
+## PUNTOS A DESTACAR
+
+- `Producto real`, no solo demo: app de seguimiento lector con biblioteca, progreso por páginas, historial mensual, estadísticas y wishlist/compras.
+- `Multiplataforma con un solo código`: funciona en móvil (Expo) y web, compartiendo la misma API.
+- `Autenticación sólida`: Firebase Auth en cliente + validación de ID token en backend (Firebase Admin).
+- `Backend completo propio`: API en Express + TypeScript + PostgreSQL, con endpoints por dominio (auth, books, reading-sessions, wishlist, billing).
+- `Pago integrado con Stripe`: flujo de prueba gratis + activación de plan Pro con webhook de confirmación en backend.
+- `Calidad de ingeniería`: CI en GitHub Actions con lint, typecheck y tests; además E2E con Maestro para flujos críticos.
+- `Arquitectura mantenible`: separación por features (src/features) y compartidos (src/shared), React Query para estado remoto y Zustand para estado local.
+- `Gestión del proyecto`: Kanban en Trello con reglas de avance (Backlog → Done) y criterios de aceptación.
+- `Escalabilidad técnica`: soporte para subida de imágenes con presigned URLs a S3 y consideraciones CORS para web.
+- `Enfoque de rendimiento y UX`: plan de pruebas de FPS, listas grandes, y validación de tema claro/oscuro.
+
 ## Instalacion y configuracion
 
 1. Instalar dependencias:
@@ -109,11 +122,11 @@ En **servidor** (`server/.env`; copia desde `server/.env.example`):
 
 ### Donde va cada secreto (dos frontends, un backend)
 
-| Secreto / variable | ¿Render (API)? | ¿Vercel (web estática)? |
-|-------------------|----------------|-------------------------|
-| `DATABASE_URL`, Firebase Admin, Stripe **secret**, webhook | Sí | No |
-| Claves **AWS** S3 | Sí | **No** (nunca en el cliente) |
-| `EXPO_PUBLIC_*` (API URL, Firebase web, Stripe **publishable**) | No | Sí |
+| Secreto / variable                                              | ¿Render (API)? | ¿Vercel (web estática)?      |
+| --------------------------------------------------------------- | -------------- | ---------------------------- |
+| `DATABASE_URL`, Firebase Admin, Stripe **secret**, webhook      | Sí             | No                           |
+| Claves **AWS** S3                                               | Sí             | **No** (nunca en el cliente) |
+| `EXPO_PUBLIC_*` (API URL, Firebase web, Stripe **publishable**) | No             | Sí                           |
 
 Con **varios dominios web** (p. ej. Vercel producción + otro), declarar **todos** en `CLIENT_ORIGINS` (API) y en **CORS del bucket S3** (`AllowedOrigins`) si hay subida de fotos desde la web.
 
@@ -130,14 +143,14 @@ No hay en este repo condiciones generales ni politica de privacidad definitivas.
 
 ## Documentacion en `docs/`
 
-| Archivo | Contenido |
-|---------|-----------|
-| `idea.md` | Problema, usuario objetivo y alcance MVP del producto |
-| `project-management.md` | Tablero Trello y flujo Kanban |
-| `test-plan-production.md` | Prioridades de tests funcionales |
-| `performance-test-plan.md` | Listas grandes y contraste claro/oscuro |
-| `react-native-teoria.md` | Notas de contexto RN / Expo |
-| `compra-pro-licencia-perpetua-borrador-es.md` | Borrador comercial Pro (no legal) |
+| Archivo                                       | Contenido                                             |
+| --------------------------------------------- | ----------------------------------------------------- |
+| `idea.md`                                     | Problema, usuario objetivo y alcance MVP del producto |
+| `project-management.md`                       | Tablero Trello y flujo Kanban                         |
+| `test-plan-production.md`                     | Prioridades de tests funcionales                      |
+| `performance-test-plan.md`                    | Listas grandes y contraste claro/oscuro               |
+| `react-native-teoria.md`                      | Notas de contexto RN / Expo                           |
+| `compra-pro-licencia-perpetua-borrador-es.md` | Borrador comercial Pro (no legal)                     |
 
 ## Ejecutar la app
 
@@ -218,3 +231,7 @@ adb kill-server; adb start-server; adb devices
 
 - Mas `testID` en pantallas criticas (p. ej. historial) para reducir dependencia de coordenadas.
 - Opcional: flujo Maestro adicional mas estricto para CI frente al smoke local.
+
+## TRELLO
+
+- Tablero: [https://trello.com/b/3e8Vo53T/readtrucker-movile]
