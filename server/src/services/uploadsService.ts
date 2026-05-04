@@ -37,6 +37,18 @@ function buildPublicUrl(bucket: string, region: string, key: string): string {
 
 export class UploadsService {
   async createCoverPresignedPut(userId: string, contentTypeRaw: string): Promise<CoverPresignResult> {
+    return this.createImagePresignedPut(userId, contentTypeRaw, "covers");
+  }
+
+  async createAvatarPresignedPut(userId: string, contentTypeRaw: string): Promise<CoverPresignResult> {
+    return this.createImagePresignedPut(userId, contentTypeRaw, "avatars");
+  }
+
+  private async createImagePresignedPut(
+    userId: string,
+    contentTypeRaw: string,
+    folder: "covers" | "avatars"
+  ): Promise<CoverPresignResult> {
     const contentType = contentTypeRaw.trim().toLowerCase();
     const ext = ALLOWED_TYPES.get(contentType);
     if (!ext) {
@@ -50,7 +62,7 @@ export class UploadsService {
 
     const bucket = env.s3Bucket;
     const region = env.awsRegion;
-    const key = `users/${userId}/covers/${randomUUID()}.${ext}`;
+    const key = `users/${userId}/${folder}/${randomUUID()}.${ext}`;
 
     const command = new PutObjectCommand({
       Bucket: bucket,

@@ -8,6 +8,7 @@ export const createUploadsRouter = (controller: UploadsController, requireAuth: 
   const router = Router();
 
   router.post("/cover", requireAuth, controller.presignCoverUpload);
+  router.post("/avatar", requireAuth, controller.presignAvatarUpload);
 
   return router;
 };

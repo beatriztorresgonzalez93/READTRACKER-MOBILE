@@ -128,23 +128,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Sesion no disponible.");
       }
 
-      try {
-        const idToken = await firebaseUser.getIdToken();
-        const updated = await apiUpdateMe(idToken, payload);
-        setUser((prev) => {
-          const base = { ...(prev ?? user), ...updated };
-          return {
-            ...base,
-            ...(payload.firstName !== undefined ? { firstName: payload.firstName } : {}),
-            ...(payload.lastName !== undefined ? { lastName: payload.lastName } : {}),
-            ...(payload.name !== undefined ? { name: payload.name } : {}),
-            ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {})
-          };
-        });
-        setToken(idToken);
-      } catch {
-        setUser((prev) => ({ ...(prev ?? user), ...payload }));
-      }
+      const idToken = await firebaseUser.getIdToken();
+      const updated = await apiUpdateMe(idToken, payload);
+      setUser((prev) => {
+        const base = { ...(prev ?? user), ...updated };
+        return {
+          ...base,
+          ...(payload.firstName !== undefined ? { firstName: payload.firstName } : {}),
+          ...(payload.lastName !== undefined ? { lastName: payload.lastName } : {}),
+          ...(payload.name !== undefined ? { name: payload.name } : {}),
+          ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {}),
+        };
+      });
+      setToken(idToken);
     },
     [user]
   );

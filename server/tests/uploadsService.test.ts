@@ -8,4 +8,8 @@ describe("UploadsService", () => {
   it("rejects unknown content types before touching S3", async () => {
     await expect(svc.createCoverPresignedPut("user-1", "application/pdf")).rejects.toThrow(/Tipo de imagen no permitido/);
   });
+
+  it("rejects unknown content types for avatar presign", async () => {
+    await expect(svc.createAvatarPresignedPut("user-1", "application/pdf")).rejects.toThrow(/Tipo de imagen no permitido/);
+  });
 });

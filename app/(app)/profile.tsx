@@ -17,6 +17,10 @@ import { Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
+import {
+  avatarUriNeedsS3Upload,
+  uploadLocalAvatarUriToS3,
+} from "@/shared/lib/upload-profile-avatar";
 import { theme } from "@/shared/ui/theme";
 
 export default function ProfileSheetScreen() {
@@ -36,6 +40,7 @@ export default function ProfileSheetScreen() {
   const [firstNameDraft, setFirstNameDraft] = useState(firstName);
   const [lastNameDraft, setLastNameDraft] = useState(lastName);
   const [avatarUrlDraft, setAvatarUrlDraft] = useState<string | null>(user?.avatarUrl ?? null);
+  const [avatarMimeDraft, setAvatarMimeDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const memberSince = useMemo(() => {
     const source =
@@ -61,6 +66,7 @@ export default function ProfileSheetScreen() {
   async function onPhotoAction(action: "change" | "remove") {
     if (action === "remove") {
       setAvatarUrlDraft(null);
+      setAvatarMimeDraft(null);
       return;
     }
 
@@ -78,7 +84,9 @@ export default function ProfileSheetScreen() {
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      setAvatarUrlDraft(result.assets[0].uri);
+      const asset = result.assets[0];
+      setAvatarUrlDraft(asset.uri);
+      setAvatarMimeDraft(asset.mimeType ?? null);
     }
   }
 
@@ -88,11 +96,20 @@ export default function ProfileSheetScreen() {
     try {
       const normalizedFirstName = firstNameDraft.trim();
       const normalizedLastName = lastNameDraft.trim();
+      let avatarUrlToSave = avatarUrlDraft;
+      if (avatarUriNeedsS3Upload(avatarUrlToSave)) {
+        if (!token) {
+          throw new Error("Sesión no disponible para subir la foto.");
+        }
+        avatarUrlToSave = await uploadLocalAvatarUriToS3(token, avatarUrlToSave, avatarMimeDraft);
+        setAvatarUrlDraft(avatarUrlToSave);
+        setAvatarMimeDraft(null);
+      }
       await updateUserProfile({
         firstName: normalizedFirstName,
         lastName: normalizedLastName,
         name: [normalizedFirstName, normalizedLastName].filter(Boolean).join(" ").trim(),
-        avatarUrl: avatarUrlDraft,
+        avatarUrl: avatarUrlToSave,
       });
       Alert.alert("Perfil actualizado", "Tus cambios se han guardado.");
     } catch (error) {

@@ -23,3 +23,18 @@ export async function requestCoverPresignedUpload(
   }
   return response.data;
 }
+
+export async function requestAvatarPresignedUpload(
+  token: string,
+  contentType: string,
+): Promise<CoverPresignPayload> {
+  const response = await apiRequest<{ data?: CoverPresignPayload }>("/uploads/avatar", {
+    method: "POST",
+    token,
+    body: { contentType },
+  });
+  if (!response.data) {
+    throw new Error("Respuesta inválida del servidor");
+  }
+  return response.data;
+}
