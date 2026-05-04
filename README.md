@@ -2,24 +2,23 @@
 
 [![CI](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml/badge.svg)](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml)
 
-> **CI (Integracion continua):** este indicador muestra si las comprobaciones automaticas del proyecto estan pasando en GitHub Actions (`lint`, `typecheck` y `tests`).
-> Si aparece en verde, la ultima ejecucion fue correcta. Si aparece en rojo, alguna validacion fallo.
-> Puedes hacer clic en el badge para ver el detalle de cada ejecucion.
+> **CI (integracion continua):** el badge indica si las comprobaciones automaticas en GitHub Actions (`lint`, `typecheck` y `tests`) pasan.
+> Verde: ultima ejecucion correcta. Rojo: alguna validacion fallida.
+> El badge enlaza al detalle de cada ejecucion.
 
 Aplicacion **ReadTracker / Scriptorium** en React Native + Expo: misma API backend para **app nativa**, **Expo Web** (p. ej. Vercel) y flujo Pro unificado.
 
 ## Que es esta app y para que sirve
 
-ReadTracker es una app para llevar tu lectura al dia de forma simple.
-Te ayuda a organizar tus libros, recordar por que pagina vas y ver tu progreso con el tiempo.
+ReadTracker organiza la lectura personal: libros, pagina actual y progreso en el tiempo.
 
-Como usuario, puedes:
+Funcionalidades para la persona lectora:
 
-- Guardar libros en tu biblioteca personal
-- Marcar paginas leidas cuando avanzas
-- Consultar tu historial de lectura por fechas
-- Ver estadisticas para entender tus habitos de lectura
-- Crear una lista de deseos y pasar libros a comprados
+- Biblioteca personal de libros
+- Progreso por paginas al avanzar en la lectura
+- Historial de lectura por fechas
+- Estadisticas de habitos de lectura
+- Lista de deseos y registro de compras
 
 ## Stack
 
@@ -101,11 +100,11 @@ EXPO_PUBLIC_WEB_APP_ORIGIN=https://tu-app.vercel.app
 EXPO_PUBLIC_PRO_TRIAL_DAYS=30
 ```
 
-Rellena las variables **Firebase** del `.env` según `.env.example` (necesarias para login/registro).
+Variables **Firebase** en `.env`: ver `.env.example` (login/registro).
 
 En **servidor** (`server/.env`; copia desde `server/.env.example`):
 
-- **Obligatorias en producción:** Firebase Admin, `DATABASE_URL`, orígenes CORS (`CLIENT_ORIGIN` o `CLIENT_ORIGINS`), Stripe si usas cobros.
+- **Obligatorias en producción:** Firebase Admin, `DATABASE_URL`, orígenes CORS (`CLIENT_ORIGIN` o `CLIENT_ORIGINS`), Stripe si hay cobros.
 - **Opcional — subida de portadas S3:** `AWS_REGION`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Sin ellas, `POST /uploads/cover` responde 503 y solo funcionan portadas por URL externa / búsqueda online.
 
 ### Donde va cada secreto (dos frontends, un backend)
@@ -116,25 +115,25 @@ En **servidor** (`server/.env`; copia desde `server/.env.example`):
 | Claves **AWS** S3 | Sí | **No** (nunca en el cliente) |
 | `EXPO_PUBLIC_*` (API URL, Firebase web, Stripe **publishable**) | No | Sí |
 
-Si tienes **dos dominios web** (p. ej. Vercel producción + otro), incluye **ambos** en `CLIENT_ORIGINS` (API) y en **CORS del bucket S3** (`AllowedOrigins`) si usas subida de fotos desde la web.
+Con **varios dominios web** (p. ej. Vercel producción + otro), declarar **todos** en `CLIENT_ORIGINS` (API) y en **CORS del bucket S3** (`AllowedOrigins`) si hay subida de fotos desde la web.
 
 ### Stripe (modo prueba)
 
 - El backend debe tener `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`.
 - La app usa `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` para mostrar el checkout en web.
-- **Modelo de producto:** prueba gratuita con app completa; despues **un pago unico** (Payment Intent de tipo “lifetime” en backend) que marca la cuenta como **Pro** sin renovaciones automaticas. Equivale comercialmente a una **licencia perpetua de uso** de la app para esa cuenta, en la medida en que sigas ofreciendo el servicio.
-- En **movil**, el boton de pago abre el navegador en `/upgrade` de tu web; define `EXPO_PUBLIC_WEB_APP_ORIGIN` con la URL de Vercel (sin `/` final).
+- **Modelo de producto:** prueba gratuita con app completa; despues **un pago unico** (Payment Intent “lifetime” en backend) que marca la cuenta como **Pro** sin renovaciones automaticas. Comercialmente se comunica como **licencia de uso** de la app para esa cuenta **mientras el servicio este disponible**.
+- En **movil**, el boton de pago abre el navegador en `/upgrade` de la web desplegada: `EXPO_PUBLIC_WEB_APP_ORIGIN` = URL de Vercel (sin `/` final).
 
 ### Textos legales / condiciones
 
-No hay en este repo condiciones generales ni politica de privacidad definitivas: para produccion conviene publicar documentos revisados por asesoria juridica y enlazarlos desde registro, checkout y perfil. Como **referencia de producto** (borrador, sin valor legal) esta `docs/compra-pro-licencia-perpetua-borrador-es.md`.
+No hay en este repo condiciones generales ni politica de privacidad definitivas. Para produccion, los textos legales suelen publicarse tras revision profesional y enlazarse desde registro, checkout y perfil. **Referencia de producto** (borrador, sin valor legal): `docs/compra-pro-licencia-perpetua-borrador-es.md`.
 
 ## Documentacion en `docs/`
 
 | Archivo | Contenido |
 |---------|-----------|
 | `idea.md` | Problema, usuario objetivo y alcance MVP del producto |
-| `project-management.md` | Enlace Trello y flujo Kanban sugerido |
+| `project-management.md` | Tablero Trello y flujo Kanban |
 | `test-plan-production.md` | Prioridades de tests funcionales |
 | `performance-test-plan.md` | Listas grandes y contraste claro/oscuro |
 | `react-native-teoria.md` | Notas de contexto RN / Expo |
@@ -159,7 +158,7 @@ Atajos:
 - Tests **app (Expo)** con Jest (lo que usa CI): `npm run test:ci`
 - Cobertura app: `npm run test:coverage`
 - Tests **backend** (`server/`, Vitest): `npm run test:server`  
-  (No ejecutes `vitest`/`npx vitest` desde la raíz del monorepo: mezcla tests del servidor con el cliente y da errores de módulos CJS/ESM.)
+  Evitar `vitest` / `npx vitest` desde la raíz del monorepo: mezcla tests del servidor con el cliente y provoca errores CJS/ESM.
 - E2E backend con DB real (opcional): `npm run test:server:e2e` (requiere `DATABASE_URL` en entorno)
 
 ## E2E con Maestro (Windows + Expo Go)
@@ -184,28 +183,28 @@ Y scripts npm:
 npm start -- --tunnel --clear
 ```
 
-- Maestro CLI instalado (en este equipo se usa `C:\tools\maestro\maestro\maestro\bin\maestro.bat`)
+- Maestro CLI instalado y accesible (`maestro` en PATH, o ruta completa al ejecutable en Windows, p. ej. `maestro.bat`)
 
 ### 2) Ejecutar flow smoke
 
-En PowerShell:
+En PowerShell, desde la raiz del repo (ajustar credenciales y URL de Expo):
 
 ```powershell
-$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="tu_email"; $env:MAESTRO_PASSWORD="tu_password"; & "C:\tools\maestro\maestro\maestro\bin\maestro.bat" test "C:\Users\beatr\Desktop\readtracker-mobile\e2e\smoke-login-library.yaml"
+cd <raiz-del-repo>
+$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="..."; $env:MAESTRO_PASSWORD="..."; maestro test .\e2e\smoke-login-library.yaml
 ```
 
 ### 3) Ejecutar flow marcar pagina + historial
 
-En PowerShell:
-
 ```powershell
-$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="tu_email"; $env:MAESTRO_PASSWORD="tu_password"; $env:MAESTRO_READING_BOOK_TITLE="En llamas"; $env:MAESTRO_NEXT_PAGE="120"; & "C:\tools\maestro\maestro\maestro\bin\maestro.bat" test "C:\Users\beatr\Desktop\readtracker-mobile\e2e\mark-page-history.yaml"
+cd <raiz-del-repo>
+$env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="..."; $env:MAESTRO_PASSWORD="..."; $env:MAESTRO_READING_BOOK_TITLE="..."; $env:MAESTRO_NEXT_PAGE="..."; maestro test .\e2e\mark-page-history.yaml
 ```
 
 ## Troubleshooting rapido (Maestro)
 
 - **`maestro` no se reconoce**
-  - Usa la ruta completa del `.bat` (como en los comandos de arriba), o agrega su carpeta al `PATH`.
+  - Usar la ruta completa al ejecutable o añadir su carpeta al `PATH`.
 - **`You have 0 devices connected`**
   - Inicia emulador/dispositivo y verifica con `adb devices`.
 - **Timeouts o errores `UNAVAILABLE/DEADLINE_EXCEEDED`**
@@ -215,7 +214,7 @@ $env:MAESTRO_APP_URL="exp://TU_URL_DE_EXPO"; $env:MAESTRO_EMAIL="tu_email"; $env
 adb kill-server; adb start-server; adb devices
 ```
 
-## Pendiente para endurecer CI E2E
+## Mejoras posibles en E2E / CI
 
-- Añadir mas `testID` en pantallas criticas (especialmente `History`) para reducir dependencia de coordenadas.
-- Mantener dos flows: uno estable local (actual) y uno estricto para CI.
+- Mas `testID` en pantallas criticas (p. ej. historial) para reducir dependencia de coordenadas.
+- Opcional: flujo Maestro adicional mas estricto para CI frente al smoke local.

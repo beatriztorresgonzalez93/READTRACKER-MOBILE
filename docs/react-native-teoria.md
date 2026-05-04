@@ -15,7 +15,7 @@ Metro es el bundler de React Native. Su funcion principal es:
 - Aplicar hot reload/fast refresh en desarrollo.
 - Servir assets (imagenes, fuentes) durante la ejecucion local.
 
-En el flujo diario, Metro permite iterar rapido: guardas cambios y la app se actualiza casi al instante en el dispositivo o emulador.
+En desarrollo, Metro permite iterar rapido: al guardar cambios, la app se actualiza casi al instante en el dispositivo o emulador.
 
 ## Por que Expo Go no es suficiente en proyectos reales
 

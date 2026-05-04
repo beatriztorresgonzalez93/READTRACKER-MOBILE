@@ -1,6 +1,6 @@
 # Gestion del proyecto
 
-El codigo vive en el repo **READTRACKER-MOBILE**; el estado de CI (`lint`, `typecheck`, tests) se ve en el badge del `README.md` raiz (GitHub Actions).
+Repositorio en GitHub: **READTRACKER-MOBILE**. Estado de CI (`lint`, `typecheck`, tests): badge en el `README.md` de la raiz (GitHub Actions).
 
 ## Enlace al tablero de Trello
 

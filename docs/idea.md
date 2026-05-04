@@ -33,4 +33,4 @@ Uso diario esperado:
 - Recomendaciones de libros basadas en historial.
 - Sincronizacion multi-dispositivo con modo offline-first.
 - Exportacion de reportes de lectura (PDF/CSV).
-- Catalogos externos mas profundos (metadatos automaticos al escanear ISBN, mas fuentes, etc.; la busqueda basica de portadas ya esta cubierta por la API).
+- Catalogos externos mas profundos (metadatos al escanear ISBN, mas fuentes). La busqueda basica de portadas va por la API actual (`GET /covers/search`).

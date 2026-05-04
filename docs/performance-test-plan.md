@@ -48,8 +48,8 @@ Validar que la app mantiene buena fluidez con listas grandes (50+ items) y que e
 - [ ] Tema oscuro correcto en pantallas clave.
 - [ ] Animaciones de entrada/salida visibles y sin glitches.
 
-## Nota de entrega
-Si se detecta una caida puntual de FPS, registrar:
+## Registro de incidencias de rendimiento
+Si aparece una caida puntual de FPS, anotar:
 - Pantalla exacta.
 - Accion realizada.
 - Cantidad aproximada de items.
