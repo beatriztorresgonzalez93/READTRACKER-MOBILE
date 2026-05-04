@@ -4,9 +4,7 @@ El codigo vive en el repo **READTRACKER-MOBILE**; el estado de CI (`lint`, `type
 
 ## Enlace al tablero de Trello
 
-- Tablero: [Anadir enlace de Trello aqui](https://trello.com/)
-
-> Nota: sustituir el enlace por la URL real del tablero cuando lo uses para coordinacion.
+- Tablero: [https://trello.com/b/3e8Vo53T/readtrucker-movile]
 
 ## Como se esta gestionando el trabajo
 
