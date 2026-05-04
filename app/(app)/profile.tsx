@@ -25,7 +25,7 @@ import { theme } from "@/shared/ui/theme";
 
 export default function ProfileSheetScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout, updateUserProfile } = useAuth();
+  const { user, token, logout, updateUserProfile } = useAuth();
 
   const fullName = useMemo(() => {
     const fromParts = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();

@@ -276,12 +276,23 @@ export default function BookDetailScreen() {
   }
 
   function onReviewDateValueChange(
-    _event: unknown,
+    event: unknown,
     selectedDate?: Date,
   ) {
-    if (!selectedDate) return;
-    setReviewReadAtDate(selectedDate);
-    setReviewReadAt(toReadAtValue(selectedDate));
+    let nextDate = selectedDate;
+    if (!nextDate && Platform.OS === "web") {
+      const targetValue = (event as { target?: { value?: string } })?.target?.value;
+      if (typeof targetValue === "string" && targetValue.trim()) {
+        const parsed = new Date(targetValue);
+        if (!Number.isNaN(parsed.getTime())) {
+          nextDate = parsed;
+        }
+      }
+    }
+    if (!nextDate) return;
+    const boundedDate = nextDate > new Date() ? new Date() : nextDate;
+    setReviewReadAtDate(boundedDate);
+    setReviewReadAt(toReadAtValue(boundedDate));
     if (Platform.OS !== "ios") {
       setReviewDatePickerOpen(false);
     }
@@ -921,10 +932,20 @@ export default function BookDetailScreen() {
                     value={reviewReadAtDate}
                     mode="date"
                     maximumDate={new Date()}
-                    display={Platform.OS === "ios" ? "inline" : "spinner"}
-                    accentColor="#9E7144"
-                    textColor="#E4BC78"
-                    themeVariant="dark"
+                    display={
+                      Platform.OS === "ios"
+                        ? "inline"
+                        : Platform.OS === "android"
+                          ? "spinner"
+                          : "default"
+                    }
+                    {...(Platform.OS === "ios"
+                      ? {
+                          accentColor: "#9E7144",
+                          textColor: "#E4BC78",
+                          themeVariant: "dark" as const,
+                        }
+                      : {})}
                     onChange={onReviewDateValueChange}
                   />
                   {Platform.OS === "ios" ? (
