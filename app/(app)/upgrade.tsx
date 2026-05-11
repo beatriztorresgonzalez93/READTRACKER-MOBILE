@@ -1,22 +1,12 @@
-// Pantalla Plan Pro: estado de trial, activación y pago (Stripe en web).
+// Pantalla Plan Pro: estado de trial, activación y pago (Stripe: Elements en web, Payment Sheet en nativo).
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { ProUpgradeModal } from "@/features/billing/pro-upgrade-modal";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { useBillingStatus, useRefreshBillingStatus } from "@/features/billing/use-billing";
-import { env } from "@/shared/config/env";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
@@ -59,30 +49,6 @@ export default function UpgradeScreen() {
   }
 
   const { isPro, trialActive, needsPayment, trialEndsAt, proActivatedAt } = billing.data;
-
-  async function openWebCheckout() {
-    if (!env.webAppOrigin) {
-      Alert.alert(
-        "Configuración necesaria",
-        "Añade EXPO_PUBLIC_WEB_APP_ORIGIN en tu build (URL de la web en Vercel) para abrir el pago en el navegador.",
-      );
-      return;
-    }
-    const url = `${env.webAppOrigin}/upgrade`;
-    Alert.alert(
-      "Continuar en la web",
-      `${subscriptionCopy.nativePayHint}\n\nSe abrirá tu navegador.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Abrir",
-          onPress: () => {
-            void WebBrowser.openBrowserAsync(url);
-          },
-        },
-      ],
-    );
-  }
 
   const trialEndLabel = trialEndsAt
     ? new Date(trialEndsAt).toLocaleDateString("es-ES", {
@@ -132,13 +98,7 @@ export default function UpgradeScreen() {
         {!isPro ? (
           <Pressable
             style={styles.primaryBtn}
-            onPress={() => {
-              if (Platform.OS === "web") {
-                setModalOpen(true);
-              } else {
-                void openWebCheckout();
-              }
-            }}
+            onPress={() => setModalOpen(true)}
           >
             <Text style={styles.primaryBtnText}>
               {needsPayment ? "Activar Pro con tarjeta" : "Ver opción de pago Pro"}
@@ -153,8 +113,8 @@ export default function UpgradeScreen() {
 
         {Platform.OS !== "web" && !isPro ? (
           <Text style={styles.footnote}>
-            En el móvil el cobro se hace en la web por seguridad (Stripe).{" "}
-            {env.webAppOrigin ? `URL: ${env.webAppOrigin}/upgrade` : "Configura EXPO_PUBLIC_WEB_APP_ORIGIN."}
+            En Android/iOS el pago usa Stripe Payment Sheet dentro de la app. Con claves de test puedes usar la tarjeta
+            4242&nbsp;4242&nbsp;4242&nbsp;4242.
           </Text>
         ) : null}
 

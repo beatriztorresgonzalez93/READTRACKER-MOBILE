@@ -20,13 +20,19 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.readtrackermobile"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/with-android-gradle-plugin-repos.js",
       "expo-router",
       [
         "expo-splash-screen",
@@ -47,6 +53,13 @@
         "expo-image-picker",
         {
           "photosPermission": "ReadTracker necesita acceso a tus fotos para subir portadas de libros."
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "",
+          "enableGooglePay": false
         }
       ]
     ],

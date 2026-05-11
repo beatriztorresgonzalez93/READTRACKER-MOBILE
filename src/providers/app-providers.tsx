@@ -5,6 +5,7 @@ import { useColorScheme } from "react-native";
 import { Provider as PaperProvider } from "react-native-paper";
 
 import { AuthProvider } from "@/features/auth/auth-context";
+import { StripeAppProvider } from "@/providers/stripe-app-provider";
 import { createPaperTheme } from "@/shared/ui/paper-theme";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -25,7 +26,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <PaperProvider theme={paperTheme}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+        <StripeAppProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </StripeAppProvider>
       </QueryClientProvider>
     </PaperProvider>
   );

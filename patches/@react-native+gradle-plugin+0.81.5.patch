@@ -1,0 +1,86 @@
+diff --git a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build.gradle.kts b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build.gradle.kts
+index f8e62cb..8f4e7d2 100644
+--- a/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build.gradle.kts
++++ b/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build.gradle.kts
+@@ -16,8 +16,10 @@ plugins {
+ }
+ 
+ repositories {
++  maven { url = uri("https://maven.aliyun.com/repository/public") }
++  maven { url = uri("https://maven.aliyun.com/repository/google") }
++  maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+   google()
+-  mavenCentral()
+ }
+ 
+ gradlePlugin {
+diff --git a/node_modules/@react-native/gradle-plugin/settings-plugin/build.gradle.kts b/node_modules/@react-native/gradle-plugin/settings-plugin/build.gradle.kts
+index bd11ca6..13b0ddd 100644
+--- a/node_modules/@react-native/gradle-plugin/settings-plugin/build.gradle.kts
++++ b/node_modules/@react-native/gradle-plugin/settings-plugin/build.gradle.kts
+@@ -16,8 +16,10 @@ plugins {
+ }
+ 
+ repositories {
++  maven { url = uri("https://maven.aliyun.com/repository/public") }
++  maven { url = uri("https://maven.aliyun.com/repository/google") }
++  maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+   google()
+-  mavenCentral()
+ }
+ 
+ gradlePlugin {
+diff --git a/node_modules/@react-native/gradle-plugin/settings.gradle.kts b/node_modules/@react-native/gradle-plugin/settings.gradle.kts
+index b3c46a3..9ef0ef1 100644
+--- a/node_modules/@react-native/gradle-plugin/settings.gradle.kts
++++ b/node_modules/@react-native/gradle-plugin/settings.gradle.kts
+@@ -7,9 +7,11 @@
+ 
+ pluginManagement {
+   repositories {
+-    mavenCentral()
++    // Avoid repo.maven.apache.org when it returns 403: Aliyun mirrors Central + Gradle Plugin Portal for this network.
++    maven { url = uri("https://maven.aliyun.com/repository/public") }
++    maven { url = uri("https://maven.aliyun.com/repository/google") }
++    maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+     google()
+-    gradlePluginPortal()
+   }
+ }
+ 
+diff --git a/node_modules/@react-native/gradle-plugin/shared-testutil/build.gradle.kts b/node_modules/@react-native/gradle-plugin/shared-testutil/build.gradle.kts
+index 4c1a1ec..18488c9 100644
+--- a/node_modules/@react-native/gradle-plugin/shared-testutil/build.gradle.kts
++++ b/node_modules/@react-native/gradle-plugin/shared-testutil/build.gradle.kts
+@@ -12,7 +12,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+ 
+ plugins { alias(libs.plugins.kotlin.jvm) }
+ 
+-repositories { mavenCentral() }
++repositories {
++  maven { url = uri("https://maven.aliyun.com/repository/public") }
++  maven { url = uri("https://maven.aliyun.com/repository/google") }
++  maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
++  google()
++}
+ 
+ group = "com.facebook.react"
+ 
+diff --git a/node_modules/@react-native/gradle-plugin/shared/build.gradle.kts b/node_modules/@react-native/gradle-plugin/shared/build.gradle.kts
+index 5a74b56..4cdedb0 100644
+--- a/node_modules/@react-native/gradle-plugin/shared/build.gradle.kts
++++ b/node_modules/@react-native/gradle-plugin/shared/build.gradle.kts
+@@ -12,7 +12,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+ 
+ plugins { alias(libs.plugins.kotlin.jvm) }
+ 
+-repositories { mavenCentral() }
++repositories {
++  maven { url = uri("https://maven.aliyun.com/repository/public") }
++  maven { url = uri("https://maven.aliyun.com/repository/google") }
++  maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
++  google()
++}
+ 
+ group = "com.facebook.react"
+ 
