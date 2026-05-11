@@ -911,7 +911,9 @@ export default function BookDetailScreen() {
                         reviewReadAt ? styles.readAtText : styles.datePlaceholder
                       }
                     >
-                      {reviewReadAt || "Seleccionar fecha..."}
+                      {reviewReadAt
+                        ? reviewReadAtDate.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+                        : "Seleccionar fecha..."}
                     </Text>
                   </Pressable>
                 </View>
@@ -969,13 +971,7 @@ export default function BookDetailScreen() {
                         value={reviewReadAtDate}
                         mode="date"
                         maximumDate={new Date()}
-                        display={
-                          Platform.OS === "ios"
-                            ? "inline"
-                            : Platform.OS === "android"
-                              ? "spinner"
-                              : "default"
-                        }
+                        display={Platform.OS === "ios" ? "inline" : "default"}
                         {...(Platform.OS === "ios"
                           ? {
                               accentColor: "#9E7144",
