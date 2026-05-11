@@ -1,11 +1,38 @@
-// Cliente de endpoints de perfil de usuario (sesión = Firebase ID token).
-import { apiRequest } from "@/shared/api/client";
+// Perfil de usuario almacenado en Firestore (colección "users").
+// Se mantiene la interfaz pública para no romper los consumidores.
+import {
+  createFirestoreProfile,
+  getFirestoreProfile,
+  updateFirestoreProfile,
+} from "@/shared/api/firestore-profile";
+import { getFirebaseAuth } from "@/shared/config/firebase";
 import type { User } from "@/shared/types/auth";
 
-export async function getMe(token: string): Promise<User> {
-  const response = await apiRequest<{ data?: User } | User>("/auth/me", { token });
-  if ("data" in response && response.data) return response.data;
-  return response as User;
+/**
+ * Obtiene el perfil del usuario actual desde Firestore.
+ * Si el documento aún no existe (primer login), lo crea con los datos de Firebase Auth.
+ */
+export async function getMe(_token: string): Promise<User> {
+  const firebaseUser = getFirebaseAuth().currentUser;
+  console.log("[Firestore profile] getMe llamado, uid:", firebaseUser?.uid ?? "SIN USER");
+  if (!firebaseUser) throw new Error("Sesión de Firebase no disponible.");
+
+  try {
+    const existing = await getFirestoreProfile(firebaseUser.uid);
+    console.log("[Firestore profile] perfil existente:", existing ? "SI" : "NO");
+    if (existing) return existing;
+
+    console.log("[Firestore profile] creando perfil nuevo...");
+    const created = await createFirestoreProfile(firebaseUser.uid, {
+      name: firebaseUser.displayName ?? "",
+      email: firebaseUser.email ?? "",
+    });
+    console.log("[Firestore profile] perfil creado OK");
+    return created;
+  } catch (err) {
+    console.error("[Firestore profile] ERROR en getMe:", err);
+    throw err;
+  }
 }
 
 type UpdateMePayload = {
@@ -15,38 +42,13 @@ type UpdateMePayload = {
   avatarUrl?: string | null;
 };
 
-export async function updateMe(token: string, payload: UpdateMePayload): Promise<User> {
-  const attempts: { method: "PATCH" | "PUT"; path: string; body: Record<string, unknown> }[] = [
-    { method: "PATCH", path: "/auth/me", body: payload },
-    { method: "PUT", path: "/auth/me", body: payload },
-    { method: "PATCH", path: "/users/me", body: payload },
-    { method: "PUT", path: "/users/me", body: payload },
-    {
-      method: "PATCH",
-      path: "/auth/me",
-      body: {
-        name: payload.name,
-        first_name: payload.firstName,
-        last_name: payload.lastName,
-        avatar_url: payload.avatarUrl
-      }
-    }
-  ];
+export async function updateMe(_token: string, payload: UpdateMePayload): Promise<User> {
+  const firebaseUser = getFirebaseAuth().currentUser;
+  if (!firebaseUser) throw new Error("Sesión de Firebase no disponible.");
 
-  const errors: string[] = [];
-  for (const attempt of attempts) {
-    try {
-      const response = await apiRequest<{ data?: User } | User>(attempt.path, {
-        method: attempt.method,
-        token,
-        body: attempt.body
-      });
-      if ("data" in response && response.data) return response.data;
-      return response as User;
-    } catch (error) {
-      errors.push((error as Error).message);
-    }
-  }
+  await updateFirestoreProfile(firebaseUser.uid, payload);
 
-  throw new Error(errors[0] ?? "No se pudo actualizar el perfil.");
+  const updated = await getFirestoreProfile(firebaseUser.uid);
+  if (!updated) throw new Error("No se pudo leer el perfil tras actualizarlo.");
+  return updated;
 }

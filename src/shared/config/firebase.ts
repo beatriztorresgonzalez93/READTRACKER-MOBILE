@@ -1,6 +1,7 @@
-// Cliente Firebase Auth (login/registro); el backend valida ID tokens con Firebase Admin.
+// Cliente Firebase: Auth (login/registro) y Firestore (perfil de usuario).
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 import { env } from "@/shared/config/env";
 
@@ -35,4 +36,8 @@ export function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseAuth() {
   return getAuth(getFirebaseApp());
+}
+
+export function getFirebaseFirestore() {
+  return getFirestore(getFirebaseApp());
 }
