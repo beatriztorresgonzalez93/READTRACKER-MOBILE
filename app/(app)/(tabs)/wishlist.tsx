@@ -4,8 +4,20 @@ import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
-import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Searchbar, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text as NativeText,
+  TextInput,
+  View,
+} from "react-native";
+import { Button, Card, Searchbar, Text as PaperText } from "react-native-paper";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
 import {
@@ -214,48 +226,18 @@ export default function WishlistScreen() {
         ListHeaderComponent={
           <View style={styles.headerContainer}>
             <View style={styles.controlsBlock}>
-              <Searchbar
-                placeholder="Buscar en lista de deseos..."
-                value={search}
-                onChangeText={setSearch}
-                style={styles.searchBar}
-                inputStyle={styles.searchInput}
-                placeholderTextColor={theme.colors.textSoft}
-                iconColor={theme.colors.textSoft}
-                elevation={0}
-              />
               {isWeb ? (
-                <View style={styles.controlsRow}>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => setStoreModalOpen(true)}
-                    style={styles.controlBtn}
-                    labelStyle={styles.controlBtnLabel}
-                  >
-                    {storeFilterLabel}
-                  </Button>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => setSortModalOpen(true)}
-                    style={styles.controlBtn}
-                    labelStyle={styles.controlBtnLabel}
-                  >
-                    {sortLabel}
-                  </Button>
-                  <Button
-                    mode="contained"
-                    style={[styles.controlBtn, styles.addWishBtnInline]}
-                    labelStyle={styles.addWishBtnLabel}
-                    onPress={onOpenNewForm}
-                    icon="plus"
-                  >
-                    Añadir deseo
-                  </Button>
-                </View>
-              ) : (
                 <>
+                  <Searchbar
+                    placeholder="Buscar en lista de deseos..."
+                    value={search}
+                    onChangeText={setSearch}
+                    style={styles.searchBar}
+                    inputStyle={styles.searchInput}
+                    placeholderTextColor={theme.colors.textSoft}
+                    iconColor={theme.colors.textSoft}
+                    elevation={0}
+                  />
                   <View style={styles.controlsRow}>
                     <Button
                       mode="outlined"
@@ -275,16 +257,57 @@ export default function WishlistScreen() {
                     >
                       {sortLabel}
                     </Button>
+                    <Button
+                      mode="contained"
+                      style={[styles.controlBtn, styles.addWishBtnInline]}
+                      labelStyle={styles.addWishBtnLabel}
+                      onPress={onOpenNewForm}
+                      icon="plus"
+                    >
+                      Añadir deseo
+                    </Button>
                   </View>
-                  <Button
-                    mode="contained"
-                    style={styles.addWishBtn}
-                    labelStyle={styles.addWishBtnLabel}
-                    onPress={onOpenNewForm}
-                    icon="plus"
-                  >
-                    Añadir deseo
-                  </Button>
+                </>
+              ) : (
+                <>
+                  <View style={styles.mobileSearchShell}>
+                    <Ionicons name="search-outline" size={20} color={theme.colors.textSoft} />
+                    <TextInput
+                      style={styles.mobileSearchInput}
+                      placeholder="Buscar en lista de deseos..."
+                      placeholderTextColor={theme.colors.textSoft}
+                      value={search}
+                      onChangeText={setSearch}
+                    />
+                  </View>
+                  <View style={styles.controlsRowMobile}>
+                    <Pressable
+                      style={styles.mobileOutlineBtn}
+                      onPress={() => setStoreModalOpen(true)}
+                    >
+                      <NativeText style={styles.mobileOutlineBtnText} numberOfLines={1}>
+                        {storeFilterLabel}
+                      </NativeText>
+                    </Pressable>
+                    <Pressable
+                      style={styles.mobileOutlineBtn}
+                      onPress={() => setSortModalOpen(true)}
+                    >
+                      <NativeText style={styles.mobileOutlineBtnText} numberOfLines={1}>
+                        {sortLabel}
+                      </NativeText>
+                    </Pressable>
+                  </View>
+                  <Pressable style={styles.mobilePrimaryBtn} onPress={onOpenNewForm}>
+                    <Ionicons name="add" size={20} color={theme.colors.textOnDark} />
+                    <NativeText style={styles.mobilePrimaryBtnText}>Añadir deseo</NativeText>
+                  </Pressable>
+                  <View style={styles.mobileActionHint}>
+                    <Ionicons name="hand-left-outline" size={18} color={theme.colors.primary} />
+                    <NativeText style={styles.mobileActionHintText}>
+                      Compra, edita o elimina desde los botones de cada tarjeta.
+                    </NativeText>
+                  </View>
                 </>
               )}
             </View>
@@ -296,72 +319,138 @@ export default function WishlistScreen() {
             entering={FadeInDown.delay(index * 30).duration(240)}
             exiting={FadeOutLeft.duration(180)}
           >
-            <Card mode="contained" style={styles.itemCard}>
-              <Card.Content>
+            {isWeb ? (
+              <Card mode="contained" style={styles.itemCard}>
+                <Card.Content>
+                  <View style={styles.itemTop}>
+                    <View style={styles.priorityBadge}>
+                      <PaperText style={styles.priorityBadgeText}>
+                        {item.priority <= 2 ? "ALTA" : item.priority === 3 ? "MEDIA" : "BAJA"}
+                      </PaperText>
+                    </View>
+                  </View>
+                  <PaperText style={styles.itemTitle} numberOfLines={2}>
+                    {item.title}
+                  </PaperText>
+                  <PaperText style={styles.itemMeta}>{item.author ?? "Autor no definido"}</PaperText>
+                  <View style={styles.itemDivider} />
+                  <View style={styles.storePriceRow}>
+                    <PaperText style={styles.itemStore} numberOfLines={1}>
+                      {item.store || "Sin tienda"}
+                    </PaperText>
+                    <PaperText style={styles.itemPrice}>{item.price || "-"}</PaperText>
+                  </View>
+                  <View style={styles.actionsRow}>
+                    <Pressable
+                      style={[styles.miniIconBtn, styles.miniIconBtnPrimary]}
+                      onPress={() => onConfirmPurchase(item)}
+                      disabled={createPurchase.isPending}
+                      accessibilityLabel="Marcar como comprado"
+                    >
+                      <Ionicons name="checkmark" size={16} color={theme.colors.onPrimary} />
+                    </Pressable>
+                    <Pressable
+                      style={styles.miniIconBtn}
+                      onPress={() => onStartEdit(item)}
+                      disabled={createItem.isPending || updateItem.isPending}
+                      accessibilityLabel="Editar deseo"
+                    >
+                      <Ionicons name="pencil-outline" size={15} color={theme.colors.textSoft} />
+                    </Pressable>
+                    <Pressable
+                      style={styles.miniIconBtn}
+                      onPress={() => onConfirmDelete(item)}
+                      disabled={removeItem.isPending}
+                      accessibilityLabel="Eliminar deseo"
+                    >
+                      <Ionicons name="trash-outline" size={15} color={theme.colors.textSoft} />
+                    </Pressable>
+                  </View>
+                </Card.Content>
+              </Card>
+            ) : (
+              <View style={styles.mobileItemCard}>
                 <View style={styles.itemTop}>
-                  <View style={styles.priorityBadge}>
-                    <Text style={styles.priorityBadgeText}>
+                  <View style={styles.priorityBadgeMobile}>
+                    <NativeText style={styles.priorityBadgeText}>
                       {item.priority <= 2 ? "ALTA" : item.priority === 3 ? "MEDIA" : "BAJA"}
-                    </Text>
+                    </NativeText>
                   </View>
                 </View>
-                <Text style={styles.itemTitle} numberOfLines={2}>
+                <NativeText style={styles.itemTitle} numberOfLines={2}>
                   {item.title}
-                </Text>
-                <Text style={styles.itemMeta}>{item.author ?? "Autor no definido"}</Text>
-                <View style={styles.itemDivider} />
+                </NativeText>
+                <NativeText style={styles.itemMeta}>{item.author ?? "Autor no definido"}</NativeText>
+                <View style={styles.itemDividerMobile} />
                 <View style={styles.storePriceRow}>
-                  <Text style={styles.itemStore} numberOfLines={1}>
+                  <NativeText style={styles.itemStore} numberOfLines={1}>
                     {item.store || "Sin tienda"}
-                  </Text>
-                  <Text style={styles.itemPrice}>{item.price || "-"}</Text>
+                  </NativeText>
+                  <NativeText style={styles.itemPrice}>{item.price || "-"}</NativeText>
                 </View>
-                <View style={styles.actionsRow}>
+                <View style={styles.actionsRowMobile}>
                   <Pressable
-                    style={[styles.miniIconBtn, styles.miniIconBtnPrimary]}
+                    style={[styles.mobileActionPill, styles.mobileActionPillPrimary]}
                     onPress={() => onConfirmPurchase(item)}
                     disabled={createPurchase.isPending}
                     accessibilityLabel="Marcar como comprado"
                   >
-                    <Ionicons name="checkmark" size={16} color={theme.colors.onPrimary} />
+                    <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.onPrimary} />
+                    <NativeText style={styles.mobileActionPillLabelPrimary}>Comprar</NativeText>
                   </Pressable>
                   <Pressable
-                    style={styles.miniIconBtn}
+                    style={styles.mobileActionPill}
                     onPress={() => onStartEdit(item)}
                     disabled={createItem.isPending || updateItem.isPending}
                     accessibilityLabel="Editar deseo"
                   >
-                    <Ionicons name="pencil-outline" size={15} color={theme.colors.textSoft} />
+                    <Ionicons name="create-outline" size={18} color={theme.colors.text} />
+                    <NativeText style={styles.mobileActionPillLabel}>Editar</NativeText>
                   </Pressable>
                   <Pressable
-                    style={styles.miniIconBtn}
+                    style={[styles.mobileActionPill, styles.mobileActionPillDanger]}
                     onPress={() => onConfirmDelete(item)}
                     disabled={removeItem.isPending}
                     accessibilityLabel="Eliminar deseo"
                   >
-                    <Ionicons name="trash-outline" size={15} color={theme.colors.textSoft} />
+                    <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
+                    <NativeText style={[styles.mobileActionPillLabel, styles.mobileActionPillLabelDanger]}>
+                      Eliminar
+                    </NativeText>
                   </Pressable>
                 </View>
-              </Card.Content>
-            </Card>
+              </View>
+            )}
           </Animated.View>
         )}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: isWeb ? 8 : 14 }} />}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
 
-      <Modal visible={formOpen} transparent animationType="fade" onRequestClose={() => setFormOpen(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.formModalCard}>
+      <Modal
+        visible={formOpen}
+        transparent
+        animationType={isWeb ? "fade" : "slide"}
+        onRequestClose={() => setFormOpen(false)}
+      >
+        <View style={[styles.modalBackdrop, !isWeb && styles.modalBackdropSheet]}>
+          <View style={[styles.formModalCard, !isWeb && styles.formModalSheet]}>
             <View style={styles.formHeader}>
-              <Text style={styles.formTitle}>{editingId ? "Editar deseo" : "Añadir deseo"}</Text>
+              {isWeb ? (
+                <PaperText style={styles.formTitle}>{editingId ? "Editar deseo" : "Añadir deseo"}</PaperText>
+              ) : (
+                <NativeText style={styles.formTitle}>{editingId ? "Editar deseo" : "Añadir deseo"}</NativeText>
+              )}
               <Pressable onPress={() => setFormOpen(false)} hitSlop={10}>
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </Pressable>
             </View>
 
-            <ScrollView contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              contentContainerStyle={[styles.formContent, !isWeb && styles.formContentMobile]}
+              showsVerticalScrollIndicator={false}
+            >
               <AppInput
                 label="Título"
                 value={title}
@@ -391,71 +480,266 @@ export default function WishlistScreen() {
                 placeholder="ej: Casa del Libro, Amazon..."
                 autoCapitalize="sentences"
               />
-              <Button
-                mode="outlined"
-                onPress={() => setPriorityModalOpen(true)}
-                style={styles.priorityPickerBtn}
-                labelStyle={styles.priorityPickerLabel}
-                icon="chevron-down"
-                contentStyle={styles.priorityPickerContent}
-              >
-                Prioridad {selectedPriorityLabel}
-              </Button>
-
-              <View style={styles.modalActionsRow}>
-                <Button mode="text" onPress={() => setFormOpen(false)} textColor={theme.colors.textSoft}>
-                  Cancelar
-                </Button>
+              {isWeb ? (
                 <Button
-                  mode="contained"
-                  onPress={onAddItem}
-                  style={styles.modalSaveBtn}
-                  disabled={createItem.isPending || updateItem.isPending}
-                  icon="content-save-outline"
+                  mode="outlined"
+                  onPress={() => setPriorityModalOpen(true)}
+                  style={styles.priorityPickerBtn}
+                  labelStyle={styles.priorityPickerLabel}
+                  icon="chevron-down"
+                  contentStyle={styles.priorityPickerContent}
                 >
-                  {createItem.isPending || updateItem.isPending ? "Guardando..." : "Guardar deseo"}
+                  Prioridad {selectedPriorityLabel}
                 </Button>
+              ) : (
+                <Pressable
+                  style={styles.mobilePriorityOpenBtn}
+                  onPress={() => setPriorityModalOpen(true)}
+                >
+                  <NativeText style={styles.mobilePriorityOpenLabel}>Prioridad: {selectedPriorityLabel}</NativeText>
+                  <Ionicons name="chevron-down" size={20} color={theme.colors.textOnDark} />
+                </Pressable>
+              )}
+
+              <View style={[styles.modalActionsRow, !isWeb && styles.modalActionsRowMobile]}>
+                {isWeb ? (
+                  <>
+                    <Button mode="text" onPress={() => setFormOpen(false)} textColor={theme.colors.textSoft}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      mode="contained"
+                      onPress={onAddItem}
+                      style={styles.modalSaveBtn}
+                      disabled={createItem.isPending || updateItem.isPending}
+                      icon="content-save-outline"
+                    >
+                      {createItem.isPending || updateItem.isPending ? "Guardando..." : "Guardar deseo"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Pressable style={styles.mobileModalGhostBtn} onPress={() => setFormOpen(false)}>
+                      <NativeText style={styles.mobileModalGhostBtnText}>Cancelar</NativeText>
+                    </Pressable>
+                    <Pressable
+                      style={[
+                        styles.mobileModalPrimaryBtn,
+                        (createItem.isPending || updateItem.isPending) && styles.mobileModalPrimaryBtnDisabled,
+                      ]}
+                      onPress={onAddItem}
+                      disabled={createItem.isPending || updateItem.isPending}
+                    >
+                      {createItem.isPending || updateItem.isPending ? (
+                        <ActivityIndicator color={theme.colors.textOnDark} />
+                      ) : (
+                        <>
+                          <Ionicons name="save-outline" size={20} color={theme.colors.textOnDark} />
+                          <NativeText style={styles.mobileModalPrimaryBtnText}>Guardar deseo</NativeText>
+                        </>
+                      )}
+                    </Pressable>
+                  </>
+                )}
               </View>
             </ScrollView>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={storeModalOpen} transparent animationType="fade" onRequestClose={() => setStoreModalOpen(false)}>
-        <View style={styles.selectorBackdrop}>
-          <View style={styles.selectorCard}>
-            <Text style={styles.selectorTitle}>Filtrar por tienda</Text>
-            <Button mode={storeFilter === "all" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setStoreFilter("all"); setStoreModalOpen(false); }}>
-              Todas las tiendas
-            </Button>
-            {uniqueStores.map((s) => (
-              <Button key={s} mode={storeFilter === s ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setStoreFilter(s); setStoreModalOpen(false); }}>
-                {s}
-              </Button>
-            ))}
-            <Button mode="text" onPress={() => setStoreModalOpen(false)} textColor={theme.colors.textSoft}>
-              Cerrar
-            </Button>
+      <Modal
+        visible={storeModalOpen}
+        transparent
+        animationType={isWeb ? "fade" : "slide"}
+        onRequestClose={() => setStoreModalOpen(false)}
+      >
+        <View style={[styles.selectorBackdrop, !isWeb && styles.selectorBackdropSheet]}>
+          <View style={[styles.selectorCard, !isWeb && styles.selectorSheet]}>
+            {isWeb ? (
+              <PaperText style={styles.selectorTitle}>Filtrar por tienda</PaperText>
+            ) : (
+              <NativeText style={[styles.selectorTitle, styles.selectorTitleMobile]}>Filtrar por tienda</NativeText>
+            )}
+            {isWeb ? (
+              <>
+                <Button
+                  mode={storeFilter === "all" ? "contained" : "outlined"}
+                  style={styles.selectorBtn}
+                  onPress={() => {
+                    setStoreFilter("all");
+                    setStoreModalOpen(false);
+                  }}
+                >
+                  Todas las tiendas
+                </Button>
+                {uniqueStores.map((s) => (
+                  <Button
+                    key={s}
+                    mode={storeFilter === s ? "contained" : "outlined"}
+                    style={styles.selectorBtn}
+                    onPress={() => {
+                      setStoreFilter(s);
+                      setStoreModalOpen(false);
+                    }}
+                  >
+                    {s}
+                  </Button>
+                ))}
+                <Button mode="text" onPress={() => setStoreModalOpen(false)} textColor={theme.colors.textSoft}>
+                  Cerrar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Pressable
+                  style={[styles.mobileSheetOption, storeFilter === "all" && styles.mobileSheetOptionSelected]}
+                  onPress={() => {
+                    setStoreFilter("all");
+                    setStoreModalOpen(false);
+                  }}
+                >
+                  <NativeText
+                    style={[
+                      styles.mobileSheetOptionText,
+                      storeFilter === "all" && styles.mobileSheetOptionTextSelected,
+                    ]}
+                  >
+                    Todas las tiendas
+                  </NativeText>
+                </Pressable>
+                {uniqueStores.map((s) => (
+                  <Pressable
+                    key={s}
+                    style={[styles.mobileSheetOption, storeFilter === s && styles.mobileSheetOptionSelected]}
+                    onPress={() => {
+                      setStoreFilter(s);
+                      setStoreModalOpen(false);
+                    }}
+                  >
+                    <NativeText
+                      style={[
+                        styles.mobileSheetOptionText,
+                        storeFilter === s && styles.mobileSheetOptionTextSelected,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {s}
+                    </NativeText>
+                  </Pressable>
+                ))}
+                <Pressable style={styles.mobileSheetCloseBtn} onPress={() => setStoreModalOpen(false)}>
+                  <NativeText style={styles.mobileSheetCloseBtnText}>Cerrar</NativeText>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       </Modal>
 
-      <Modal visible={sortModalOpen} transparent animationType="fade" onRequestClose={() => setSortModalOpen(false)}>
-        <View style={styles.selectorBackdrop}>
-          <View style={styles.selectorCard}>
-            <Text style={styles.selectorTitle}>Ordenar</Text>
-            <Button mode={sortBy === "priority" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setSortBy("priority"); setSortModalOpen(false); }}>
-              Prioridad
-            </Button>
-            <Button mode={sortBy === "title" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setSortBy("title"); setSortModalOpen(false); }}>
-              Título
-            </Button>
-            <Button mode={sortBy === "recent" ? "contained" : "outlined"} style={styles.selectorBtn} onPress={() => { setSortBy("recent"); setSortModalOpen(false); }}>
-              Mas recientes
-            </Button>
-            <Button mode="text" onPress={() => setSortModalOpen(false)} textColor={theme.colors.textSoft}>
-              Cerrar
-            </Button>
+      <Modal
+        visible={sortModalOpen}
+        transparent
+        animationType={isWeb ? "fade" : "slide"}
+        onRequestClose={() => setSortModalOpen(false)}
+      >
+        <View style={[styles.selectorBackdrop, !isWeb && styles.selectorBackdropSheet]}>
+          <View style={[styles.selectorCard, !isWeb && styles.selectorSheet]}>
+            {isWeb ? (
+              <PaperText style={styles.selectorTitle}>Ordenar</PaperText>
+            ) : (
+              <NativeText style={[styles.selectorTitle, styles.selectorTitleMobile]}>Ordenar</NativeText>
+            )}
+            {isWeb ? (
+              <>
+                <Button
+                  mode={sortBy === "priority" ? "contained" : "outlined"}
+                  style={styles.selectorBtn}
+                  onPress={() => {
+                    setSortBy("priority");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  Prioridad
+                </Button>
+                <Button
+                  mode={sortBy === "title" ? "contained" : "outlined"}
+                  style={styles.selectorBtn}
+                  onPress={() => {
+                    setSortBy("title");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  Título
+                </Button>
+                <Button
+                  mode={sortBy === "recent" ? "contained" : "outlined"}
+                  style={styles.selectorBtn}
+                  onPress={() => {
+                    setSortBy("recent");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  Mas recientes
+                </Button>
+                <Button mode="text" onPress={() => setSortModalOpen(false)} textColor={theme.colors.textSoft}>
+                  Cerrar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Pressable
+                  style={[styles.mobileSheetOption, sortBy === "priority" && styles.mobileSheetOptionSelected]}
+                  onPress={() => {
+                    setSortBy("priority");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  <NativeText
+                    style={[
+                      styles.mobileSheetOptionText,
+                      sortBy === "priority" && styles.mobileSheetOptionTextSelected,
+                    ]}
+                  >
+                    Prioridad
+                  </NativeText>
+                </Pressable>
+                <Pressable
+                  style={[styles.mobileSheetOption, sortBy === "title" && styles.mobileSheetOptionSelected]}
+                  onPress={() => {
+                    setSortBy("title");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  <NativeText
+                    style={[
+                      styles.mobileSheetOptionText,
+                      sortBy === "title" && styles.mobileSheetOptionTextSelected,
+                    ]}
+                  >
+                    Título
+                  </NativeText>
+                </Pressable>
+                <Pressable
+                  style={[styles.mobileSheetOption, sortBy === "recent" && styles.mobileSheetOptionSelected]}
+                  onPress={() => {
+                    setSortBy("recent");
+                    setSortModalOpen(false);
+                  }}
+                >
+                  <NativeText
+                    style={[
+                      styles.mobileSheetOptionText,
+                      sortBy === "recent" && styles.mobileSheetOptionTextSelected,
+                    ]}
+                  >
+                    Mas recientes
+                  </NativeText>
+                </Pressable>
+                <Pressable style={styles.mobileSheetCloseBtn} onPress={() => setSortModalOpen(false)}>
+                  <NativeText style={styles.mobileSheetCloseBtnText}>Cerrar</NativeText>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -463,28 +747,65 @@ export default function WishlistScreen() {
       <Modal
         visible={priorityModalOpen}
         transparent
-        animationType="fade"
+        animationType={isWeb ? "fade" : "slide"}
         onRequestClose={() => setPriorityModalOpen(false)}
       >
-        <View style={styles.selectorBackdrop}>
-          <View style={styles.selectorCard}>
-            <Text style={styles.selectorTitle}>Selecciona prioridad</Text>
-            {PRIORITY_OPTIONS.map((opt) => (
-              <Button
-                key={opt.value}
-                mode={priority === opt.value ? "contained" : "outlined"}
-                style={styles.selectorBtn}
-                onPress={() => {
-                  setPriority(opt.value);
-                  setPriorityModalOpen(false);
-                }}
-              >
-                {opt.label}
-              </Button>
-            ))}
-            <Button mode="text" onPress={() => setPriorityModalOpen(false)} textColor={theme.colors.textSoft}>
-              Cerrar
-            </Button>
+        <View style={[styles.selectorBackdrop, !isWeb && styles.selectorBackdropSheet]}>
+          <View style={[styles.selectorCard, !isWeb && styles.selectorSheet]}>
+            {isWeb ? (
+              <PaperText style={styles.selectorTitle}>Selecciona prioridad</PaperText>
+            ) : (
+              <NativeText style={[styles.selectorTitle, styles.selectorTitleMobile]}>
+                Selecciona prioridad
+              </NativeText>
+            )}
+            {isWeb ? (
+              <>
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    mode={priority === opt.value ? "contained" : "outlined"}
+                    style={styles.selectorBtn}
+                    onPress={() => {
+                      setPriority(opt.value);
+                      setPriorityModalOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+                <Button mode="text" onPress={() => setPriorityModalOpen(false)} textColor={theme.colors.textSoft}>
+                  Cerrar
+                </Button>
+              </>
+            ) : (
+              <>
+                <View style={styles.mobilePriorityPillRow}>
+                  {PRIORITY_OPTIONS.map((opt) => (
+                    <Pressable
+                      key={opt.value}
+                      style={[styles.mobilePriorityPill, priority === opt.value && styles.mobilePriorityPillSelected]}
+                      onPress={() => {
+                        setPriority(opt.value);
+                        setPriorityModalOpen(false);
+                      }}
+                    >
+                      <NativeText
+                        style={[
+                          styles.mobilePriorityPillText,
+                          priority === opt.value && styles.mobilePriorityPillTextSelected,
+                        ]}
+                      >
+                        {opt.label}
+                      </NativeText>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable style={styles.mobileSheetCloseBtn} onPress={() => setPriorityModalOpen(false)}>
+                  <NativeText style={styles.mobileSheetCloseBtnText}>Cerrar</NativeText>
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -492,34 +813,78 @@ export default function WishlistScreen() {
       <Modal
         visible={confirmModalOpen}
         transparent
-        animationType="fade"
+        animationType={isWeb ? "fade" : "slide"}
         onRequestClose={closeConfirmModal}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>
-              {confirmType === "purchase" ? "Marcar como comprado" : "Eliminar deseo"}
-            </Text>
-            <Text style={styles.confirmBody}>
-              {confirmType === "purchase"
-                ? `¿Quieres marcar "${selectedItem?.title ?? ""}" como comprado?`
-                : `¿Seguro que quieres eliminar "${selectedItem?.title ?? ""}" de tu wishlist?`}
-            </Text>
-            <View style={styles.confirmActionsRow}>
-              <Button mode="outlined" onPress={closeConfirmModal} style={styles.confirmCancelBtn}>
-                Cancelar
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => void onAcceptConfirm()}
-                style={styles.confirmAcceptBtn}
-                buttonColor={confirmType === "delete" ? "#7D3A35" : theme.colors.primary}
-                textColor={confirmType === "delete" ? theme.colors.textOnDark : theme.colors.onPrimary}
-                disabled={createPurchase.isPending || removeItem.isPending}
-              >
-                {confirmType === "delete" ? "Eliminar" : "Confirmar"}
-              </Button>
-            </View>
+        <View style={[styles.modalBackdrop, !isWeb && styles.modalBackdropSheet]}>
+          <View style={[styles.confirmCard, !isWeb && styles.confirmSheet]}>
+            {isWeb ? (
+              <>
+                <PaperText style={styles.confirmTitle}>
+                  {confirmType === "purchase" ? "Marcar como comprado" : "Eliminar deseo"}
+                </PaperText>
+                <PaperText style={styles.confirmBody}>
+                  {confirmType === "purchase"
+                    ? `¿Quieres marcar "${selectedItem?.title ?? ""}" como comprado?`
+                    : `¿Seguro que quieres eliminar "${selectedItem?.title ?? ""}" de tu wishlist?`}
+                </PaperText>
+                <View style={styles.confirmActionsRow}>
+                  <Button mode="outlined" onPress={closeConfirmModal} style={styles.confirmCancelBtn}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={() => void onAcceptConfirm()}
+                    style={styles.confirmAcceptBtn}
+                    buttonColor={confirmType === "delete" ? "#7D3A35" : theme.colors.primary}
+                    textColor={confirmType === "delete" ? theme.colors.textOnDark : theme.colors.onPrimary}
+                    disabled={createPurchase.isPending || removeItem.isPending}
+                  >
+                    {confirmType === "delete" ? "Eliminar" : "Confirmar"}
+                  </Button>
+                </View>
+              </>
+            ) : (
+              <>
+                <NativeText style={[styles.confirmTitle, styles.confirmTitleMobile]}>
+                  {confirmType === "purchase" ? "Marcar como comprado" : "Eliminar deseo"}
+                </NativeText>
+                <NativeText style={[styles.confirmBody, styles.confirmBodyMobile]}>
+                  {confirmType === "purchase"
+                    ? `¿Quieres marcar "${selectedItem?.title ?? ""}" como comprado?`
+                    : `¿Seguro que quieres eliminar "${selectedItem?.title ?? ""}" de tu wishlist?`}
+                </NativeText>
+                <View style={styles.confirmActionsRowMobile}>
+                  <Pressable style={styles.mobileConfirmSecondaryBtn} onPress={closeConfirmModal}>
+                    <NativeText style={styles.mobileConfirmSecondaryBtnText}>Cancelar</NativeText>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.mobileConfirmPrimaryBtn,
+                      confirmType === "delete" && styles.mobileConfirmPrimaryBtnDanger,
+                      (createPurchase.isPending || removeItem.isPending) && styles.mobileModalPrimaryBtnDisabled,
+                    ]}
+                    onPress={() => void onAcceptConfirm()}
+                    disabled={createPurchase.isPending || removeItem.isPending}
+                  >
+                    {createPurchase.isPending || removeItem.isPending ? (
+                      <ActivityIndicator
+                        color={confirmType === "delete" ? theme.colors.textOnDark : theme.colors.onPrimary}
+                      />
+                    ) : (
+                      <NativeText
+                        style={[
+                          styles.mobileConfirmPrimaryBtnText,
+                          confirmType === "delete" && styles.mobileConfirmPrimaryBtnTextDanger,
+                        ]}
+                      >
+                        {confirmType === "delete" ? "Eliminar" : "Confirmar"}
+                      </NativeText>
+                    )}
+                  </Pressable>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -532,15 +897,15 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   headerContainer: {
-    marginBottom: 10,
-    gap: 10,
+    marginBottom: Platform.OS === "web" ? 10 : 16,
+    gap: Platform.OS === "web" ? 10 : 14,
   },
   listContent: {
     paddingBottom: 24,
     flexGrow: 1,
   },
   controlsBlock: {
-    gap: 10,
+    gap: Platform.OS === "web" ? 10 : 14,
   },
   searchBar: {
     backgroundColor: theme.colors.cardElevated,
@@ -770,6 +1135,444 @@ const styles = StyleSheet.create({
   confirmAcceptBtn: {
     flex: 1,
     borderRadius: 12,
+  },
+  modalBackdropSheet: {
+    justifyContent: "flex-end",
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
+  formModalSheet: {
+    alignSelf: "stretch",
+    maxWidth: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderWidth: 0,
+    borderTopWidth: 1,
+    borderColor: theme.colors.borderOnCard,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 28,
+    maxHeight: "92%",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 18,
+      },
+      default: {},
+    }),
+  },
+  formContentMobile: {
+    gap: 14,
+    paddingBottom: 12,
+  },
+  modalActionsRowMobile: {
+    marginTop: 16,
+    gap: 12,
+    alignItems: "stretch",
+  },
+  mobileSearchShell: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: { elevation: 3 },
+      default: {},
+    }),
+  },
+  mobileSearchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: "Fraunces_400Regular",
+    color: theme.colors.text,
+    paddingVertical: 0,
+  },
+  controlsRowMobile: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  mobileOutlineBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.bgPanel,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+      default: {},
+    }),
+  },
+  mobileOutlineBtnText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 12,
+    color: theme.colors.textOnDark,
+    textAlign: "center",
+  },
+  mobilePrimaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+      default: {},
+    }),
+  },
+  mobilePrimaryBtnText: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 16,
+    color: theme.colors.textOnDark,
+  },
+  mobileActionHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: theme.colors.cardElevated,
+  },
+  mobileActionHintText: {
+    flex: 1,
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 13,
+    lineHeight: 18,
+    color: theme.colors.textSoft,
+  },
+  mobileItemCard: {
+    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+      },
+      android: { elevation: 5 },
+      default: {},
+    }),
+  },
+  priorityBadgeMobile: {
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    backgroundColor: theme.colors.bgPanel,
+  },
+  itemDividerMobile: {
+    height: 12,
+  },
+  actionsRowMobile: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+    alignItems: "stretch",
+  },
+  mobileActionPill: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    backgroundColor: theme.colors.cardElevated,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 },
+      default: {},
+    }),
+  },
+  mobileActionPillPrimary: {
+    backgroundColor: theme.colors.primary,
+  },
+  mobileActionPillDanger: {
+    backgroundColor: theme.colors.cardElevated,
+  },
+  mobileActionPillLabel: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 12,
+    color: theme.colors.text,
+  },
+  mobileActionPillLabelPrimary: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 12,
+    color: theme.colors.onPrimary,
+  },
+  mobileActionPillLabelDanger: {
+    color: theme.colors.danger,
+    fontFamily: "Fraunces_700Bold",
+  },
+  mobilePriorityOpenBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      },
+      android: { elevation: 3 },
+      default: {},
+    }),
+  },
+  mobilePriorityOpenLabel: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 15,
+    color: theme.colors.textOnDark,
+  },
+  mobileModalGhostBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+  },
+  mobileModalGhostBtnText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 16,
+    color: theme.colors.textSoft,
+  },
+  mobileModalPrimaryBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.primary,
+  },
+  mobileModalPrimaryBtnDisabled: {
+    opacity: 0.65,
+  },
+  mobileModalPrimaryBtnText: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 15,
+    color: theme.colors.textOnDark,
+  },
+  selectorBackdropSheet: {
+    justifyContent: "flex-end",
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
+  selectorSheet: {
+    alignSelf: "stretch",
+    maxWidth: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderWidth: 0,
+    borderTopWidth: 1,
+    borderColor: theme.colors.borderOnCard,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 24,
+    gap: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: { elevation: 16 },
+      default: {},
+    }),
+  },
+  selectorTitleMobile: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  mobileSheetOption: {
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.cardElevated,
+  },
+  mobileSheetOptionSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  mobileSheetOptionText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 16,
+    color: theme.colors.text,
+    textAlign: "center",
+  },
+  mobileSheetOptionTextSelected: {
+    fontFamily: "Fraunces_700Bold",
+    color: theme.colors.textOnDark,
+  },
+  mobileSheetCloseBtn: {
+    alignSelf: "center",
+    marginTop: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+  },
+  mobileSheetCloseBtnText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 15,
+    color: theme.colors.textSoft,
+  },
+  mobilePriorityPillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  mobilePriorityPill: {
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    backgroundColor: theme.colors.cardElevated,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+      default: {},
+    }),
+  },
+  mobilePriorityPillSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  mobilePriorityPillText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 15,
+    color: theme.colors.text,
+  },
+  mobilePriorityPillTextSelected: {
+    fontFamily: "Fraunces_700Bold",
+    color: theme.colors.textOnDark,
+  },
+  confirmSheet: {
+    alignSelf: "stretch",
+    maxWidth: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderWidth: 0,
+    borderTopWidth: 1,
+    borderColor: theme.colors.borderOnCard,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 28,
+    gap: 14,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 16,
+      },
+      android: { elevation: 18 },
+      default: {},
+    }),
+  },
+  confirmTitleMobile: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  confirmBodyMobile: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  confirmActionsRowMobile: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "stretch",
+  },
+  mobileConfirmSecondaryBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.cardElevated,
+  },
+  mobileConfirmSecondaryBtnText: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  mobileConfirmPrimaryBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primary,
+  },
+  mobileConfirmPrimaryBtnDanger: {
+    backgroundColor: "#7D3A35",
+  },
+  mobileConfirmPrimaryBtnText: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 16,
+    color: theme.colors.onPrimary,
+  },
+  mobileConfirmPrimaryBtnTextDanger: {
+    color: theme.colors.textOnDark,
   },
 });
 

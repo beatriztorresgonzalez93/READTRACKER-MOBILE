@@ -3,16 +3,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import Constants from "expo-constants";
 import { useMemo, useState } from "react";
+import type { TextProps as RNTextProps } from "react-native";
 import {
+    ActivityIndicator,
     Alert,
     FlatList,
     Modal,
     Platform,
     Pressable,
     StyleSheet,
+    Text as RNText,
     View,
 } from "react-native";
-import { Button, Card, Text } from "react-native-paper";
+import { Button, Card, Text as PaperText } from "react-native-paper";
 
 import {
     useDeleteReadingSession,
@@ -23,6 +26,13 @@ import { AppLoader } from "@/shared/ui/app-loader";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
+
+function HistoryText({ children, ...rest }: RNTextProps) {
+  if (Platform.OS === "web") {
+    return <PaperText {...rest}>{children}</PaperText>;
+  }
+  return <RNText {...rest}>{children}</RNText>;
+}
 
 export default function HistoryScreen() {
   const ListComponent: any =
@@ -97,10 +107,10 @@ export default function HistoryScreen() {
   if (history.isError) {
     return (
       <Screen>
-        <Text style={styles.errorText}>
+        <HistoryText style={styles.errorText}>
           No se pudo cargar el historial. Comprueba tu conexion y vuelve a
           intentarlo.
-        </Text>
+        </HistoryText>
       </Screen>
     );
   }
@@ -171,173 +181,306 @@ export default function HistoryScreen() {
     }
   }
 
+  const calendarBody = (
+    <>
+      <HistoryText
+        style={[
+          styles.calendarTitle,
+          Platform.OS !== "web" ? styles.calendarTitleNative : null,
+        ]}
+      >
+        Calendario de intensidad
+      </HistoryText>
+      <View
+        style={[
+          styles.weekRow,
+          Platform.OS !== "web" ? styles.weekRowNative : null,
+        ]}
+      >
+        {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
+          <HistoryText key={weekDay} style={styles.weekDayLabel}>
+            {weekDay}
+          </HistoryText>
+        ))}
+      </View>
+      <View
+        style={[
+          styles.calendarGrid,
+          Platform.OS !== "web" ? styles.calendarGridNative : null,
+        ]}
+      >
+        {calendarCells.map((cell) => (
+          <Pressable
+            key={cell.key}
+            disabled={!cell.day || !cell.pages}
+            onPress={() => setSelectedDay(cell.key)}
+            style={[
+              styles.dayCell,
+              Platform.OS !== "web" ? styles.dayCellNative : null,
+              { backgroundColor: intensityColor(cell.pages) },
+              selectedDay === cell.key
+                ? styles.dayCellSelected
+                : null,
+            ]}
+          >
+            <HistoryText
+              style={[
+                styles.dayCellText,
+                Platform.OS !== "web" ? styles.dayCellTextNative : null,
+                (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
+              ]}
+            >
+              {cell.day ?? ""}
+            </HistoryText>
+          </Pressable>
+        ))}
+      </View>
+      <View
+        style={[
+          styles.legendRow,
+          Platform.OS !== "web" ? styles.legendRowNative : null,
+        ]}
+      >
+        {[
+          { label: "0", color: intensityColor(0) },
+          { label: "1-10", color: intensityColor(10) },
+          { label: "11-25", color: intensityColor(25) },
+          { label: "26-40", color: intensityColor(40) },
+          { label: "41+", color: intensityColor(50) },
+        ].map((item) => (
+          <View key={item.label} style={styles.legendItem}>
+            <View
+              style={[
+                styles.legendSwatch,
+                Platform.OS !== "web" ? styles.legendSwatchNative : null,
+                { backgroundColor: item.color },
+              ]}
+            />
+            <HistoryText style={styles.legendText}>{item.label}</HistoryText>
+          </View>
+        ))}
+      </View>
+      {selectedDay ? (
+        <View
+          style={[
+            styles.sessionsBlock,
+            Platform.OS !== "web" ? styles.sessionsBlockNative : null,
+          ]}
+        >
+          <HistoryText
+            style={[
+              styles.sessionsTitle,
+              Platform.OS !== "web" ? styles.sessionsTitleNative : null,
+            ]}
+          >
+            Sesiones del {dateFormatter.format(new Date(selectedDay))}
+          </HistoryText>
+          {selectedSessions.length > 0 ? (
+            selectedSessions.map((session) => (
+              <View
+                key={session.id}
+                style={[
+                  styles.sessionMiniCard,
+                  Platform.OS !== "web" ? styles.sessionMiniCardNative : null,
+                ]}
+              >
+                <View style={styles.sessionMiniHeader}>
+                  <HistoryText
+                    style={[
+                      styles.sessionMiniTitle,
+                      Platform.OS !== "web"
+                        ? styles.sessionMiniTitleNative
+                        : null,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {session.title}
+                  </HistoryText>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() =>
+                      onDeleteSession({
+                        id: session.id,
+                        title: session.title,
+                      })
+                    }
+                    disabled={deleteSession.isPending}
+                    accessibilityLabel="Eliminar sesión"
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={Platform.OS === "web" ? 16 : 18}
+                      color={theme.colors.textSoft}
+                    />
+                  </Pressable>
+                </View>
+                <HistoryText
+                  style={[
+                    styles.sessionMiniMeta,
+                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {session.author || "Autor desconocido"}
+                </HistoryText>
+                <HistoryText
+                  style={[
+                    styles.sessionMiniMeta,
+                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
+                  ]}
+                >
+                  Paginas:{" "}
+                  {Math.max(
+                    0,
+                    (session.previousPage ??
+                      session.currentPage - session.pagesRead) + 1,
+                  )}{" "}
+                  - {session.currentPage}
+                </HistoryText>
+                <HistoryText
+                  style={[
+                    styles.sessionMiniMeta,
+                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
+                  ]}
+                >
+                  Hora:{" "}
+                  {timeFormatter.format(new Date(session.recordedAt))}
+                </HistoryText>
+              </View>
+            ))
+          ) : (
+            <HistoryText style={styles.sessionEmptyText}>
+              No hay detalle de sesiones para ese día.
+            </HistoryText>
+          )}
+        </View>
+      ) : null}
+    </>
+  );
+
   return (
-    <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
+    <Screen
+      edges={["bottom", "left", "right"]}
+      style={[
+        styles.screen,
+        Platform.OS !== "web" ? styles.screenNative : null,
+      ]}
+    >
       <ListComponent
         data={[{ id: "history-header-only" }]}
         keyExtractor={(item: { id: string }) => item.id}
         ListHeaderComponent={
-          <View style={styles.headerContainer}>
-            <View style={styles.monthControls}>
-              <Button
-                mode="outlined"
-                style={styles.navBtn}
-                labelStyle={styles.navBtnLabel}
-                onPress={history.previousMonth}
-              >
-                Mes anterior
-              </Button>
-              <Text
-                style={[
-                  styles.monthLabel,
-                  { color: appTheme.colors.textOnDark },
-                ]}
-              >
-                {monthFormatter.format(
-                  new Date(
-                    history.selected.year,
-                    history.selected.month - 1,
-                    1,
-                  ),
-                )}
-              </Text>
-              <Button
-                mode="outlined"
-                style={styles.navBtn}
-                labelStyle={styles.navBtnLabel}
-                onPress={history.nextMonth}
-              >
-                Mes siguiente
-              </Button>
+          <View
+            style={[
+              styles.headerContainer,
+              Platform.OS !== "web" ? styles.headerContainerNative : null,
+            ]}
+          >
+            <View
+              style={[
+                styles.monthControls,
+                Platform.OS !== "web" ? styles.monthControlsNative : null,
+              ]}
+            >
+              {Platform.OS === "web" ? (
+                <>
+                  <Button
+                    mode="outlined"
+                    style={styles.navBtn}
+                    labelStyle={styles.navBtnLabel}
+                    onPress={history.previousMonth}
+                  >
+                    Mes anterior
+                  </Button>
+                  <PaperText
+                    style={[
+                      styles.monthLabel,
+                      { color: appTheme.colors.textOnDark },
+                    ]}
+                  >
+                    {monthFormatter.format(
+                      new Date(
+                        history.selected.year,
+                        history.selected.month - 1,
+                        1,
+                      ),
+                    )}
+                  </PaperText>
+                  <Button
+                    mode="outlined"
+                    style={styles.navBtn}
+                    labelStyle={styles.navBtnLabel}
+                    onPress={history.nextMonth}
+                  >
+                    Mes siguiente
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.navBtnNative,
+                      pressed ? styles.navBtnNativePressed : null,
+                    ]}
+                    onPress={history.previousMonth}
+                  >
+                    <HistoryText style={styles.navBtnNativeLabel}>
+                      Mes anterior
+                    </HistoryText>
+                  </Pressable>
+                  <HistoryText
+                    style={[
+                      styles.monthLabel,
+                      styles.monthLabelNative,
+                      { color: appTheme.colors.textOnDark },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {monthFormatter.format(
+                      new Date(
+                        history.selected.year,
+                        history.selected.month - 1,
+                        1,
+                      ),
+                    )}
+                  </HistoryText>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.navBtnNative,
+                      pressed ? styles.navBtnNativePressed : null,
+                    ]}
+                    onPress={history.nextMonth}
+                  >
+                    <HistoryText style={styles.navBtnNativeLabel}>
+                      Mes siguiente
+                    </HistoryText>
+                  </Pressable>
+                </>
+              )}
             </View>
 
-            <Card mode="outlined" style={styles.calendarCard}>
-              <Card.Content>
-                <Text style={styles.calendarTitle}>
-                  Calendario de intensidad
-                </Text>
-                <View style={styles.weekRow}>
-                  {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
-                    <Text key={weekDay} style={styles.weekDayLabel}>
-                      {weekDay}
-                    </Text>
-                  ))}
-                </View>
-                <View style={styles.calendarGrid}>
-                  {calendarCells.map((cell) => (
-                    <Pressable
-                      key={cell.key}
-                      disabled={!cell.day || !cell.pages}
-                      onPress={() => setSelectedDay(cell.key)}
-                      style={[
-                        styles.dayCell,
-                        { backgroundColor: intensityColor(cell.pages) },
-                        selectedDay === cell.key
-                          ? styles.dayCellSelected
-                          : null,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayCellText,
-                          (cell.pages ?? 0) >= 26
-                            ? styles.dayCellTextOnDark
-                            : null,
-                        ]}
-                      >
-                        {cell.day ?? ""}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <View style={styles.legendRow}>
-                  {[
-                    { label: "0", color: intensityColor(0) },
-                    { label: "1-10", color: intensityColor(10) },
-                    { label: "11-25", color: intensityColor(25) },
-                    { label: "26-40", color: intensityColor(40) },
-                    { label: "41+", color: intensityColor(50) },
-                  ].map((item) => (
-                    <View key={item.label} style={styles.legendItem}>
-                      <View
-                        style={[
-                          styles.legendSwatch,
-                          { backgroundColor: item.color },
-                        ]}
-                      />
-                      <Text style={styles.legendText}>{item.label}</Text>
-                    </View>
-                  ))}
-                </View>
-                {selectedDay ? (
-                  <View style={styles.sessionsBlock}>
-                    <Text style={styles.sessionsTitle}>
-                      Sesiones del {dateFormatter.format(new Date(selectedDay))}
-                    </Text>
-                    {selectedSessions.length > 0 ? (
-                      selectedSessions.map((session) => (
-                        <View key={session.id} style={styles.sessionMiniCard}>
-                          <View style={styles.sessionMiniHeader}>
-                            <Text
-                              style={styles.sessionMiniTitle}
-                              numberOfLines={1}
-                            >
-                              {session.title}
-                            </Text>
-                            <Pressable
-                              hitSlop={10}
-                              onPress={() =>
-                                onDeleteSession({
-                                  id: session.id,
-                                  title: session.title,
-                                })
-                              }
-                              disabled={deleteSession.isPending}
-                              accessibilityLabel="Eliminar sesión"
-                            >
-                              <Ionicons
-                                name="trash-outline"
-                                size={16}
-                                color={theme.colors.textSoft}
-                              />
-                            </Pressable>
-                          </View>
-                          <Text
-                            style={styles.sessionMiniMeta}
-                            numberOfLines={1}
-                          >
-                            {session.author || "Autor desconocido"}
-                          </Text>
-                          <Text style={styles.sessionMiniMeta}>
-                            Paginas:{" "}
-                            {Math.max(
-                              0,
-                              (session.previousPage ??
-                                session.currentPage - session.pagesRead) + 1,
-                            )}{" "}
-                            - {session.currentPage}
-                          </Text>
-                          <Text style={styles.sessionMiniMeta}>
-                            Hora:{" "}
-                            {timeFormatter.format(new Date(session.recordedAt))}
-                          </Text>
-                        </View>
-                      ))
-                    ) : (
-                      <Text style={styles.sessionEmptyText}>
-                        No hay detalle de sesiones para ese día.
-                      </Text>
-                    )}
-                  </View>
-                ) : null}
-              </Card.Content>
-            </Card>
+            {Platform.OS === "web" ? (
+              <Card mode="outlined" style={styles.calendarCard}>
+                <Card.Content>{calendarBody}</Card.Content>
+              </Card>
+            ) : (
+              <View style={[styles.calendarCard, styles.calendarCardNative]}>
+                <View style={styles.calendarCardInner}>{calendarBody}</View>
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={null}
         renderItem={() => null}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: Platform.OS === "web" ? 8 : 12 }} />
+        )}
+        contentContainerStyle={[
+          styles.listContent,
+          Platform.OS !== "web" ? styles.listContentNative : null,
+        ]}
         showsVerticalScrollIndicator={false}
       />
 
@@ -347,33 +490,87 @@ export default function HistoryScreen() {
         animationType="fade"
         onRequestClose={closeConfirmModal}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>Eliminar sesión</Text>
-            <Text style={styles.confirmBody}>
-              {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
-            </Text>
-            <View style={styles.confirmActionsRow}>
-              <Button
-                mode="outlined"
-                onPress={closeConfirmModal}
-                style={styles.confirmCancelBtn}
-              >
-                Cancelar
-              </Button>
-              <Button
-                mode="contained"
-                buttonColor={theme.colors.danger}
-                onPress={onConfirmDeleteSession}
-                loading={deleteSession.isPending}
-                disabled={deleteSession.isPending}
-                style={styles.confirmDeleteBtn}
-              >
-                Eliminar
-              </Button>
+        {Platform.OS === "web" ? (
+          <View style={styles.modalBackdrop}>
+            <View style={styles.confirmCard}>
+              <PaperText style={styles.confirmTitle}>Eliminar sesión</PaperText>
+              <PaperText style={styles.confirmBody}>
+                {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
+              </PaperText>
+              <View style={styles.confirmActionsRow}>
+                <Button
+                  mode="outlined"
+                  onPress={closeConfirmModal}
+                  style={styles.confirmCancelBtn}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  mode="contained"
+                  buttonColor={theme.colors.danger}
+                  onPress={onConfirmDeleteSession}
+                  loading={deleteSession.isPending}
+                  disabled={deleteSession.isPending}
+                  style={styles.confirmDeleteBtn}
+                >
+                  Eliminar
+                </Button>
+              </View>
             </View>
           </View>
-        </View>
+        ) : (
+          <Pressable
+            style={[styles.modalBackdrop, styles.modalBackdropMobile]}
+            onPress={closeConfirmModal}
+          >
+            <Pressable
+              style={[styles.confirmCard, styles.confirmCardMobile]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <HistoryText style={styles.confirmTitle}>Eliminar sesión</HistoryText>
+              <HistoryText style={styles.confirmBody}>
+                {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
+              </HistoryText>
+              <View style={styles.confirmActionsRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.confirmBtnNative,
+                    styles.confirmBtnNativeCancel,
+                    pressed ? styles.navBtnNativePressed : null,
+                  ]}
+                  onPress={closeConfirmModal}
+                  disabled={deleteSession.isPending}
+                >
+                  <HistoryText style={styles.confirmBtnNativeCancelLabel}>
+                    Cancelar
+                  </HistoryText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.confirmBtnNative,
+                    styles.confirmBtnNativeDelete,
+                    pressed ? styles.confirmBtnNativeDeletePressed : null,
+                  ]}
+                  onPress={onConfirmDeleteSession}
+                  disabled={deleteSession.isPending}
+                >
+                  {deleteSession.isPending ? (
+                    <ActivityIndicator
+                      color={theme.colors.textOnDark}
+                      size="small"
+                    />
+                  ) : (
+                    <HistoryText style={styles.confirmBtnNativeDeleteLabel}>
+                      Eliminar
+                    </HistoryText>
+                  )}
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        )}
       </Modal>
     </Screen>
   );
@@ -382,6 +579,9 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   screen: {
     paddingTop: 10,
+  },
+  screenNative: {
+    paddingTop: 16,
   },
   headerContainer: {
     marginBottom: 12,
@@ -392,6 +592,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
     flexGrow: 1,
+  },
+  listContentNative: {
+    paddingBottom: 36,
   },
   monthControls: {
     flexDirection: "row",
@@ -573,5 +776,202 @@ const styles = StyleSheet.create({
   confirmDeleteBtn: {
     flex: 1,
     borderRadius: 10,
+  },
+  headerContainerNative: {
+    marginBottom: 20,
+  },
+  monthControlsNative: {
+    marginBottom: 22,
+    gap: 12,
+    alignItems: "stretch",
+  },
+  navBtnNative: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navBtnNativePressed: {
+    backgroundColor: theme.colors.bgSoft,
+    opacity: 0.9,
+  },
+  navBtnNativeLabel: {
+    fontSize: 11,
+    fontFamily: "Fraunces_400Regular",
+    color: theme.colors.text,
+    textAlign: "center",
+  },
+  monthLabelNative: {
+    flexShrink: 1,
+    flexBasis: "36%",
+    fontSize: 23,
+    lineHeight: 27,
+    minWidth: 0,
+    paddingHorizontal: 4,
+  },
+  calendarCardNative: {
+    borderRadius: 16,
+    borderWidth: 0,
+    overflow: "visible",
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3D2914",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
+      },
+      android: {
+        elevation: 8,
+      },
+      default: {},
+    }),
+  },
+  calendarCardInner: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  calendarTitleNative: {
+    fontSize: 20,
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  calendarGridNative: {
+    gap: 8,
+  },
+  weekRowNative: {
+    marginBottom: 8,
+  },
+  dayCellNative: {
+    borderWidth: 0,
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3D2914",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.18,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+      default: {},
+    }),
+  },
+  dayCellTextNative: {
+    fontSize: 13,
+  },
+  legendRowNative: {
+    marginTop: 18,
+    gap: 12,
+  },
+  legendSwatchNative: {
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    borderWidth: 0,
+  },
+  sessionsBlockNative: {
+    marginTop: 22,
+    gap: 10,
+  },
+  sessionsTitleNative: {
+    fontSize: 20,
+    color: theme.colors.text,
+    fontFamily: "Fraunces_700Bold",
+    marginBottom: 2,
+  },
+  sessionMiniCardNative: {
+    borderWidth: 0,
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3D2914",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.14,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
+  },
+  sessionMiniTitleNative: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Fraunces_700Bold",
+  },
+  sessionMiniMetaNative: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Fraunces_400Regular",
+  },
+  modalBackdropMobile: {
+    justifyContent: "flex-end",
+    paddingHorizontal: 0,
+    paddingTop: 48,
+  },
+  confirmCardMobile: {
+    maxWidth: "100%",
+    width: "100%",
+    alignSelf: "stretch",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderWidth: 0,
+    paddingBottom: 28,
+    paddingTop: 22,
+    paddingHorizontal: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#1A0F08",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 24,
+      },
+      default: {},
+    }),
+  },
+  confirmBtnNative: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  confirmBtnNativeCancel: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.cardElevated,
+  },
+  confirmBtnNativeCancelLabel: {
+    fontFamily: "Fraunces_400Regular",
+    color: theme.colors.text,
+    fontSize: 15,
+  },
+  confirmBtnNativeDelete: {
+    backgroundColor: theme.colors.danger,
+  },
+  confirmBtnNativeDeletePressed: {
+    opacity: 0.88,
+  },
+  confirmBtnNativeDeleteLabel: {
+    color: theme.colors.textOnDark,
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 15,
   },
 });

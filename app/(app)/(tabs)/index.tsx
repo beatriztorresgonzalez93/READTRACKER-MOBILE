@@ -12,6 +12,8 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Text as NativeText,
+  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -50,7 +52,10 @@ import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 import { useLibraryPreferencesStore } from "@store/library-preferences";
 
+const isWeb = Platform.OS === "web";
+
 const COLLECTION_CARD_WIDTH = 146;
+const COLLECTION_CARD_WIDTH_MOBILE = 160;
 const COLLECTION_COVER_RATIO = 1.42;
 const GRID_COVER_WIDTH = 168;
 
@@ -127,6 +132,30 @@ function StatsStrip({
     { icon: "star-outline" as const, value: ratingLabel, label: "VALORACION" },
     { icon: "trophy-outline" as const, value: yearLabel, label: "MEJOR AÑO" },
   ];
+
+  if (!isWeb) {
+    return (
+      <View style={styles.statsRowMobile}>
+        {cells.map((cell) => (
+          <View key={cell.label} style={styles.statsCellMobile}>
+            <Ionicons
+              name={cell.icon}
+              size={16}
+              color={theme.colors.primary}
+              style={styles.statsIcon}
+            />
+            <NativeText style={styles.statsValueMobile}>
+              {cell.value}
+            </NativeText>
+            <NativeText style={styles.statsLabelMobile}>
+              {cell.label}
+            </NativeText>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
   return (
     <Card mode="contained" style={styles.statsCard}>
       <Card.Content style={{ paddingVertical: 0, paddingHorizontal: 0 }}>
@@ -156,16 +185,19 @@ function StatsStrip({
 }
 
 function CollectionBookCard({ book }: { book: Book }) {
-  const h = Math.round(COLLECTION_CARD_WIDTH * COLLECTION_COVER_RATIO);
+  const cardWidth = isWeb ? COLLECTION_CARD_WIDTH : COLLECTION_CARD_WIDTH_MOBILE;
+  const h = Math.round(cardWidth * COLLECTION_COVER_RATIO);
   return (
     <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable style={styles.collectionCard}>
+      <Pressable
+        style={isWeb ? styles.collectionCard : styles.collectionCardMobile}
+      >
         <View style={[styles.collectionCoverWrap, { height: h }]}>
           <BookCover
             uri={book.coverUrl}
-            width={COLLECTION_CARD_WIDTH}
+            width={cardWidth}
             aspectRatio={COLLECTION_COVER_RATIO}
-            borderRadius={4}
+            borderRadius={isWeb ? 4 : 10}
           />
           {book.isFavorite ? (
             <View style={styles.collectionHeart}>
@@ -196,7 +228,9 @@ function ReadingNowCard({ book }: { book: Book }) {
   const progress = Math.max(0, Math.min(100, Math.round(book.progress ?? 0)));
   return (
     <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable style={styles.readingCard}>
+      <Pressable
+        style={isWeb ? styles.readingCard : styles.readingCardMobile}
+      >
         <BookCover
           uri={book.coverUrl}
           width={88}
@@ -224,14 +258,18 @@ function ReadingNowCard({ book }: { book: Book }) {
           <ProgressBar
             progress={progress / 100}
             color={theme.colors.primary}
-            style={styles.readingProgressBar}
+            style={
+              isWeb ? styles.readingProgressBar : styles.readingProgressBarMobile
+            }
           />
         </View>
-        <Ionicons
-          name="chevron-forward"
-          size={22}
-          color={theme.colors.textSoft}
-        />
+        {isWeb && (
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color={theme.colors.textSoft}
+          />
+        )}
       </Pressable>
     </Link>
   );
@@ -279,7 +317,6 @@ function LibraryAcquisitionsFooter() {
   const appTheme = useAppTheme();
   const purchases = usePurchases();
   const items = purchases.data ?? [];
-  const isWeb = Platform.OS === "web";
   const acquisitionsScrollRef = useRef<ScrollView>(null);
   const [acquisitionsOffset, setAcquisitionsOffset] = useState(0);
 
@@ -386,15 +423,17 @@ function BookGridCard({ book }: { book: Book }) {
   const year = book.updatedAt ? new Date(book.updatedAt).getFullYear() : null;
   return (
     <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable style={styles.gridCard}>
+      <Pressable style={isWeb ? styles.gridCard : styles.gridCardMobile}>
         <BookCover
           uri={book.coverUrl}
           width={GRID_COVER_WIDTH}
           aspectRatio={1.45}
-          borderRadius={6}
+          borderRadius={isWeb ? 6 : 14}
           accessibilityLabel={`Portada: ${book.title}`}
         />
-        <View style={styles.gridInfoPanel}>
+        <View
+          style={isWeb ? styles.gridInfoPanel : styles.gridInfoPanelMobile}
+        >
           <Text
             variant="labelLarge"
             style={styles.gridCardTitle}
@@ -410,19 +449,23 @@ function BookGridCard({ book }: { book: Book }) {
           >
             {book.author ?? "Autor desconocido"}
           </Text>
-          <View style={styles.gridGenreYearRow}>
-            <Text
-              variant="labelSmall"
-              style={styles.gridCardStatus}
-              numberOfLines={1}
-            >
-              {book.genre ?? "Sin género"}
-            </Text>
-            <Text variant="labelSmall" style={styles.gridCardYear}>
-              {year ? String(year) : "----"}
-            </Text>
-          </View>
-          <View style={styles.gridDivider} />
+          {isWeb && (
+            <>
+              <View style={styles.gridGenreYearRow}>
+                <Text
+                  variant="labelSmall"
+                  style={styles.gridCardStatus}
+                  numberOfLines={1}
+                >
+                  {book.genre ?? "Sin género"}
+                </Text>
+                <Text variant="labelSmall" style={styles.gridCardYear}>
+                  {year ? String(year) : "----"}
+                </Text>
+              </View>
+              <View style={styles.gridDivider} />
+            </>
+          )}
           <StarRow rating={book.rating} />
         </View>
       </Pressable>
@@ -435,7 +478,6 @@ export default function LibraryScreen() {
   const appTheme = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
   const gridColumns = isWeb
     ? width >= 1500
       ? 5
@@ -564,7 +606,12 @@ export default function LibraryScreen() {
           <View style={styles.listHeaderOuter}>
             {/* Web: cabecera transparente — espacio manual. Nativo: el stack reserva altura del header. */}
             <View style={{ height: isWeb ? insets.top + 72 : 0 }} />
-            <View style={[styles.listHeader, isWeb && styles.listHeaderWeb]}>
+            <View
+              style={[
+                styles.listHeader,
+                isWeb ? styles.listHeaderWeb : styles.listHeaderMobile,
+              ]}
+            >
               <StatsStrip
                 total={summary.data?.total ?? 0}
                 leido={summary.data?.leido ?? 0}
@@ -573,22 +620,44 @@ export default function LibraryScreen() {
               />
 
               <View style={styles.searchRow}>
-                <Searchbar
-                  testID="library-searchbar"
-                  accessibilityLabel="Buscar en biblioteca"
-                  placeholder="Título, autor, género o año..."
-                  value={searchDraft}
-                  onChangeText={setSearchDraft}
-                  style={styles.searchBarFlex}
-                  inputStyle={styles.searchInput}
-                  placeholderTextColor={theme.colors.text}
-                  iconColor={theme.colors.text}
-                  elevation={0}
-                />
+                {isWeb ? (
+                  <Searchbar
+                    testID="library-searchbar"
+                    accessibilityLabel="Buscar en biblioteca"
+                    placeholder="Título, autor, género o año..."
+                    value={searchDraft}
+                    onChangeText={setSearchDraft}
+                    style={styles.searchBarFlex}
+                    inputStyle={styles.searchInput}
+                    placeholderTextColor={theme.colors.text}
+                    iconColor={theme.colors.text}
+                    elevation={0}
+                  />
+                ) : (
+                  <View style={styles.searchBarMobile}>
+                    <Ionicons
+                      name="search-outline"
+                      size={18}
+                      color={theme.colors.textSoft}
+                      style={{ marginLeft: 12 }}
+                    />
+                    <TextInput
+                      testID="library-searchbar"
+                      accessibilityLabel="Buscar en biblioteca"
+                      placeholder="Título, autor, género o año..."
+                      value={searchDraft}
+                      onChangeText={setSearchDraft}
+                      style={styles.searchInputMobile}
+                      placeholderTextColor={theme.colors.textSoft}
+                    />
+                  </View>
+                )}
                 <Pressable
                   onPress={toggleShowFilters}
                   style={[
-                    styles.filterIconBtn,
+                    isWeb
+                      ? styles.filterIconBtn
+                      : styles.filterIconBtnMobile,
                     showFilters && styles.filterIconBtnActive,
                   ]}
                   accessibilityLabel={
@@ -597,7 +666,7 @@ export default function LibraryScreen() {
                 >
                   <Ionicons
                     name="options-outline"
-                    size={22}
+                    size={isWeb ? 22 : 18}
                     color={
                       showFilters ? theme.colors.onPrimary : theme.colors.accent
                     }
@@ -621,31 +690,53 @@ export default function LibraryScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.chipRow}
                   >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <Chip
-                        key={opt.key}
-                        compact
-                        selected={status === opt.key}
-                        onPress={() => setStatus(opt.key)}
-                        style={{
-                          backgroundColor:
-                            status === opt.key
-                              ? appTheme.colors.primary
-                              : appTheme.colors.bgPanel,
-                        }}
-                        textStyle={[
-                          styles.filterChipLabel,
-                          {
-                            color:
+                    {STATUS_OPTIONS.map((opt) =>
+                      isWeb ? (
+                        <Chip
+                          key={opt.key}
+                          compact
+                          selected={status === opt.key}
+                          onPress={() => setStatus(opt.key)}
+                          style={{
+                            backgroundColor:
                               status === opt.key
-                                ? appTheme.colors.onPrimary
-                                : appTheme.colors.textOnDark,
-                          },
-                        ]}
-                      >
-                        {opt.label}
-                      </Chip>
-                    ))}
+                                ? appTheme.colors.primary
+                                : appTheme.colors.bgPanel,
+                          }}
+                          textStyle={[
+                            styles.filterChipLabel,
+                            {
+                              color:
+                                status === opt.key
+                                  ? appTheme.colors.onPrimary
+                                  : appTheme.colors.textOnDark,
+                            },
+                          ]}
+                        >
+                          {opt.label}
+                        </Chip>
+                      ) : (
+                        <Pressable
+                          key={opt.key}
+                          onPress={() => setStatus(opt.key)}
+                          style={[
+                            styles.filterPillMobile,
+                            status === opt.key &&
+                              styles.filterPillMobileActive,
+                          ]}
+                        >
+                          <NativeText
+                            style={[
+                              styles.filterPillTextMobile,
+                              status === opt.key &&
+                                styles.filterPillTextMobileActive,
+                            ]}
+                          >
+                            {opt.label}
+                          </NativeText>
+                        </Pressable>
+                      ),
+                    )}
                   </ScrollView>
                   <Text
                     variant="labelMedium"
@@ -661,74 +752,129 @@ export default function LibraryScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.chipRow}
                   >
-                    {SHELF_OPTIONS.map((opt) => (
-                      <Chip
-                        key={opt.key}
-                        compact
-                        selected={shelf === opt.key}
-                        onPress={() => setShelf(opt.key)}
-                        style={{
-                          backgroundColor:
-                            shelf === opt.key
-                              ? appTheme.colors.primary
-                              : appTheme.colors.bgPanel,
-                        }}
-                        textStyle={[
-                          styles.filterChipLabel,
-                          {
-                            color:
+                    {SHELF_OPTIONS.map((opt) =>
+                      isWeb ? (
+                        <Chip
+                          key={opt.key}
+                          compact
+                          selected={shelf === opt.key}
+                          onPress={() => setShelf(opt.key)}
+                          style={{
+                            backgroundColor:
                               shelf === opt.key
-                                ? appTheme.colors.onPrimary
-                                : appTheme.colors.textOnDark,
-                          },
-                        ]}
-                      >
-                        {opt.label}
-                      </Chip>
-                    ))}
+                                ? appTheme.colors.primary
+                                : appTheme.colors.bgPanel,
+                          }}
+                          textStyle={[
+                            styles.filterChipLabel,
+                            {
+                              color:
+                                shelf === opt.key
+                                  ? appTheme.colors.onPrimary
+                                  : appTheme.colors.textOnDark,
+                            },
+                          ]}
+                        >
+                          {opt.label}
+                        </Chip>
+                      ) : (
+                        <Pressable
+                          key={opt.key}
+                          onPress={() => setShelf(opt.key)}
+                          style={[
+                            styles.filterPillMobile,
+                            shelf === opt.key &&
+                              styles.filterPillMobileActive,
+                          ]}
+                        >
+                          <NativeText
+                            style={[
+                              styles.filterPillTextMobile,
+                              shelf === opt.key &&
+                                styles.filterPillTextMobileActive,
+                            ]}
+                          >
+                            {opt.label}
+                          </NativeText>
+                        </Pressable>
+                      ),
+                    )}
                   </ScrollView>
                   <View style={styles.actionsRow}>
-                    <Button
-                      mode="outlined"
-                      compact
-                      textColor={appTheme.colors.textOnDark}
-                      onPress={() => setGenreModalOpen(true)}
-                      style={[
-                        styles.actionBtn,
-                        styles.actionBtnHalf,
-                        { borderColor: appTheme.colors.accent },
-                      ]}
-                      labelStyle={[
-                        styles.actionBtnLabel,
-                        { color: appTheme.colors.textOnDark },
-                      ]}
-                      contentStyle={styles.actionBtnContent}
-                    >
-                      Género:{" "}
-                      {genre
-                        ? genre.length > 10
-                          ? `${genre.slice(0, 10)}…`
-                          : genre
-                        : "Todos"}
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      compact
-                      textColor={appTheme.colors.textOnDark}
-                      onPress={() => setSortModalOpen(true)}
-                      style={[
-                        styles.actionBtn,
-                        styles.actionBtnHalf,
-                        { borderColor: appTheme.colors.accent },
-                      ]}
-                      labelStyle={[
-                        styles.actionBtnLabel,
-                        { color: appTheme.colors.textOnDark },
-                      ]}
-                      contentStyle={styles.actionBtnContent}
-                    >
-                      Orden: {SORT_LABELS[sort]}
-                    </Button>
+                    {isWeb ? (
+                      <Button
+                        mode="outlined"
+                        compact
+                        textColor={appTheme.colors.textOnDark}
+                        onPress={() => setGenreModalOpen(true)}
+                        style={[
+                          styles.actionBtn,
+                          styles.actionBtnHalf,
+                          { borderColor: appTheme.colors.accent },
+                        ]}
+                        labelStyle={[
+                          styles.actionBtnLabel,
+                          { color: appTheme.colors.textOnDark },
+                        ]}
+                        contentStyle={styles.actionBtnContent}
+                      >
+                        Género:{" "}
+                        {genre
+                          ? genre.length > 10
+                            ? `${genre.slice(0, 10)}…`
+                            : genre
+                          : "Todos"}
+                      </Button>
+                    ) : (
+                      <Pressable
+                        onPress={() => setGenreModalOpen(true)}
+                        style={[styles.actionBtnMobile, styles.actionBtnHalf]}
+                      >
+                        <NativeText
+                          style={styles.actionBtnLabelMobile}
+                          numberOfLines={1}
+                        >
+                          Género:{" "}
+                          {genre
+                            ? genre.length > 10
+                              ? `${genre.slice(0, 10)}…`
+                              : genre
+                            : "Todos"}
+                        </NativeText>
+                      </Pressable>
+                    )}
+                    {isWeb ? (
+                      <Button
+                        mode="outlined"
+                        compact
+                        textColor={appTheme.colors.textOnDark}
+                        onPress={() => setSortModalOpen(true)}
+                        style={[
+                          styles.actionBtn,
+                          styles.actionBtnHalf,
+                          { borderColor: appTheme.colors.accent },
+                        ]}
+                        labelStyle={[
+                          styles.actionBtnLabel,
+                          { color: appTheme.colors.textOnDark },
+                        ]}
+                        contentStyle={styles.actionBtnContent}
+                      >
+                        Orden: {SORT_LABELS[sort]}
+                      </Button>
+                    ) : (
+                      <Pressable
+                        onPress={() => setSortModalOpen(true)}
+                        style={[styles.actionBtnMobile, styles.actionBtnHalf]}
+                      >
+                        <NativeText
+                          style={styles.actionBtnLabelMobile}
+                          numberOfLines={1}
+                        >
+                          Orden: {SORT_LABELS[sort]}
+                        </NativeText>
+                      </Pressable>
+                    )}
                   </View>
                   {filtered ? (
                     <Button
@@ -747,15 +893,21 @@ export default function LibraryScreen() {
               {collectionSlice.length > 0 ? (
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
-                    <Text
-                      variant="titleLarge"
-                      style={[
-                        styles.sectionTitle,
-                        { color: appTheme.colors.textOnDark },
-                      ]}
-                    >
-                      Colección
-                    </Text>
+                    {isWeb ? (
+                      <Text
+                        variant="titleLarge"
+                        style={[
+                          styles.sectionTitle,
+                          { color: appTheme.colors.textOnDark },
+                        ]}
+                      >
+                        Colección
+                      </Text>
+                    ) : (
+                      <NativeText style={styles.sectionTitleMobile}>
+                        Colección
+                      </NativeText>
+                    )}
                   </View>
                   {isWeb ? (
                     <View style={styles.webCarouselWrap}>
@@ -847,15 +999,21 @@ export default function LibraryScreen() {
 
               {readingBooks.length > 0 ? (
                 <View style={styles.section}>
-                  <Text
-                    variant="titleLarge"
-                    style={[
-                      styles.sectionTitle,
-                      { color: appTheme.colors.textOnDark },
-                    ]}
-                  >
-                    Leyendo ahora
-                  </Text>
+                  {isWeb ? (
+                    <Text
+                      variant="titleLarge"
+                      style={[
+                        styles.sectionTitle,
+                        { color: appTheme.colors.textOnDark },
+                      ]}
+                    >
+                      Leyendo ahora
+                    </Text>
+                  ) : (
+                    <NativeText style={styles.sectionTitleMobile}>
+                      Leyendo ahora
+                    </NativeText>
+                  )}
                   <View style={styles.readingStack}>
                     {readingBooks.map((book, index) => (
                       <Animated.View
@@ -871,12 +1029,18 @@ export default function LibraryScreen() {
               ) : null}
 
               <View style={styles.section}>
-                <Text
-                  variant="titleLarge"
-                  style={[styles.sectionTitleStrong, { color: appTheme.colors.textOnDark }]}
-                >
-                  Tus libros
-                </Text>
+                {isWeb ? (
+                  <Text
+                    variant="titleLarge"
+                    style={[styles.sectionTitleStrong, { color: appTheme.colors.textOnDark }]}
+                  >
+                    Tus libros
+                  </Text>
+                ) : (
+                  <NativeText style={styles.sectionTitleMobile}>
+                    Tus libros
+                  </NativeText>
+                )}
               </View>
             </View>
           </View>
@@ -901,14 +1065,31 @@ export default function LibraryScreen() {
         ListFooterComponent={
           <View style={styles.listFooterWrap}>
             {booksFeed.hasNextPage ? (
-              <Button
-                mode="contained"
-                style={styles.loadMoreButton}
-                onPress={() => booksFeed.fetchNextPage()}
-                disabled={booksFeed.isFetchingNextPage}
-              >
-                {booksFeed.isFetchingNextPage ? "Cargando..." : "Cargar mas"}
-              </Button>
+              isWeb ? (
+                <Button
+                  mode="contained"
+                  style={styles.loadMoreButton}
+                  onPress={() => booksFeed.fetchNextPage()}
+                  disabled={booksFeed.isFetchingNextPage}
+                >
+                  {booksFeed.isFetchingNextPage ? "Cargando..." : "Cargar mas"}
+                </Button>
+              ) : (
+                <Pressable
+                  style={[
+                    styles.loadMoreButtonMobile,
+                    booksFeed.isFetchingNextPage && { opacity: 0.6 },
+                  ]}
+                  onPress={() => booksFeed.fetchNextPage()}
+                  disabled={booksFeed.isFetchingNextPage}
+                >
+                  <NativeText style={styles.loadMoreLabelMobile}>
+                    {booksFeed.isFetchingNextPage
+                      ? "Cargando..."
+                      : "Cargar mas"}
+                  </NativeText>
+                </Pressable>
+              )
             ) : null}
             <LibraryAcquisitionsFooter />
           </View>
@@ -926,12 +1107,12 @@ export default function LibraryScreen() {
         animationType="fade"
         onRequestClose={() => setSortModalOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View style={isWeb ? styles.modalRoot : styles.modalRootMobile}>
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setSortModalOpen(false)}
           />
-          <View style={styles.genreSheet}>
+          <View style={isWeb ? styles.genreSheet : styles.genreSheetMobile}>
             <Text variant="titleMedium" style={styles.genreSheetTitle}>
               Ordenar por
             </Text>
@@ -984,12 +1165,12 @@ export default function LibraryScreen() {
         animationType="fade"
         onRequestClose={() => setGenreModalOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View style={isWeb ? styles.modalRoot : styles.modalRootMobile}>
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setGenreModalOpen(false)}
           />
-          <View style={styles.genreSheet}>
+          <View style={isWeb ? styles.genreSheet : styles.genreSheetMobile}>
             <Text variant="titleMedium" style={styles.genreSheetTitle}>
               Género
             </Text>
@@ -1039,7 +1220,6 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  /** Contenedor del FlatList: sin padding horizontal para que el header llegue a los bordes. */
   listContent: {
     flexGrow: 1,
     paddingHorizontal: 0,
@@ -1062,6 +1242,10 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 1220,
     alignSelf: "center",
+  },
+  listHeaderMobile: {
+    paddingHorizontal: 14,
+    gap: 16,
   },
   listRowOuter: {
     paddingHorizontal: 16,
@@ -1167,6 +1351,42 @@ const styles = StyleSheet.create({
     marginTop: 1,
     textAlign: "center",
   },
+  statsRowMobile: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  statsCellMobile: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: theme.colors.card,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+      default: {},
+    }),
+  },
+  statsValueMobile: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 22,
+    color: theme.colors.text,
+  },
+  statsLabelMobile: {
+    fontSize: 8,
+    letterSpacing: 0.4,
+    color: theme.colors.textSoft,
+    marginTop: 1,
+    textAlign: "center",
+  },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1187,10 +1407,38 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     opacity: 1,
   },
+  searchBarMobile: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 44,
+    backgroundColor: theme.colors.card,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+  },
+  searchInputMobile: {
+    flex: 1,
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 14,
+    color: theme.colors.text,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
   filterIconBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  filterIconBtnMobile: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     borderColor: theme.colors.accent,
     alignItems: "center",
@@ -1218,6 +1466,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  filterPillMobile: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+  },
+  filterPillMobileActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterPillTextMobile: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 12,
+    lineHeight: 16,
+    color: theme.colors.text,
+  },
+  filterPillTextMobileActive: {
+    color: theme.colors.onPrimary,
+  },
   actionsRow: {
     flexDirection: "row",
     flexWrap: "nowrap",
@@ -1242,6 +1511,22 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     textTransform: "none",
   },
+  actionBtnMobile: {
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtnLabelMobile: {
+    fontSize: 11,
+    lineHeight: 14,
+    color: theme.colors.text,
+    fontFamily: "Fraunces_400Regular",
+  },
   clearFiltersLabel: {
     fontSize: 12,
   },
@@ -1263,6 +1548,12 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_700Bold",
     letterSpacing: 0.2,
   },
+  sectionTitleMobile: {
+    fontSize: 20,
+    fontFamily: "Fraunces_700Bold",
+    color: theme.colors.text,
+    letterSpacing: 0.2,
+  },
   collectionListContent: {
     gap: 12,
     paddingVertical: 4,
@@ -1275,6 +1566,24 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
+  },
+  collectionCardMobile: {
+    width: COLLECTION_CARD_WIDTH_MOBILE,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: theme.colors.card,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
   },
   collectionCoverWrap: {
     position: "relative",
@@ -1318,6 +1627,26 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
   },
+  readingCardMobile: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
+  },
   readingBody: {
     flex: 1,
     minWidth: 0,
@@ -1336,6 +1665,12 @@ const styles = StyleSheet.create({
   },
   readingProgressBar: {
     height: 6,
+    borderRadius: 999,
+    marginTop: 4,
+    backgroundColor: theme.colors.bgSoft,
+  },
+  readingProgressBarMobile: {
+    height: 8,
     borderRadius: 999,
     marginTop: 4,
     backgroundColor: theme.colors.bgSoft,
@@ -1363,6 +1698,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
   },
+  gridCardMobile: {
+    overflow: "visible",
+    paddingHorizontal: 2,
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   gridInfoPanel: {
     width: GRID_COVER_WIDTH,
     minWidth: 0,
@@ -1377,6 +1718,30 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
     borderTopWidth: 0,
+  },
+  gridInfoPanelMobile: {
+    width: GRID_COVER_WIDTH,
+    minWidth: 0,
+    gap: 3,
+    marginTop: 0,
+    backgroundColor: theme.colors.card,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+      default: {},
+    }),
   },
   gridCardTitle: {
     color: theme.colors.text,
@@ -1417,9 +1782,26 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.primary,
   },
+  loadMoreButtonMobile: {
+    marginTop: 8,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadMoreLabelMobile: {
+    color: theme.colors.onPrimary,
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 14,
+  },
   modalRoot: {
     flex: 1,
     justifyContent: "center",
+  },
+  modalRootMobile: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1433,6 +1815,17 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  genreSheetMobile: {
+    width: "100%",
+    maxHeight: "85%",
+    backgroundColor: theme.colors.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.borderOnCard,
     paddingVertical: 12,
