@@ -54,6 +54,7 @@ function buildBooksListQueryString(offset: number, limit: number, query: Library
   q.set("shelf", query.shelf);
   if (query.genre?.trim()) q.set("genre", query.genre.trim());
   q.set("sort", query.sort);
+  if (query.hasReview === true) q.set("hasReview", "true");
   q.set("limit", String(limit));
   q.set("offset", String(offset));
   return q.toString();

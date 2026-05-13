@@ -75,7 +75,8 @@ const buildWhereFragments = (
   search?: string | null,
   hookStatus?: string | null,
   shelf?: string | null,
-  genre?: string | null
+  genre?: string | null,
+  hasReview?: boolean
 ): { where: string; values: unknown[] } => {
   const parts: string[] = ["user_id = $1"];
   const values: unknown[] = [userId];
@@ -126,6 +127,10 @@ const buildWhereFragments = (
     i += 1;
   }
 
+  if (hasReview) {
+    parts.push(`TRIM(COALESCE(review, '')) <> ''`);
+  }
+
   return { where: parts.join(" AND "), values };
 };
 
@@ -141,7 +146,8 @@ export class BooksRepository {
       filters.search,
       filters.hookStatus,
       filters.shelf,
-      filters.genre ?? null
+      filters.genre ?? null,
+      filters.hasReview === true
     );
     const order = orderByClause(filters.sort);
 

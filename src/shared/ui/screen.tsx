@@ -9,15 +9,18 @@ export type ScreenProps = ViewProps & {
   edges?: Edges;
   /** Solo web: permite ajustar el color del fondo exterior (laterales). */
   webBackgroundColor?: string;
+  /** Sustituye el fondo del contenedor seguro (p. ej. pantallas de auth). */
+  backgroundColor?: string;
 };
 
-export function Screen({ children, style, edges, webBackgroundColor }: ScreenProps) {
+export function Screen({ children, style, edges, webBackgroundColor, backgroundColor }: ScreenProps) {
   const theme = useAppTheme();
-  const webUnifiedBg = webBackgroundColor ?? theme.colors.bgSoft;
+  const screenBg = backgroundColor ?? theme.colors.bg;
+  const webUnifiedBg = webBackgroundColor ?? backgroundColor ?? theme.colors.bgSoft;
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: Platform.OS === "web" ? webUnifiedBg : theme.colors.bg,
+      backgroundColor: Platform.OS === "web" ? webUnifiedBg : screenBg,
     },
     content: {
       flex: 1,

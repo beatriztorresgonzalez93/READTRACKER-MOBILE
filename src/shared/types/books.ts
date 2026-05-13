@@ -15,6 +15,8 @@ export type LibraryBooksQuery = {
   shelf: LibraryShelfFilter;
   genre: string | null;
   sort: BooksSortKey;
+  /** GET /books?hasReview=true — solo libros con texto de reseña (requiere API compatible). */
+  hasReview?: boolean;
 };
 
 export const defaultLibraryBooksQuery: LibraryBooksQuery = {
@@ -41,6 +43,8 @@ export type Book = {
   lastPageMarkedAt?: string | null;
   tags?: string[];
   publisher?: string;
+  /** Texto de reseña cuando la API lo devuelve en listados. */
+  reviewText?: string;
 };
 
 export type BooksSummary = {
@@ -66,7 +70,6 @@ export type PaginatedBooks = {
 export type BookDetail = Book & {
   description?: string;
   progressPercent?: number;
-  reviewText?: string;
   readCount?: number;
   readAt?: string;
   timesRead?: string;

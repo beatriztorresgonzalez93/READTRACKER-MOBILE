@@ -62,6 +62,8 @@ export interface BookListPageFilters {
   shelf?: string;
   genre?: string | null;
   sort: BookSortKey;
+  /** Si es true, solo filas con texto de reseña no vacío. */
+  hasReview?: boolean;
 }
 
 /** Totales globales de la biblioteca (barra lateral / reseñas). */

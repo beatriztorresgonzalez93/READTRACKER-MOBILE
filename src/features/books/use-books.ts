@@ -16,6 +16,12 @@ const LEIDOS_HOME_CAROUSEL_QUERY: LibraryBooksQuery = {
   sort: "recientes",
 };
 
+export const REVIEWS_TAB_BOOKS_QUERY: LibraryBooksQuery = {
+  ...defaultLibraryBooksQuery,
+  sort: "recientes",
+  hasReview: true,
+};
+
 export function useLeyendoPreview() {
   const { token } = useAuth();
 
@@ -43,6 +49,11 @@ export function useLeidosHomeCarousel() {
   });
 }
 
+/** Libros con texto de reseña (GET /books?hasReview=true). */
+export function useReviewsBooksFeed() {
+  return useBooksFeed(REVIEWS_TAB_BOOKS_QUERY);
+}
+
 export function useBooksFeed(listQuery: LibraryBooksQuery) {
   const { token } = useAuth();
 
@@ -55,6 +66,7 @@ export function useBooksFeed(listQuery: LibraryBooksQuery) {
       listQuery.shelf,
       listQuery.genre,
       listQuery.sort,
+      listQuery.hasReview === true,
     ],
     queryFn: ({ pageParam = 0 }) => getBooksPage(token ?? "", pageParam, 10, listQuery),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.offset + lastPage.limit : undefined),

@@ -118,7 +118,7 @@ describe("books hooks query/mutation wiring", () => {
 
     expect(mockUseInfiniteQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ["books", "feed", "asimov", "leyendo", "main", "Sci-Fi", "updated_desc"],
+        queryKey: ["books", "feed", "asimov", "leyendo", "main", "Sci-Fi", "updated_desc", false],
         enabled: true,
         initialPageParam: 0,
       }),

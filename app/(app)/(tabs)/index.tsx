@@ -1,8 +1,9 @@
 // Pantalla principal de biblioteca con filtros, resumen y listado de libros.
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   Platform,
@@ -206,6 +207,12 @@ export default function LibraryScreen() {
   const booksFeed = useBooksFeed(listQuery);
   const filtered = isFilteredQuery(listQuery);
 
+  const loadMoreBooks = useCallback(() => {
+    if (booksFeed.hasNextPage && !booksFeed.isFetchingNextPage) {
+      void booksFeed.fetchNextPage();
+    }
+  }, [booksFeed.hasNextPage, booksFeed.isFetchingNextPage, booksFeed.fetchNextPage]);
+
   if (booksFeed.isPending && !booksFeed.data) {
     return <AppLoader />;
   }
@@ -316,6 +323,22 @@ export default function LibraryScreen() {
                   />
                 </Pressable>
               </View>
+
+              <Pressable
+                onPress={() => router.push("/(app)/books/new" as never)}
+                style={[
+                  styles.addBookBtn,
+                  isWeb ? styles.addBookBtnWeb : styles.addBookBtnMobile,
+                  { backgroundColor: appTheme.colors.primary },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Añadir libro"
+              >
+                <Ionicons name="add" size={20} color={appTheme.colors.onPrimary} />
+                <NativeText style={[styles.addBookBtnLabel, { color: appTheme.colors.onPrimary }]}>
+                  Añadir libro
+                </NativeText>
+              </Pressable>
 
               {isWeb && showFilters ? (
                 <View style={styles.filtersBlock}>
@@ -567,36 +590,16 @@ export default function LibraryScreen() {
             <EmptyState title={emptyTitle} description={emptyDescription} />
           </View>
         }
+        onEndReached={loadMoreBooks}
+        onEndReachedThreshold={0.4}
         ListFooterComponent={
-          <View style={styles.listFooterWrap}>
-            {booksFeed.hasNextPage ? (
-              isWeb ? (
-                <Button
-                  mode="contained"
-                  style={styles.loadMoreButton}
-                  onPress={() => booksFeed.fetchNextPage()}
-                  disabled={booksFeed.isFetchingNextPage}
-                >
-                  {booksFeed.isFetchingNextPage ? "Cargando..." : "Cargar mas"}
-                </Button>
-              ) : (
-                <Pressable
-                  style={[
-                    styles.loadMoreButtonMobile,
-                    booksFeed.isFetchingNextPage && { opacity: 0.6 },
-                  ]}
-                  onPress={() => booksFeed.fetchNextPage()}
-                  disabled={booksFeed.isFetchingNextPage}
-                >
-                  <NativeText style={styles.loadMoreLabelMobile}>
-                    {booksFeed.isFetchingNextPage
-                      ? "Cargando..."
-                      : "Cargar mas"}
-                  </NativeText>
-                </Pressable>
-              )
-            ) : null}
-          </View>
+          booksFeed.isFetchingNextPage ? (
+            <View style={styles.listFooterWrap}>
+              <ActivityIndicator size="small" color={appTheme.colors.primary} />
+            </View>
+          ) : (
+            <View style={styles.listFooterSpacer} />
+          )
         }
         contentContainerStyle={[
           styles.listContent,
@@ -759,14 +762,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   listFooterWrap: {
-    gap: 20,
-    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
     paddingHorizontal: 16,
+  },
+  listFooterSpacer: {
+    height: 8,
   },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  addBookBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  addBookBtnWeb: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  addBookBtnMobile: {
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  addBookBtnLabel: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 15,
   },
   searchBarFlex: {
     flex: 1,
@@ -1028,24 +1055,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.borderOnCard,
     marginTop: 2,
     marginBottom: 2,
-  },
-  loadMoreButton: {
-    marginTop: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.primary,
-  },
-  loadMoreButtonMobile: {
-    marginTop: 8,
-    borderRadius: 14,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadMoreLabelMobile: {
-    color: theme.colors.onPrimary,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 14,
   },
   modalRoot: {
     flex: 1,
