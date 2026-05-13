@@ -1,5 +1,3 @@
-# ReadTracker Mobile (Expo)
-
 [![CI](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml/badge.svg)](https://github.com/beatriztorresgonzalez93/READTRACKER-MOBILE/actions/workflows/ci.yml)
 
 > **CI (integracion continua):** el badge indica si las comprobaciones automaticas en GitHub Actions (`lint`, `typecheck` y `tests`) pasan.

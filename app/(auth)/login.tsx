@@ -24,13 +24,7 @@ import { formatFirebaseAuthError } from "@/shared/lib/firebase-auth-errors";
 import { showAppAlert } from "@/shared/lib/show-app-alert";
 import { showPlaceholderAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
-
-const AUTH_BG = "#F9F7F2";
-const AUTH_GREEN = "#2D4635";
-const AUTH_TEXT = "#2D4635";
-const AUTH_TEXT_MUTED = "#6B7A72";
-const AUTH_BORDER = "#D9D5CC";
-const AUTH_INPUT_BG = "#FFFFFF";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 const logo = require("../../assets/images/logo.png");
 
@@ -38,6 +32,7 @@ export default function LoginScreen() {
   const { scrollRef, scrollPasswordFieldIntoView } = useAuthFormScroll();
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
 
   const loginSchema = z.object({
     email: z.string().trim().email("Introduce un correo valido."),
@@ -123,13 +118,13 @@ export default function LoginScreen() {
       fontFamily: "Fraunces_700Bold",
       fontSize: 28,
       letterSpacing: 2,
-      color: AUTH_GREEN,
+      color: theme.colors.textOnDark,
       textTransform: "uppercase",
     },
     tagline: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 15,
-      color: AUTH_TEXT_MUTED,
+      color: theme.colors.textMutedOnDark,
       textAlign: "center",
       lineHeight: 22,
     },
@@ -137,11 +132,11 @@ export default function LoginScreen() {
       padding: 12,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: "#C94A4A",
-      backgroundColor: "#FFF5F5",
+      borderColor: theme.colors.danger,
+      backgroundColor: theme.colors.bgSoft,
     },
     syncErrorText: {
-      color: AUTH_TEXT,
+      color: theme.colors.textOnDark,
       fontSize: 14,
       lineHeight: 20,
       fontFamily: "Fraunces_400Regular",
@@ -152,20 +147,20 @@ export default function LoginScreen() {
     fieldLabel: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 14,
-      color: AUTH_TEXT,
+      color: theme.colors.textOnDark,
     },
     inputRow: {
       flexDirection: "row",
       alignItems: "center",
       borderWidth: 1,
-      borderColor: AUTH_BORDER,
+      borderColor: theme.colors.borderOnCard,
       borderRadius: 12,
-      backgroundColor: AUTH_INPUT_BG,
+      backgroundColor: theme.colors.card,
       paddingHorizontal: 12,
       minHeight: 48,
     },
     inputRowError: {
-      borderColor: "#C94A4A",
+      borderColor: theme.colors.danger,
     },
     inputIcon: {
       marginRight: 10,
@@ -174,11 +169,11 @@ export default function LoginScreen() {
       flex: 1,
       fontFamily: "Fraunces_400Regular",
       fontSize: 15,
-      color: AUTH_TEXT,
+      color: theme.colors.text,
       paddingVertical: Platform.OS === "ios" ? 12 : 8,
     },
     fieldError: {
-      color: "#C94A4A",
+      color: theme.colors.danger,
       fontSize: 12,
       fontFamily: "Fraunces_400Regular",
     },
@@ -189,12 +184,12 @@ export default function LoginScreen() {
     forgotPasswordText: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 13,
-      color: AUTH_TEXT_MUTED,
+      color: theme.colors.textMutedOnDark,
     },
     primaryButton: {
-      backgroundColor: AUTH_GREEN,
+      backgroundColor: theme.colors.primary,
       borderWidth: 1,
-      borderColor: AUTH_GREEN,
+      borderColor: theme.colors.primary,
       paddingVertical: 14,
       borderRadius: 12,
       alignItems: "center",
@@ -203,7 +198,7 @@ export default function LoginScreen() {
       opacity: 0.9,
     },
     primaryButtonLabel: {
-      color: "#FFFFFF",
+      color: theme.colors.onPrimary,
       fontFamily: "Fraunces_700Bold",
       fontSize: 16,
     },
@@ -216,12 +211,12 @@ export default function LoginScreen() {
     dividerLine: {
       flex: 1,
       height: StyleSheet.hairlineWidth,
-      backgroundColor: AUTH_BORDER,
+      backgroundColor: theme.colors.borderOnCard,
     },
     dividerText: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 13,
-      color: AUTH_TEXT_MUTED,
+      color: theme.colors.textMutedOnDark,
     },
     socialButton: {
       flexDirection: "row",
@@ -229,15 +224,15 @@ export default function LoginScreen() {
       justifyContent: "center",
       gap: 10,
       borderWidth: 1,
-      borderColor: AUTH_BORDER,
+      borderColor: theme.colors.borderOnCard,
       borderRadius: 12,
-      backgroundColor: AUTH_INPUT_BG,
+      backgroundColor: theme.colors.card,
       paddingVertical: 13,
     },
     socialButtonLabel: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 15,
-      color: AUTH_TEXT,
+      color: theme.colors.textOnDark,
     },
     registerBlock: {
       alignItems: "center",
@@ -247,17 +242,17 @@ export default function LoginScreen() {
     registerHint: {
       fontFamily: "Fraunces_400Regular",
       fontSize: 14,
-      color: AUTH_TEXT_MUTED,
+      color: theme.colors.textMutedOnDark,
     },
     registerLink: {
       fontFamily: "Fraunces_700Bold",
       fontSize: 15,
-      color: AUTH_GREEN,
+      color: theme.colors.primary,
     },
   });
 
   return (
-    <Screen backgroundColor={AUTH_BG} webBackgroundColor={AUTH_BG}>
+    <Screen backgroundColor={theme.colors.bg} webBackgroundColor={theme.colors.bg}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -286,7 +281,7 @@ export default function LoginScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>Correo electrónico</Text>
             <View style={[styles.inputRow, errors.email ? styles.inputRowError : undefined]}>
-              <Ionicons name="mail-outline" size={18} color={AUTH_TEXT_MUTED} style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={18} color={theme.colors.textMutedOnDark} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 value={email}
@@ -297,7 +292,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholder="tu@email.com"
-                placeholderTextColor="#A8A39A"
+                placeholderTextColor={theme.colors.textSoft}
               />
             </View>
             {errors.email ? <Text style={styles.fieldError}>{errors.email}</Text> : null}
@@ -306,7 +301,7 @@ export default function LoginScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>Contraseña</Text>
             <View style={[styles.inputRow, errors.password ? styles.inputRowError : undefined]}>
-              <Ionicons name="lock-closed-outline" size={18} color={AUTH_TEXT_MUTED} style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMutedOnDark} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 value={password}
@@ -317,7 +312,7 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 placeholder="Ingresa tu contraseña"
-                placeholderTextColor="#A8A39A"
+                placeholderTextColor={theme.colors.textSoft}
                 onFocus={scrollPasswordFieldIntoView}
               />
               <Pressable
@@ -328,7 +323,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={18}
-                  color={AUTH_TEXT_MUTED}
+                  color={theme.colors.textMutedOnDark}
                 />
               </Pressable>
             </View>
@@ -361,7 +356,7 @@ export default function LoginScreen() {
           </Pressable>
 
           <Pressable style={styles.socialButton} onPress={() => onSocialLogin("Apple")}>
-            <Ionicons name="logo-apple" size={20} color={AUTH_TEXT} />
+            <Ionicons name="logo-apple" size={20} color={theme.colors.textOnDark} />
             <Text style={styles.socialButtonLabel}>Apple</Text>
           </Pressable>
 
