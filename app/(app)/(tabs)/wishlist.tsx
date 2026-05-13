@@ -2,6 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
 import {
@@ -26,18 +27,89 @@ import {
   useDeleteWishlistItem,
   useUpdateWishlistItem,
   useWishlistItems,
+  usePurchases,
 } from "@/features/wishlist/use-wishlist";
+import type { PurchaseItem } from "@/shared/types/wishlist";
 import { AppInput } from "@/shared/ui/app-input";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
+import { useWishlistPreferencesStore } from "@store/wishlist-preferences";
 
 const PRIORITY_OPTIONS = [
   { value: "1", label: "Alta" },
   { value: "3", label: "Media" },
   { value: "5", label: "Baja" },
 ];
+
+function WishlistRecentPurchases() {
+  const purchases = usePurchases();
+  const items = useMemo(() => {
+    const list = [...(purchases.data ?? [])];
+    list.sort((a, b) => Date.parse(b.purchasedAt) - Date.parse(a.purchasedAt));
+    return list.slice(0, 6);
+  }, [purchases.data]);
+
+  const dateFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat("es-ES", {
+        day: "2-digit",
+        month: "short",
+      }),
+    [],
+  );
+
+  if (purchases.isError) return null;
+  if (purchases.isLoading && !purchases.data) return null;
+  if (items.length === 0) return null;
+
+  return (
+    <View style={styles.recentPurchasesBlock}>
+      <View style={styles.recentPurchasesHeader}>
+        <NativeText style={styles.recentPurchasesTitle}>Últimas adquisiciones</NativeText>
+        <Pressable
+          onPress={() => router.push("/(app)/activity" as never)}
+          style={styles.recentPurchasesVerTodas}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Ver historial completo de compras"
+        >
+          <NativeText style={styles.recentPurchasesVerTodasText}>Ver todo</NativeText>
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
+        </Pressable>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.recentPurchasesList}
+      >
+        {items.map((item: PurchaseItem) => {
+          let dateStr = "";
+          try {
+            dateStr = dateFmt.format(new Date(item.purchasedAt));
+          } catch {
+            dateStr = "";
+          }
+          return (
+            <View key={item.id} style={styles.recentPurchaseCard}>
+              <NativeText style={styles.recentPurchaseTitle} numberOfLines={2}>
+                {item.title}
+              </NativeText>
+              <NativeText style={styles.recentPurchaseAuthor} numberOfLines={1}>
+                {item.author || "Autor no definido"}
+              </NativeText>
+              <NativeText style={styles.recentPurchaseMeta} numberOfLines={1}>
+                {item.store || "—"} · {item.price || "—"}
+              </NativeText>
+              <NativeText style={styles.recentPurchaseDate}>{dateStr}</NativeText>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
 
 export default function WishlistScreen() {
   const isWeb = Platform.OS === "web";
@@ -54,8 +126,10 @@ export default function WishlistScreen() {
   const [store, setStore] = useState("");
   const [priority, setPriority] = useState("3");
   const [search, setSearch] = useState("");
-  const [storeFilter, setStoreFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<"priority" | "title" | "recent">("priority");
+  const storeFilter = useWishlistPreferencesStore((s) => s.storeFilter);
+  const setStoreFilter = useWishlistPreferencesStore((s) => s.setStoreFilter);
+  const sortBy = useWishlistPreferencesStore((s) => s.sortBy);
+  const setSortBy = useWishlistPreferencesStore((s) => s.setSortBy);
   const [formOpen, setFormOpen] = useState(false);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [sortModalOpen, setSortModalOpen] = useState(false);
@@ -173,7 +247,7 @@ export default function WishlistScreen() {
     const stores = new Set<string>();
     for (const item of allItems) {
       const s = item.store?.trim();
-      if (s) stores.add(s);
+      stores.add(s || "Sin tienda");
     }
     return [...stores].sort((a, b) => a.localeCompare(b, "es"));
   }, [allItems]);
@@ -181,7 +255,8 @@ export default function WishlistScreen() {
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = allItems.filter((item) => {
-      const matchesStore = storeFilter === "all" || item.store === storeFilter;
+      const itemStore = item.store?.trim() || "Sin tienda";
+      const matchesStore = storeFilter === "all" || itemStore === storeFilter;
       const matchesSearch =
         !q ||
         item.title.toLowerCase().includes(q) ||
@@ -197,6 +272,11 @@ export default function WishlistScreen() {
     });
     return list;
   }, [allItems, search, storeFilter, sortBy]);
+
+  const wishlistFiltersActive = useMemo(
+    () => storeFilter !== "all" || sortBy !== "priority",
+    [storeFilter, sortBy],
+  );
 
   const storeFilterLabel = storeFilter === "all" ? "Todas las tiendas" : storeFilter;
   const sortLabel =
@@ -270,47 +350,50 @@ export default function WishlistScreen() {
                 </>
               ) : (
                 <>
-                  <View style={styles.mobileSearchShell}>
-                    <Ionicons name="search-outline" size={20} color={theme.colors.textSoft} />
-                    <TextInput
-                      style={styles.mobileSearchInput}
-                      placeholder="Buscar en lista de deseos..."
-                      placeholderTextColor={theme.colors.textSoft}
-                      value={search}
-                      onChangeText={setSearch}
-                    />
-                  </View>
-                  <View style={styles.controlsRowMobile}>
+                  <View style={styles.mobileSearchRow}>
+                    <View style={styles.mobileSearchBarFlex}>
+                      <Ionicons
+                        name="search-outline"
+                        size={18}
+                        color={theme.colors.textSoft}
+                        style={{ marginLeft: 12 }}
+                      />
+                      <TextInput
+                        style={styles.mobileSearchBarInput}
+                        placeholder="Buscar en lista de deseos..."
+                        placeholderTextColor={theme.colors.textSoft}
+                        value={search}
+                        onChangeText={setSearch}
+                        accessibilityLabel="Buscar en wishlist"
+                      />
+                    </View>
                     <Pressable
-                      style={styles.mobileOutlineBtn}
-                      onPress={() => setStoreModalOpen(true)}
+                      onPress={() => router.push("/(app)/wishlist-filters" as never)}
+                      style={[
+                        styles.mobileFilterIconBtn,
+                        wishlistFiltersActive && styles.mobileFilterIconBtnActive,
+                      ]}
+                      accessibilityLabel="Filtros y orden"
                     >
-                      <NativeText style={styles.mobileOutlineBtnText} numberOfLines={1}>
-                        {storeFilterLabel}
-                      </NativeText>
-                    </Pressable>
-                    <Pressable
-                      style={styles.mobileOutlineBtn}
-                      onPress={() => setSortModalOpen(true)}
-                    >
-                      <NativeText style={styles.mobileOutlineBtnText} numberOfLines={1}>
-                        {sortLabel}
-                      </NativeText>
+                      <Ionicons
+                        name="options-outline"
+                        size={18}
+                        color={
+                          wishlistFiltersActive
+                            ? theme.colors.onPrimary
+                            : theme.colors.accent
+                        }
+                      />
                     </Pressable>
                   </View>
                   <Pressable style={styles.mobilePrimaryBtn} onPress={onOpenNewForm}>
                     <Ionicons name="add" size={20} color={theme.colors.textOnDark} />
                     <NativeText style={styles.mobilePrimaryBtnText}>Añadir deseo</NativeText>
                   </Pressable>
-                  <View style={styles.mobileActionHint}>
-                    <Ionicons name="hand-left-outline" size={18} color={theme.colors.primary} />
-                    <NativeText style={styles.mobileActionHintText}>
-                      Compra, edita o elimina desde los botones de cada tarjeta.
-                    </NativeText>
-                  </View>
                 </>
               )}
             </View>
+            <WishlistRecentPurchases />
           </View>
         }
         ListEmptyComponent={<EmptyState title="Wishlist vacia" description="Anade tus proximas lecturas aqui." />}
@@ -396,7 +479,7 @@ export default function WishlistScreen() {
                     accessibilityLabel="Marcar como comprado"
                   >
                     <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.onPrimary} />
-                    <NativeText style={styles.mobileActionPillLabelPrimary}>Comprar</NativeText>
+                    <NativeText style={styles.mobileActionPillLabelPrimary}>Comprado</NativeText>
                   </Pressable>
                   <Pressable
                     style={styles.mobileActionPill}
@@ -547,6 +630,8 @@ export default function WishlistScreen() {
         </View>
       </Modal>
 
+      {isWeb ? (
+        <>
       <Modal
         visible={storeModalOpen}
         transparent
@@ -743,6 +828,8 @@ export default function WishlistScreen() {
           </View>
         </View>
       </Modal>
+        </>
+      ) : null}
 
       <Modal
         visible={priorityModalOpen}
@@ -1177,60 +1264,42 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: "stretch",
   },
-  mobileSearchShell: {
+  mobileSearchRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 14,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: { elevation: 3 },
-      default: {},
-    }),
   },
-  mobileSearchInput: {
+  mobileSearchBarFlex: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: "Fraunces_400Regular",
-    color: theme.colors.text,
-    paddingVertical: 0,
-  },
-  controlsRowMobile: {
     flexDirection: "row",
-    gap: 10,
-  },
-  mobileOutlineBtn: {
-    flex: 1,
+    alignItems: "center",
+    minHeight: 44,
+    backgroundColor: theme.colors.card,
     borderRadius: 14,
-    paddingVertical: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+  },
+  mobileSearchBarInput: {
+    flex: 1,
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 14,
+    color: theme.colors.text,
     paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  mobileFilterIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.bgPanel,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-      },
-      android: { elevation: 2 },
-      default: {},
-    }),
+    backgroundColor: "transparent",
   },
-  mobileOutlineBtnText: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 12,
-    color: theme.colors.textOnDark,
-    textAlign: "center",
+  mobileFilterIconBtnActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   mobilePrimaryBtn: {
     flexDirection: "row",
@@ -1256,23 +1325,6 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_700Bold",
     fontSize: 16,
     color: theme.colors.textOnDark,
-  },
-  mobileActionHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: theme.colors.cardElevated,
-  },
-  mobileActionHintText: {
-    flex: 1,
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 13,
-    lineHeight: 18,
-    color: theme.colors.textSoft,
   },
   mobileItemCard: {
     borderRadius: 16,
@@ -1573,6 +1625,79 @@ const styles = StyleSheet.create({
   },
   mobileConfirmPrimaryBtnTextDanger: {
     color: theme.colors.textOnDark,
+  },
+  recentPurchasesBlock: {
+    marginTop: 4,
+    gap: 10,
+  },
+  recentPurchasesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+  },
+  recentPurchasesTitle: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 17,
+    color: theme.colors.text,
+    letterSpacing: 0.2,
+  },
+  recentPurchasesVerTodas: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  recentPurchasesVerTodasText: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 14,
+    color: theme.colors.primary,
+  },
+  recentPurchasesList: {
+    gap: 12,
+    paddingVertical: 4,
+    paddingRight: 8,
+  },
+  recentPurchaseCard: {
+    width: 148,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    gap: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 },
+      default: {},
+    }),
+  },
+  recentPurchaseTitle: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 14,
+    lineHeight: 18,
+    color: theme.colors.text,
+  },
+  recentPurchaseAuthor: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 12,
+    color: theme.colors.textSoft,
+  },
+  recentPurchaseMeta: {
+    fontFamily: "Fraunces_400Regular",
+    fontSize: 11,
+    color: theme.colors.textMutedOnDark,
+    marginTop: 2,
+  },
+  recentPurchaseDate: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 11,
+    color: theme.colors.primary,
+    marginTop: 4,
   },
 });
 

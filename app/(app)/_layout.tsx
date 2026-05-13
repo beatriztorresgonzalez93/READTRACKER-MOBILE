@@ -1,5 +1,6 @@
 // Controla el acceso autenticado y la estructura privada de navegacion.
 import { Redirect, Stack, useSegments } from "expo-router";
+import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
@@ -39,6 +40,17 @@ export default function ProtectedLayout() {
     return <Redirect href="/upgrade" />;
   }
 
+  const nativeStackHeader = {
+    headerStyle: { backgroundColor: theme.colors.bgSoft },
+    headerTintColor: theme.colors.primary,
+    headerTitleStyle: {
+      color: theme.colors.text,
+      fontFamily: "Fraunces_700Bold",
+      fontSize: 18,
+    },
+    headerShadowVisible: false,
+  };
+
   return (
     <Stack
       screenOptions={{
@@ -55,16 +67,41 @@ export default function ProtectedLayout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="upgrade"
-        options={{
-          title: "",
-          headerShown: true,
-          headerTransparent: false,
-          headerShadowVisible: false,
-          header: () => <ScriptoriumHeader showBackButton />,
-        }}
+        options={
+          Platform.OS === "web"
+            ? {
+                title: "",
+                headerShown: true,
+                headerTransparent: false,
+                headerShadowVisible: false,
+                header: () => <ScriptoriumHeader showBackButton />,
+              }
+            : {
+                ...nativeStackHeader,
+                title: "Scriptorium Pro",
+                headerShown: true,
+              }
+        }
       />
       <Stack.Screen
         name="profile"
+        options={
+          Platform.OS === "web"
+            ? {
+                headerShown: false,
+                presentation: "modal",
+                animation: "slide_from_bottom",
+              }
+            : {
+                ...nativeStackHeader,
+                title: "Perfil",
+                headerShown: true,
+                presentation: "card",
+              }
+        }
+      />
+      <Stack.Screen
+        name="app-menu"
         options={{
           headerShown: false,
           presentation: "modal",
@@ -72,36 +109,94 @@ export default function ProtectedLayout() {
         }}
       />
       <Stack.Screen
-        name="books/[id]"
+        name="settings"
         options={{
-          title: "",
+          ...nativeStackHeader,
+          title: "Ajustes",
           headerShown: true,
-          headerTransparent: false,
-          headerShadowVisible: false,
-          header: () => <ScriptoriumHeader showBackButton />,
         }}
+      />
+      <Stack.Screen
+        name="activity"
+        options={{
+          ...nativeStackHeader,
+          title: "Actividad de compras",
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="library-filters"
+        options={{
+          ...nativeStackHeader,
+          title: "Filtrar",
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="wishlist-filters"
+        options={{
+          ...nativeStackHeader,
+          title: "Filtrar",
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="books/[id]"
+        options={
+          Platform.OS === "web"
+            ? {
+                title: "",
+                headerShown: true,
+                headerTransparent: false,
+                headerShadowVisible: false,
+                header: () => <ScriptoriumHeader showBackButton />,
+              }
+            : {
+                ...nativeStackHeader,
+                title: "Libro",
+                headerShown: true,
+              }
+        }
       />
       <Stack.Screen
         name="books/new"
-        options={{
-          title: "",
-          headerShown: true,
-          headerTransparent: true,
-          headerShadowVisible: false,
-          presentation: "modal",
-          header: () => <ScriptoriumHeader showBackButton />,
-        }}
+        options={
+          Platform.OS === "web"
+            ? {
+                title: "",
+                headerShown: true,
+                headerTransparent: true,
+                headerShadowVisible: false,
+                presentation: "modal",
+                header: () => <ScriptoriumHeader showBackButton />,
+              }
+            : {
+                ...nativeStackHeader,
+                title: "Añadir libro",
+                headerShown: true,
+                presentation: "modal",
+              }
+        }
       />
       <Stack.Screen
         name="books/edit"
-        options={{
-          title: "",
-          headerShown: true,
-          headerTransparent: true,
-          headerShadowVisible: false,
-          presentation: "modal",
-          header: () => <ScriptoriumHeader showBackButton />,
-        }}
+        options={
+          Platform.OS === "web"
+            ? {
+                title: "",
+                headerShown: true,
+                headerTransparent: true,
+                headerShadowVisible: false,
+                presentation: "modal",
+                header: () => <ScriptoriumHeader showBackButton />,
+              }
+            : {
+                ...nativeStackHeader,
+                title: "Editar libro",
+                headerShown: true,
+                presentation: "modal",
+              }
+        }
       />
     </Stack>
   );

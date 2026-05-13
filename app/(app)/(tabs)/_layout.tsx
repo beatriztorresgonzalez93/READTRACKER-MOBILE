@@ -1,24 +1,25 @@
 // Configura tabs principales y accesos rapidos de la seccion privada.
-import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
-import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import * as SystemUI from "expo-system-ui";
 import { Tabs, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from "@/features/auth/use-auth";
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 function AddBookCenterButton(_props: BottomTabBarButtonProps) {
   const theme = useAppTheme();
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  /** Seis pestañas visibles: el hueco del + está en 7/12 del ancho; el centro real es 6/12 → desplazamos −ancho/12. */
+  const centerNudgeX = -windowWidth / 12;
 
   return (
-    <View style={nativeStyles.addSlot}>
+    <View style={[nativeStyles.addSlot, { transform: [{ translateX: centerNudgeX }] }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Añadir libro"
@@ -38,27 +39,17 @@ function AddBookCenterButton(_props: BottomTabBarButtonProps) {
 function NativeHeaderRight() {
   const theme = useAppTheme();
   const router = useRouter();
-  const { user } = useAuth();
-  const avatarUri = user?.avatarUrl?.trim() ? user.avatarUrl : null;
 
   return (
     <View style={nativeStyles.headerRight}>
       <Pressable
-        onPress={() => router.push("/(app)/profile" as never)}
+        onPress={() => router.push("/(app)/app-menu" as never)}
         hitSlop={10}
-        accessibilityLabel="Perfil"
+        accessibilityLabel="Más opciones y ajustes"
       >
-        {avatarUri ? (
-          <Image
-            source={{ uri: avatarUri }}
-            style={nativeStyles.headerAvatar}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={[nativeStyles.headerAvatarPlaceholder, { backgroundColor: theme.colors.border }]}>
-            <Ionicons name="person" size={18} color={theme.colors.textSoft} />
-          </View>
-        )}
+        <View style={[nativeStyles.headerGearWrap, { backgroundColor: theme.colors.bgPanel }]}>
+          <Ionicons name="settings-outline" size={22} color={theme.colors.primary} />
+        </View>
       </Pressable>
     </View>
   );
@@ -128,6 +119,16 @@ export default function AppTabsLayout() {
         }}
       >
         <Tabs.Screen
+          name="home"
+          options={{
+            title: "Inicio",
+            headerTransparent: isWeb,
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name={Platform.OS === "web" ? "home-outline" : "home"} color={color} size={isWeb ? size : 24} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="index"
           options={{
             title: "Biblioteca",
@@ -192,8 +193,8 @@ const nativeStyles = StyleSheet.create({
   addSlot: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 2,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   addCircle: {
     width: 52,
@@ -222,18 +223,13 @@ const nativeStyles = StyleSheet.create({
     gap: 12,
     paddingRight: 16,
   },
-  headerAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1.5,
-    borderColor: "#D8C9AE",
-  },
-  headerAvatarPlaceholder: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  headerGearWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#D8C9AE",
   },
 });

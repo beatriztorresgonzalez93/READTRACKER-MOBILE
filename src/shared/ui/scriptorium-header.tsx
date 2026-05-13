@@ -72,7 +72,7 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace("/(app)/(tabs)" as never);
+                router.replace("/(app)/(tabs)/home" as never);
               }
             }}
             style={styles.leading}

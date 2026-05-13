@@ -44,7 +44,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/(app)/(tabs)" as never);
+      router.replace("/(app)/(tabs)/home" as never);
     }
   }, [isAuthenticated]);
 

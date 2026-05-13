@@ -46,7 +46,7 @@ export default function RegisterScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/(app)/(tabs)" as never);
+      router.replace("/(app)/(tabs)/home" as never);
     }
   }, [isAuthenticated]);
 

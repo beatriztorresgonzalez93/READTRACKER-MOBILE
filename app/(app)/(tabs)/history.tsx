@@ -148,6 +148,11 @@ export default function HistoryScreen() {
     calendarCells.push({ key: `tail-${calendarCells.length}` });
   }
 
+  const calendarWeeks: (typeof calendarCells)[] = [];
+  for (let i = 0; i < calendarCells.length; i += 7) {
+    calendarWeeks.push(calendarCells.slice(i, i + 7));
+  }
+
   const selectedSessions = selectedDay
     ? (sessionsByDay.get(selectedDay) ?? [])
     : [];
@@ -209,30 +214,38 @@ export default function HistoryScreen() {
           Platform.OS !== "web" ? styles.calendarGridNative : null,
         ]}
       >
-        {calendarCells.map((cell) => (
-          <Pressable
-            key={cell.key}
-            disabled={!cell.day || !cell.pages}
-            onPress={() => setSelectedDay(cell.key)}
+        {calendarWeeks.map((week, weekIdx) => (
+          <View
+            key={`week-${weekIdx}`}
             style={[
-              styles.dayCell,
-              Platform.OS !== "web" ? styles.dayCellNative : null,
-              { backgroundColor: intensityColor(cell.pages) },
-              selectedDay === cell.key
-                ? styles.dayCellSelected
-                : null,
+              styles.calendarWeekRow,
+              Platform.OS !== "web" ? styles.calendarWeekRowNative : null,
             ]}
           >
-            <HistoryText
-              style={[
-                styles.dayCellText,
-                Platform.OS !== "web" ? styles.dayCellTextNative : null,
-                (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
-              ]}
-            >
-              {cell.day ?? ""}
-            </HistoryText>
-          </Pressable>
+            {week.map((cell) => (
+              <Pressable
+                key={cell.key}
+                disabled={!cell.day || !cell.pages}
+                onPress={() => setSelectedDay(cell.key)}
+                style={[
+                  styles.dayCell,
+                  Platform.OS !== "web" ? styles.dayCellNative : null,
+                  { backgroundColor: intensityColor(cell.pages) },
+                  selectedDay === cell.key ? styles.dayCellSelected : null,
+                ]}
+              >
+                <HistoryText
+                  style={[
+                    styles.dayCellText,
+                    Platform.OS !== "web" ? styles.dayCellTextNative : null,
+                    (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
+                  ]}
+                >
+                  {cell.day ?? ""}
+                </HistoryText>
+              </Pressable>
+            ))}
+          </View>
         ))}
       </View>
       <View
@@ -634,9 +647,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 4,
+    gap: 6,
   },
   weekDayLabel: {
-    width: "14%",
+    flex: 1,
+    minWidth: 0,
     textAlign: "center",
     color: theme.colors.textSoft,
     fontSize: 12,
@@ -644,12 +659,17 @@ const styles = StyleSheet.create({
     fontFamily: "Fraunces_700Bold",
   },
   calendarGrid: {
+    flexDirection: "column",
+    gap: 6,
+  },
+  calendarWeekRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    width: "100%",
     gap: 6,
   },
   dayCell: {
-    width: "12.6%",
+    flex: 1,
+    minWidth: 0,
     aspectRatio: 1.35,
     borderRadius: theme.radius.sm,
     borderWidth: 1,
@@ -842,6 +862,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   calendarGridNative: {
+    gap: 8,
+  },
+  calendarWeekRowNative: {
     gap: 8,
   },
   weekRowNative: {

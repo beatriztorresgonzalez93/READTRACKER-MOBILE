@@ -2,8 +2,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
+import { useNavigation } from "@react-navigation/native";
 import { Link, router, useLocalSearchParams } from "expo-router";
-import { createElement, type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createElement, type ChangeEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -80,6 +81,7 @@ export default function BookDetailScreen() {
   const pageWidth = Platform.OS === "web" ? Math.min(width, 1120) : width;
   const pagerRef = useRef<ScrollView>(null);
   const reviewScrollRef = useRef<ScrollView>(null);
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id;
   const detailQuery = useBookDetail(bookId);
@@ -210,6 +212,14 @@ export default function BookDetailScreen() {
     [sessionsQuery.data, bookId],
   );
   const latestBookSession = bookSessions[0];
+
+  useLayoutEffect(() => {
+    if (Platform.OS === "web") return;
+    const raw = book?.title?.trim() ?? "";
+    const title =
+      raw.length === 0 ? "Libro" : raw.length > 32 ? `${raw.slice(0, 32)}…` : raw;
+    navigation.setOptions({ title });
+  }, [book?.title, navigation]);
 
   useEffect(() => {
     const fromBook = book?.status;
@@ -682,9 +692,14 @@ export default function BookDetailScreen() {
         </ScrollView>
       </ScrollView>
 
-      <View style={styles.bottomMenu}>
+      <View
+        style={Platform.OS === "web" ? styles.bottomMenu : styles.bottomMenuNative}
+      >
         <Pressable
-          style={[styles.menuBtn, styles.menuBtnPrimary]}
+          style={[
+            Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative,
+            styles.menuBtnPrimary,
+          ]}
           onPress={() => {
             if (activeTab === "Mi reseña") {
               setReviewModalOpen(true);
@@ -695,28 +710,51 @@ export default function BookDetailScreen() {
               params: { id: bookId },
             });
           }}
+          accessibilityLabel={
+            activeTab === "Mi reseña" ? "Escribir reseña" : "Editar información del libro"
+          }
         >
           <Ionicons
             name={activeTab === "Mi reseña" ? "create" : "create-outline"}
-            size={17}
-            color="#D14E72"
+            size={Platform.OS === "web" ? 17 : 22}
+            color={
+              Platform.OS === "web" ? "#D14E72" : theme.colors.primary
+            }
           />
+          {Platform.OS !== "web" ? (
+            <Text style={styles.menuCellLabelNative}>
+              {activeTab === "Mi reseña" ? "Reseña" : "Editar"}
+            </Text>
+          ) : null}
         </Pressable>
 
         <Pressable
-          style={[styles.menuBtn, !canMarkPage && styles.menuBtnDisabled]}
+          style={[
+            Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative,
+            !canMarkPage && styles.menuBtnDisabled,
+          ]}
           disabled={!canMarkPage}
           onPress={() => setMarkPageModalOpen(true)}
+          accessibilityLabel="Marcar página"
         >
           <Ionicons
             name="bookmark-outline"
-            size={17}
-            color={canMarkPage ? "#D14E72" : theme.colors.textMutedOnDark}
+            size={Platform.OS === "web" ? 17 : 22}
+            color={
+              canMarkPage
+                ? Platform.OS === "web"
+                  ? "#D14E72"
+                  : theme.colors.primary
+                : theme.colors.textMutedOnDark
+            }
           />
+          {Platform.OS !== "web" ? (
+            <Text style={styles.menuCellLabelNative}>Página</Text>
+          ) : null}
         </Pressable>
 
         <Pressable
-          style={styles.menuBtn}
+          style={Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative}
           onPress={async () => {
             const previous = isFavorite;
             const next = !previous;
@@ -731,20 +769,37 @@ export default function BookDetailScreen() {
               Alert.alert("No se pudo actualizar", (error as Error).message);
             }
           }}
+          accessibilityLabel={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
         >
           <Ionicons
             name={isFavorite ? "heart" : "heart-outline"}
-            size={17}
-            color="#D14E72"
+            size={Platform.OS === "web" ? 17 : 22}
+            color={Platform.OS === "web" ? "#D14E72" : theme.colors.primary}
           />
+          {Platform.OS !== "web" ? (
+            <Text style={styles.menuCellLabelNative}>Favorito</Text>
+          ) : null}
         </Pressable>
 
         <Pressable
-          style={[styles.menuBtn, deleteBook.isPending && styles.menuBtnDisabled]}
+          style={[
+            Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative,
+            deleteBook.isPending && styles.menuBtnDisabled,
+          ]}
           onPress={onDeletePress}
           disabled={deleteBook.isPending}
+          accessibilityLabel="Eliminar libro"
         >
-          <Ionicons name="trash-outline" size={17} color="#D14E72" />
+          <Ionicons
+            name="trash-outline"
+            size={Platform.OS === "web" ? 17 : 22}
+            color={Platform.OS === "web" ? "#D14E72" : theme.colors.danger}
+          />
+          {Platform.OS !== "web" ? (
+            <Text style={[styles.menuCellLabelNative, styles.menuCellLabelDanger]}>
+              Eliminar
+            </Text>
+          ) : null}
         </Pressable>
       </View>
 
@@ -754,12 +809,29 @@ export default function BookDetailScreen() {
         animationType="fade"
         onRequestClose={() => setMarkPageModalOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View
+          style={
+            Platform.OS === "web" ? styles.modalRoot : styles.reviewModalRootNative
+          }
+        >
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setMarkPageModalOpen(false)}
           />
-          <View style={styles.markSheet}>
+          <KeyboardAvoidingView
+            style={
+              Platform.OS === "web"
+                ? { marginHorizontal: 20, width: "100%" }
+                : { width: "100%", flexShrink: 1 }
+            }
+            behavior={Platform.OS === "android" ? "height" : "padding"}
+          >
+            <View
+              style={[
+                styles.markSheet,
+                Platform.OS !== "web" && styles.reviewSheetNative,
+              ]}
+            >
             <View style={styles.markHeader}>
               <Text style={styles.markTitle}>Marcar página</Text>
               <Text style={styles.markSubtitle}>
@@ -774,7 +846,7 @@ export default function BookDetailScreen() {
                 onChangeText={setPageInput}
                 keyboardType="number-pad"
                 placeholder="0"
-                placeholderTextColor="#9D7E5B"
+                placeholderTextColor={theme.colors.textSoft}
                 style={[styles.markInput, styles.markPageInput]}
               />
               <Text style={styles.markTotal}>/ {totalPages}</Text>
@@ -849,6 +921,7 @@ export default function BookDetailScreen() {
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -858,16 +931,29 @@ export default function BookDetailScreen() {
         animationType="fade"
         onRequestClose={() => setReviewModalOpen(false)}
       >
-        <View style={styles.modalRoot}>
+        <View
+          style={
+            Platform.OS === "web" ? styles.modalRoot : styles.reviewModalRootNative
+          }
+        >
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setReviewModalOpen(false)}
           />
           <KeyboardAvoidingView
-            style={{ marginHorizontal: 20 }}
+            style={
+              Platform.OS === "web"
+                ? { marginHorizontal: 20 }
+                : { width: "100%", flexShrink: 1 }
+            }
             behavior={Platform.OS === "android" ? "height" : "padding"}
           >
-            <View style={styles.markSheet}>
+            <View
+              style={[
+                styles.markSheet,
+                Platform.OS !== "web" && styles.reviewSheetNative,
+              ]}
+            >
               <View style={styles.markHeader}>
                 <Text style={styles.markTitle}>Escribir reseña y valoración</Text>
                 <Text style={styles.markSubtitle}>
@@ -1004,7 +1090,7 @@ export default function BookDetailScreen() {
                   onFocus={scrollReviewToBottom}
                   multiline
                   placeholder="¿Qué te pareció el libro? Escribe con libertad..."
-                  placeholderTextColor="#9D7E5B"
+                  placeholderTextColor={theme.colors.textSoft}
                   style={[styles.markInput, styles.reviewInput]}
                 />
 
@@ -1015,7 +1101,7 @@ export default function BookDetailScreen() {
                   onFocus={scrollReviewToBottom}
                   multiline
                   placeholder="Una frase del libro que te haya marcado..."
-                  placeholderTextColor="#9D7E5B"
+                  placeholderTextColor={theme.colors.textSoft}
                   style={[styles.markInput, styles.quoteInput]}
                 />
 
@@ -1028,14 +1114,14 @@ export default function BookDetailScreen() {
                     onSubmitEditing={() => addReviewTag(reviewTagInput)}
                     returnKeyType="done"
                     placeholder="Escribe una etiqueta"
-                    placeholderTextColor="#9D7E5B"
+                    placeholderTextColor={theme.colors.textSoft}
                     style={[styles.markInput, styles.reviewSmallInput, styles.tagInput]}
                   />
                 <Pressable
                   style={styles.tagAddBtn}
                   onPress={() => addReviewTag(reviewTagInput)}
                 >
-                  <Ionicons name="add" size={18} color="#2B1308" />
+                  <Ionicons name="add" size={18} color={theme.colors.onPrimary} />
                 </Pressable>
               </View>
               {reviewTags.length > 0 ? (
@@ -1253,7 +1339,7 @@ export default function BookDetailScreen() {
         animationType="fade"
         onRequestClose={() => {
           setDeleteSuccessOpen(false);
-          router.replace("/(app)/(tabs)");
+          router.replace("/(app)/(tabs)/home");
         }}
       >
         <View style={styles.modalRoot}>
@@ -1261,7 +1347,7 @@ export default function BookDetailScreen() {
             style={styles.modalBackdrop}
             onPress={() => {
               setDeleteSuccessOpen(false);
-              router.replace("/(app)/(tabs)");
+              router.replace("/(app)/(tabs)/home");
             }}
           />
           <View style={styles.confirmSheet}>
@@ -1274,7 +1360,7 @@ export default function BookDetailScreen() {
                 style={[styles.confirmBtn, styles.confirmBtnDanger]}
                 onPress={() => {
                   setDeleteSuccessOpen(false);
-                  router.replace("/(app)/(tabs)");
+                  router.replace("/(app)/(tabs)/home");
                 }}
               >
                 <Text style={styles.confirmBtnDangerText}>Continuar</Text>
@@ -1576,13 +1662,74 @@ const styles = StyleSheet.create({
   menuBtnDisabled: {
     opacity: 0.5,
   },
+  bottomMenuNative: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.bgSoft,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: -2 },
+      },
+      android: { elevation: 12 },
+      default: {},
+    }),
+  },
+  menuCellNative: {
+    flex: 1,
+    minHeight: 64,
+    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 6,
+  },
+  menuCellLabelNative: {
+    fontFamily: "Fraunces_700Bold",
+    fontSize: 10,
+    color: theme.colors.textSoft,
+    letterSpacing: 0.2,
+  },
+  menuCellLabelDanger: {
+    color: theme.colors.danger,
+  },
+  reviewModalRootNative: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  reviewSheetNative: {
+    marginHorizontal: 0,
+    width: "100%",
+    maxWidth: "100%",
+    maxHeight: "92%",
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.accent,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    paddingBottom: 20,
+  },
   modalRoot: {
     flex: 1,
     justifyContent: "center",
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(26, 11, 6, 0.45)",
+    backgroundColor: "rgba(74, 61, 52, 0.35)",
   },
   confirmSheet: {
     width: "100%",
@@ -1667,33 +1814,34 @@ const styles = StyleSheet.create({
     maxWidth: 860,
     maxHeight: "82%",
     alignSelf: "center",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#9C723F",
-    backgroundColor: "#230A05",
-    padding: 14,
-    gap: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.cardElevated,
+    padding: 16,
+    gap: 12,
   },
   markHeader: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#6C4A2D",
-    paddingBottom: 8,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 10,
   },
   markTitle: {
-    color: theme.colors.accent,
+    color: theme.colors.text,
     fontFamily: "Fraunces_700Bold",
-    fontSize: 28,
+    fontSize: 22,
   },
   markSubtitle: {
-    color: "#C9A36C",
-    fontSize: 16,
+    color: theme.colors.textSoft,
+    fontSize: 15,
+    fontFamily: "Fraunces_400Regular",
   },
   markLabel: {
-    color: "#D5AF72",
+    color: theme.colors.textSoft,
     fontFamily: "Fraunces_700Bold",
-    fontSize: 14,
+    fontSize: 13,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   markInputRow: {
     flexDirection: "row",
@@ -1702,14 +1850,15 @@ const styles = StyleSheet.create({
   },
   markInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#8C653A",
-    backgroundColor: "#2F120A",
-    color: "#F2D3A2",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.bgSoft,
+    color: theme.colors.text,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
     fontFamily: "Fraunces_700Bold",
+    borderRadius: 12,
   },
   markPageInput: {
     fontSize: 28,
@@ -1750,7 +1899,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   timesReadText: {
-    color: "#F2D3A2",
+    color: theme.colors.text,
     fontFamily: "Fraunces_700Bold",
     fontSize: 16,
   },
@@ -1762,33 +1911,33 @@ const styles = StyleSheet.create({
   },
   readAtText: {
     flex: 1,
-    color: "#F2D3A2",
+    color: theme.colors.text,
     fontFamily: "Fraunces_400Regular",
     fontSize: 16,
     marginTop: 1,
   },
   datePlaceholder: {
-    color: "#9D7E5B",
+    color: theme.colors.textMutedOnDark,
     fontFamily: "Fraunces_400Regular",
     fontSize: 16,
   },
   datePickerWrap: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#8C653A",
-    borderRadius: 10,
-    backgroundColor: "#2F120A",
-    padding: 6,
+    borderColor: theme.colors.border,
+    borderRadius: 12,
+    backgroundColor: theme.colors.bgSoft,
+    padding: 8,
   },
   datePickerDoneBtn: {
     alignSelf: "flex-end",
     marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#D4A62F",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
   },
   datePickerDoneText: {
-    color: "#2B1308",
+    color: theme.colors.onPrimary,
     fontFamily: "Fraunces_700Bold",
     fontSize: 13,
   },
@@ -1798,7 +1947,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   counterText: {
-    color: "#A8885F",
+    color: theme.colors.textSoft,
     fontSize: 13,
     fontFamily: "Fraunces_400Regular",
   },
@@ -1813,38 +1962,38 @@ const styles = StyleSheet.create({
   },
   recommendBtn: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#8C653A",
-    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2F120A",
+    backgroundColor: theme.colors.bgSoft,
   },
   recommendBtnActive: {
-    backgroundColor: "#D4A62F",
-    borderColor: "#D4A62F",
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   recommendText: {
-    color: "#E4BC78",
+    color: theme.colors.text,
     fontFamily: "Fraunces_700Bold",
     fontSize: 14,
     textAlign: "center",
   },
   recommendTextActive: {
-    color: "#2B1308",
+    color: theme.colors.onPrimary,
   },
   tagChipBtn: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#8C653A",
-    backgroundColor: "#2F120A",
+    borderColor: theme.colors.borderOnCard,
+    backgroundColor: theme.colors.bgSoft,
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   tagChipText: {
-    color: "#E4BC78",
+    color: theme.colors.text,
     fontFamily: "Fraunces_700Bold",
     fontSize: 13,
   },
@@ -1859,34 +2008,35 @@ const styles = StyleSheet.create({
   tagAddBtn: {
     width: 44,
     minHeight: 44,
-    borderRadius: 10,
-    backgroundColor: "#D4A62F",
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#9C723F",
+    borderColor: theme.colors.primaryPressed,
   },
   markTotal: {
-    color: "#E4BC78",
+    color: theme.colors.primary,
     fontFamily: "Fraunces_700Bold",
     fontSize: 32,
   },
   progressTrack: {
     height: 8,
-    backgroundColor: "#3E210F",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#7E582E",
+    backgroundColor: theme.colors.border,
+    borderRadius: 999,
+    overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#C79638",
+    backgroundColor: theme.colors.accent,
+    borderRadius: 999,
   },
   markProgressText: {
-    color: "#D5AF72",
+    color: theme.colors.textSoft,
     fontSize: 15,
   },
   markEmpty: {
-    color: "#A8885F",
+    color: theme.colors.textMutedOnDark,
     fontSize: 14,
     fontStyle: "italic",
   },
@@ -1894,17 +2044,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#5A3A20",
+    borderBottomColor: theme.colors.border,
     paddingVertical: 6,
   },
   historyDate: {
-    color: "#D5AF72",
-    fontSize: 16,
+    color: theme.colors.textSoft,
+    fontSize: 15,
   },
   historyPage: {
-    color: "#D5AF72",
+    color: theme.colors.text,
     fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
+    fontSize: 15,
   },
   markActions: {
     marginTop: 8,
@@ -1919,20 +2069,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   markBtnPrimary: {
-    backgroundColor: "#D4A62F",
+    backgroundColor: theme.colors.primary,
   },
   markBtnGhost: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#6B4B31",
-    backgroundColor: "#28140F",
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.bgSoft,
   },
   markBtnPrimaryText: {
-    color: "#2B1308",
+    color: theme.colors.onPrimary,
     fontFamily: "Fraunces_700Bold",
     fontSize: 17,
   },
   markBtnGhostText: {
-    color: "#D9B477",
+    color: theme.colors.primary,
     fontFamily: "Fraunces_700Bold",
     fontSize: 17,
   },

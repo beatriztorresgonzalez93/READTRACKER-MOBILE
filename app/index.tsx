@@ -11,6 +11,6 @@ export default function IndexScreen() {
     return <AppLoader />;
   }
 
-  return <Redirect href={(isAuthenticated ? "/(app)/(tabs)" : "/(auth)/login") as never} />;
+  return <Redirect href={(isAuthenticated ? "/(app)/(tabs)/home" : "/(auth)/login") as never} />;
 }
 

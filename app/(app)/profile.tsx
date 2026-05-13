@@ -1,9 +1,10 @@
 // Pantalla de perfil para ver y actualizar datos del usuario.
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -22,10 +23,28 @@ import {
   uploadLocalAvatarUriToS3,
 } from "@/shared/lib/upload-profile-avatar";
 import { theme } from "@/shared/ui/theme";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function ProfileSheetScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const appTheme = useAppTheme();
   const { user, token, logout, updateUserProfile } = useAuth();
+
+  useLayoutEffect(() => {
+    if (Platform.OS === "web") return;
+    navigation.setOptions({
+      title: "Perfil",
+      headerStyle: { backgroundColor: appTheme.colors.bgSoft },
+      headerTintColor: appTheme.colors.primary,
+      headerTitleStyle: {
+        fontFamily: "Fraunces_700Bold",
+        fontSize: 18,
+        color: appTheme.colors.text,
+      },
+      headerShadowVisible: false,
+    });
+  }, [navigation, appTheme.colors]);
 
   const fullName = useMemo(() => {
     const fromParts = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
@@ -122,26 +141,49 @@ export default function ProfileSheetScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 }]}>
-      <View style={styles.sheet}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Tu ficha</Text>
-          <Pressable
-            onPress={() => {
-              if (router.canDismiss()) {
-                router.dismiss();
-              } else if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/(app)/(tabs)" as never);
-              }
-            }}
-            hitSlop={12}
-            accessibilityLabel="Cerrar ficha"
-          >
-            <Ionicons name="close" size={26} color={theme.colors.text} />
-          </Pressable>
-        </View>
+    <View
+      style={[
+        styles.screen,
+        {
+          paddingTop: Platform.OS === "web" ? insets.top + 8 : 12,
+          paddingBottom: insets.bottom + 12,
+          backgroundColor: Platform.OS === "web" ? theme.colors.bg : appTheme.colors.bgSoft,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.sheet,
+          Platform.OS !== "web" && {
+            borderWidth: 0,
+            borderRadius: 0,
+            maxHeight: undefined,
+            backgroundColor: "transparent",
+          },
+        ]}
+      >
+        {Platform.OS === "web" ? (
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Tu ficha</Text>
+            <Pressable
+              onPress={() => {
+                if (router.canDismiss()) {
+                  router.dismiss();
+                } else if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(app)/(tabs)/home" as never);
+                }
+              }}
+              hitSlop={12}
+              accessibilityLabel="Cerrar ficha"
+            >
+              <Ionicons name="close" size={26} color={theme.colors.text} />
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={[styles.sheetTitle, styles.sheetTitleNative]}>Tu ficha</Text>
+        )}
         <Text style={styles.sheetSubtitle}>
           Datos de tu cuenta en Scriptorium. El correo no se puede cambiar aqui.
         </Text>
@@ -240,6 +282,10 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontFamily: "Fraunces_700Bold",
     color: theme.colors.text,
+  },
+  sheetTitleNative: {
+    fontSize: 22,
+    marginBottom: 4,
   },
   sheetSubtitle: {
     marginTop: 8,

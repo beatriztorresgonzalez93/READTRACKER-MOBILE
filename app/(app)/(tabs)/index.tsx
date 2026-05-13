@@ -1,9 +1,7 @@
-// Pantalla principal de biblioteca con filtros, resumen y coleccion.
+// Pantalla principal de biblioteca con filtros, resumen y listado de libros.
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
-import Constants from "expo-constants";
-import { Link } from "expo-router";
-import { useMemo, useRef, useState } from "react";
+import { Link, router } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -19,9 +17,7 @@ import {
 } from "react-native";
 import {
   Button,
-  Card,
   Chip,
-  ProgressBar,
   Searchbar,
   Text,
 } from "react-native-paper";
@@ -31,10 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useBooksFeed,
   useBooksSummary,
-  useLeyendoPreview,
 } from "@/features/books/use-books";
-import { useReadingSessionsList } from "@/features/readingSessions/use-history";
-import { usePurchases } from "@/features/wishlist/use-wishlist";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import type {
   Book,
@@ -43,7 +36,6 @@ import type {
   LibraryShelfFilter,
   LibraryStatusFilter,
 } from "@/shared/types/books";
-import type { PurchaseItem } from "@/shared/types/wishlist";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -54,9 +46,6 @@ import { useLibraryPreferencesStore } from "@store/library-preferences";
 
 const isWeb = Platform.OS === "web";
 
-const COLLECTION_CARD_WIDTH = 146;
-const COLLECTION_CARD_WIDTH_MOBILE = 160;
-const COLLECTION_COVER_RATIO = 1.42;
 const GRID_COVER_WIDTH = 168;
 
 const SORT_LABELS: Record<BooksSortKey, string> = {
@@ -107,314 +96,6 @@ function StarRow({ rating }: { rating?: number | null }) {
           color={theme.colors.primary}
         />
       ))}
-    </View>
-  );
-}
-
-function StatsStrip({
-  total,
-  leido,
-  ratingLabel,
-  yearLabel,
-}: {
-  total: number;
-  leido: number;
-  ratingLabel: string;
-  yearLabel: string;
-}) {
-  const cells = [
-    { icon: "book-outline" as const, value: String(total), label: "LIBROS" },
-    {
-      icon: "bookmark-outline" as const,
-      value: String(leido),
-      label: "LEIDOS",
-    },
-    { icon: "star-outline" as const, value: ratingLabel, label: "VALORACION" },
-    { icon: "trophy-outline" as const, value: yearLabel, label: "MEJOR AÑO" },
-  ];
-
-  if (!isWeb) {
-    return (
-      <View style={styles.statsRowMobile}>
-        {cells.map((cell) => (
-          <View key={cell.label} style={styles.statsCellMobile}>
-            <Ionicons
-              name={cell.icon}
-              size={16}
-              color={theme.colors.primary}
-              style={styles.statsIcon}
-            />
-            <NativeText style={styles.statsValueMobile}>
-              {cell.value}
-            </NativeText>
-            <NativeText style={styles.statsLabelMobile}>
-              {cell.label}
-            </NativeText>
-          </View>
-        ))}
-      </View>
-    );
-  }
-
-  return (
-    <Card mode="contained" style={styles.statsCard}>
-      <Card.Content style={{ paddingVertical: 0, paddingHorizontal: 0 }}>
-        <View style={styles.statsRow}>
-          {cells.map((cell, idx) => (
-            <View
-              key={cell.label}
-              style={[
-                styles.statsCell,
-                idx < cells.length - 1 && styles.statsCellBorder,
-              ]}
-            >
-              <Ionicons
-                name={cell.icon}
-                size={14}
-                color={theme.colors.primary}
-                style={styles.statsIcon}
-              />
-              <Text style={styles.statsValue}>{cell.value}</Text>
-              <Text style={styles.statsLabel}>{cell.label}</Text>
-            </View>
-          ))}
-        </View>
-      </Card.Content>
-    </Card>
-  );
-}
-
-function CollectionBookCard({ book }: { book: Book }) {
-  const cardWidth = isWeb ? COLLECTION_CARD_WIDTH : COLLECTION_CARD_WIDTH_MOBILE;
-  const h = Math.round(cardWidth * COLLECTION_COVER_RATIO);
-  return (
-    <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable
-        style={isWeb ? styles.collectionCard : styles.collectionCardMobile}
-      >
-        <View style={[styles.collectionCoverWrap, { height: h }]}>
-          <BookCover
-            uri={book.coverUrl}
-            width={cardWidth}
-            aspectRatio={COLLECTION_COVER_RATIO}
-            borderRadius={isWeb ? 4 : 10}
-          />
-          {book.isFavorite ? (
-            <View style={styles.collectionHeart}>
-              <Ionicons name="heart" size={16} color="#E879A9" />
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.collectionMeta}>
-          <Text
-            variant="titleSmall"
-            style={styles.collectionTitle}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {book.title}
-          </Text>
-          <Text style={styles.collectionAuthor} numberOfLines={1}>
-            {book.author ?? "Autor desconocido"}
-          </Text>
-          <StarRow rating={book.rating} />
-        </View>
-      </Pressable>
-    </Link>
-  );
-}
-
-function ReadingNowCard({ book }: { book: Book }) {
-  const progress = Math.max(0, Math.min(100, Math.round(book.progress ?? 0)));
-  return (
-    <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable
-        style={isWeb ? styles.readingCard : styles.readingCardMobile}
-      >
-        <BookCover
-          uri={book.coverUrl}
-          width={88}
-          aspectRatio={1.45}
-          accessibilityLabel={`Portada: ${book.title}`}
-        />
-        <View style={styles.readingBody}>
-          <Text
-            variant="titleMedium"
-            style={styles.readingTitle}
-            numberOfLines={2}
-          >
-            {book.title}
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={styles.readingAuthor}
-            numberOfLines={1}
-          >
-            {book.author ?? "Autor desconocido"}
-          </Text>
-          <Text variant="labelSmall" style={styles.readingProgressLabel}>
-            Avance: {progress}%
-          </Text>
-          <ProgressBar
-            progress={progress / 100}
-            color={theme.colors.primary}
-            style={
-              isWeb ? styles.readingProgressBar : styles.readingProgressBarMobile
-            }
-          />
-        </View>
-        {isWeb && (
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color={theme.colors.textSoft}
-          />
-        )}
-      </Pressable>
-    </Link>
-  );
-}
-
-const ACQUISITION_CARD_WIDTH = 168;
-const acquisitionDateFormatter = new Intl.DateTimeFormat("es-ES", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-function AcquisitionCard({ item }: { item: PurchaseItem }) {
-  let dateStr = "";
-  try {
-    dateStr = acquisitionDateFormatter.format(new Date(item.purchasedAt));
-  } catch {
-    dateStr = "";
-  }
-
-  return (
-    <View style={styles.acquisitionCard}>
-      <Text
-        variant="titleSmall"
-        style={styles.acquisitionTitle}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {item.title}
-      </Text>
-      <Text style={styles.acquisitionAuthor} numberOfLines={1}>
-        {item.author || "Autor no definido"}
-      </Text>
-      <Text style={styles.acquisitionMeta} numberOfLines={1}>
-        {item.price || "—"} · {item.store || "—"}
-      </Text>
-      <Text style={styles.acquisitionDate}>{dateStr}</Text>
-    </View>
-  );
-}
-
-function LibraryAcquisitionsFooter() {
-  const ListComponent: any =
-    Constants.appOwnership === "expo" ? FlatList : FlashList;
-  const appTheme = useAppTheme();
-  const purchases = usePurchases();
-  const items = purchases.data ?? [];
-  const acquisitionsScrollRef = useRef<ScrollView>(null);
-  const [acquisitionsOffset, setAcquisitionsOffset] = useState(0);
-
-  if (purchases.isError) {
-    return null;
-  }
-
-  return (
-    <View style={styles.acquisitionsSection}>
-      <Text
-        variant="titleLarge"
-        style={[styles.sectionTitle, { color: appTheme.colors.textOnDark }]}
-      >
-        Ultimas adquisiciones
-      </Text>
-      {purchases.isLoading && !purchases.data ? (
-        <Text style={styles.acquisitionsHint}>Cargando...</Text>
-      ) : items.length === 0 ? (
-        <Text style={styles.acquisitionsHint}>
-          Cuando marques deseos como comprados apareceran aqui.
-        </Text>
-      ) : isWeb ? (
-        <View style={styles.webCarouselWrap}>
-          <Pressable
-            style={styles.webCarouselArrow}
-            onPress={() => {
-              const next = Math.max(
-                0,
-                acquisitionsOffset - ACQUISITION_CARD_WIDTH,
-              );
-              acquisitionsScrollRef.current?.scrollTo({
-                x: next,
-                animated: true,
-              });
-            }}
-            accessibilityLabel="Desplazar adquisiciones a la izquierda"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={18}
-              color={theme.colors.textOnDark}
-            />
-          </Pressable>
-          <ScrollView
-            ref={acquisitionsScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.acquisitionsListContent}
-            onScroll={(event) =>
-              setAcquisitionsOffset(event.nativeEvent.contentOffset.x)
-            }
-            scrollEventThrottle={16}
-          >
-            {items.map((item, index) => (
-              <Animated.View
-                key={`acq-${item.id}`}
-                entering={FadeInDown.delay(index * 35).duration(240)}
-                exiting={FadeOutLeft.duration(180)}
-              >
-                <AcquisitionCard item={item} />
-              </Animated.View>
-            ))}
-          </ScrollView>
-          <Pressable
-            style={styles.webCarouselArrow}
-            onPress={() => {
-              const next = acquisitionsOffset + ACQUISITION_CARD_WIDTH;
-              acquisitionsScrollRef.current?.scrollTo({
-                x: next,
-                animated: true,
-              });
-            }}
-            accessibilityLabel="Desplazar adquisiciones a la derecha"
-          >
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={theme.colors.textOnDark}
-            />
-          </Pressable>
-        </View>
-      ) : (
-        <ListComponent
-          horizontal
-          data={items}
-          keyExtractor={(p: { id: string }) => `acq-${p.id}`}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.acquisitionsListContent}
-          renderItem={({ item, index }: { item: any; index: number }) => (
-            <Animated.View
-              entering={FadeInDown.delay(index * 35).duration(240)}
-              exiting={FadeOutLeft.duration(180)}
-            >
-              <AcquisitionCard item={item} />
-            </Animated.View>
-          )}
-        />
-      )}
     </View>
   );
 }
@@ -488,8 +169,6 @@ export default function LibraryScreen() {
           : 2
     : 2;
   const summary = useBooksSummary();
-  const leyendoPreview = useLeyendoPreview();
-  const sessionsQuery = useReadingSessionsList();
   const searchDraft = useLibraryPreferencesStore((state) => state.searchDraft);
   const setSearchDraft = useLibraryPreferencesStore(
     (state) => state.setSearchDraft,
@@ -512,8 +191,6 @@ export default function LibraryScreen() {
   );
   const [genreModalOpen, setGenreModalOpen] = useState(false);
   const [sortModalOpen, setSortModalOpen] = useState(false);
-  const collectionScrollRef = useRef<ScrollView>(null);
-  const [collectionOffset, setCollectionOffset] = useState(0);
 
   const listQuery = useMemo<LibraryBooksQuery>(
     () => ({
@@ -528,55 +205,18 @@ export default function LibraryScreen() {
 
   const booksFeed = useBooksFeed(listQuery);
   const filtered = isFilteredQuery(listQuery);
-  const latestSessionByBook = useMemo(() => {
-    const map = new Map<string, { currentPage: number; at: number }>();
-    for (const session of sessionsQuery.data ?? []) {
-      const at = Date.parse(session.recordedAt || session.createdAt);
-      const current = map.get(session.bookId);
-      if (!current || at > current.at) {
-        map.set(session.bookId, {
-          currentPage: Math.max(0, session.currentPage),
-          at,
-        });
-      }
-    }
-    return map;
-  }, [sessionsQuery.data]);
 
   if (booksFeed.isPending && !booksFeed.data) {
     return <AppLoader />;
   }
 
   const books = booksFeed.data?.pages.flatMap((page) => page.items) ?? [];
-  const collectionSlice = [...books]
-    .sort((a, b) => {
-      const aTime = a.updatedAt ? Date.parse(a.updatedAt) : 0;
-      const bTime = b.updatedAt ? Date.parse(b.updatedAt) : 0;
-      return bTime - aTime;
-    })
-    .slice(0, 10);
-  const readingBooks = (leyendoPreview.data ?? [])
-    .map((book) => {
-      const latest = latestSessionByBook.get(book.id);
-      if (!latest || !book.pages || book.pages <= 0) return book;
-      const progressFromSession = Math.max(
-        0,
-        Math.min(100, Math.round((latest.currentPage / book.pages) * 100)),
-      );
-      return { ...book, progress: progressFromSession };
-    })
-    .slice(0, 3);
   const genreRows = (summary.data?.genres ?? []).filter(
     (row): row is { genre: string; count: number } =>
       Boolean(row) &&
       typeof row.genre === "string" &&
       Number.isFinite(row.count),
   );
-
-  const ratedCount = summary.data?.ratedCount ?? 0;
-  const ratedSum = summary.data?.ratedSum ?? 0;
-  const ratingLabel = ratedCount > 0 ? (ratedSum / ratedCount).toFixed(1) : "—";
-  const yearLabel = String(summary.data?.latestYear ?? "—");
 
   const emptyTitle = filtered
     ? "Nada coincide con estos filtros"
@@ -612,13 +252,6 @@ export default function LibraryScreen() {
                 isWeb ? styles.listHeaderWeb : styles.listHeaderMobile,
               ]}
             >
-              <StatsStrip
-                total={summary.data?.total ?? 0}
-                leido={summary.data?.leido ?? 0}
-                ratingLabel={ratingLabel}
-                yearLabel={yearLabel}
-              />
-
               <View style={styles.searchRow}>
                 {isWeb ? (
                   <Searchbar
@@ -653,15 +286,25 @@ export default function LibraryScreen() {
                   </View>
                 )}
                 <Pressable
-                  onPress={toggleShowFilters}
+                  onPress={() => {
+                    if (isWeb) {
+                      toggleShowFilters();
+                    } else {
+                      router.push("/(app)/library-filters" as never);
+                    }
+                  }}
                   style={[
                     isWeb
                       ? styles.filterIconBtn
                       : styles.filterIconBtnMobile,
-                    showFilters && styles.filterIconBtnActive,
+                    (isWeb ? showFilters : filtered) && styles.filterIconBtnActive,
                   ]}
                   accessibilityLabel={
-                    showFilters ? "Ocultar filtros" : "Mostrar filtros"
+                    isWeb
+                      ? showFilters
+                        ? "Ocultar filtros"
+                        : "Mostrar filtros"
+                      : "Abrir filtros de biblioteca"
                   }
                 >
                   <Ionicons
@@ -674,7 +317,7 @@ export default function LibraryScreen() {
                 </Pressable>
               </View>
 
-              {showFilters ? (
+              {isWeb && showFilters ? (
                 <View style={styles.filtersBlock}>
                   <Text
                     variant="labelMedium"
@@ -890,144 +533,6 @@ export default function LibraryScreen() {
                 </View>
               ) : null}
 
-              {collectionSlice.length > 0 ? (
-                <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                    {isWeb ? (
-                      <Text
-                        variant="titleLarge"
-                        style={[
-                          styles.sectionTitle,
-                          { color: appTheme.colors.textOnDark },
-                        ]}
-                      >
-                        Colección
-                      </Text>
-                    ) : (
-                      <NativeText style={styles.sectionTitleMobile}>
-                        Colección
-                      </NativeText>
-                    )}
-                  </View>
-                  {isWeb ? (
-                    <View style={styles.webCarouselWrap}>
-                      <Pressable
-                        style={styles.webCarouselArrow}
-                        onPress={() => {
-                          const next = Math.max(
-                            0,
-                            collectionOffset - COLLECTION_CARD_WIDTH,
-                          );
-                          collectionScrollRef.current?.scrollTo({
-                            x: next,
-                            animated: true,
-                          });
-                        }}
-                        accessibilityLabel="Desplazar colección a la izquierda"
-                      >
-                        <Ionicons
-                          name="chevron-back"
-                          size={18}
-                          color={theme.colors.textOnDark}
-                        />
-                      </Pressable>
-                      <ScrollView
-                        ref={collectionScrollRef}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.collectionListContent}
-                        onScroll={(event) =>
-                          setCollectionOffset(event.nativeEvent.contentOffset.x)
-                        }
-                        scrollEventThrottle={16}
-                      >
-                        {collectionSlice.map((item, index) => (
-                          <Animated.View
-                            key={`c-${item.id}`}
-                            entering={FadeInDown.delay(index * 35).duration(
-                              260,
-                            )}
-                            exiting={FadeOutLeft.duration(180)}
-                          >
-                            <CollectionBookCard book={item} />
-                          </Animated.View>
-                        ))}
-                      </ScrollView>
-                      <Pressable
-                        style={styles.webCarouselArrow}
-                        onPress={() => {
-                          const next = collectionOffset + COLLECTION_CARD_WIDTH;
-                          collectionScrollRef.current?.scrollTo({
-                            x: next,
-                            animated: true,
-                          });
-                        }}
-                        accessibilityLabel="Desplazar colección a la derecha"
-                      >
-                        <Ionicons
-                          name="chevron-forward"
-                          size={18}
-                          color={theme.colors.textOnDark}
-                        />
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <ListComponent
-                      horizontal
-                      data={collectionSlice}
-                      keyExtractor={(item: { id: string }) => `c-${item.id}`}
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.collectionListContent}
-                      renderItem={({
-                        item,
-                        index,
-                      }: {
-                        item: any;
-                        index: number;
-                      }) => (
-                        <Animated.View
-                          entering={FadeInDown.delay(index * 35).duration(260)}
-                          exiting={FadeOutLeft.duration(180)}
-                        >
-                          <CollectionBookCard book={item} />
-                        </Animated.View>
-                      )}
-                    />
-                  )}
-                </View>
-              ) : null}
-
-              {readingBooks.length > 0 ? (
-                <View style={styles.section}>
-                  {isWeb ? (
-                    <Text
-                      variant="titleLarge"
-                      style={[
-                        styles.sectionTitle,
-                        { color: appTheme.colors.textOnDark },
-                      ]}
-                    >
-                      Leyendo ahora
-                    </Text>
-                  ) : (
-                    <NativeText style={styles.sectionTitleMobile}>
-                      Leyendo ahora
-                    </NativeText>
-                  )}
-                  <View style={styles.readingStack}>
-                    {readingBooks.map((book, index) => (
-                      <Animated.View
-                        key={book.id}
-                        entering={FadeInDown.delay(index * 40).duration(260)}
-                        exiting={FadeOutLeft.duration(180)}
-                      >
-                        <ReadingNowCard book={book} />
-                      </Animated.View>
-                    ))}
-                  </View>
-                </View>
-              ) : null}
-
               <View style={styles.section}>
                 {isWeb ? (
                   <Text
@@ -1091,7 +596,6 @@ export default function LibraryScreen() {
                 </Pressable>
               )
             ) : null}
-            <LibraryAcquisitionsFooter />
           </View>
         }
         contentContainerStyle={[
@@ -1101,6 +605,8 @@ export default function LibraryScreen() {
         ]}
       />
 
+      {isWeb ? (
+        <>
       <Modal
         visible={sortModalOpen}
         transparent
@@ -1215,6 +721,8 @@ export default function LibraryScreen() {
           </View>
         </View>
       </Modal>
+        </>
+      ) : null}
     </Screen>
   );
 }
@@ -1254,138 +762,6 @@ const styles = StyleSheet.create({
     gap: 20,
     marginTop: 8,
     paddingHorizontal: 16,
-  },
-  acquisitionsSection: {
-    gap: 10,
-    marginBottom: 8,
-  },
-  acquisitionsListContent: {
-    gap: 12,
-    paddingVertical: 4,
-    paddingRight: 8,
-  },
-  webCarouselWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  webCarouselArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderOnCard,
-    backgroundColor: theme.colors.cardElevated,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  acquisitionsHint: {
-    color: theme.colors.textMutedOnDark,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  acquisitionCard: {
-    width: ACQUISITION_CARD_WIDTH,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: theme.colors.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderOnCard,
-    gap: 4,
-  },
-  acquisitionTitle: {
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  acquisitionAuthor: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontStyle: "italic",
-  },
-  acquisitionMeta: {
-    color: theme.colors.textSoft,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  acquisitionDate: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    fontFamily: "Fraunces_700Bold",
-    marginTop: 4,
-  },
-  statsCard: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderOnCard,
-    overflow: "hidden",
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "stretch",
-  },
-  statsCell: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-  },
-  statsCellBorder: {
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: theme.colors.borderOnCard,
-  },
-  statsIcon: {
-    marginBottom: 2,
-  },
-  statsValue: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 15,
-    color: theme.colors.text,
-  },
-  statsLabel: {
-    fontSize: 8,
-    letterSpacing: 0.4,
-    color: theme.colors.textSoft,
-    marginTop: 1,
-    textAlign: "center",
-  },
-  statsRowMobile: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statsCellMobile: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-    backgroundColor: theme.colors.card,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-      default: {},
-    }),
-  },
-  statsValueMobile: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 22,
-    color: theme.colors.text,
-  },
-  statsLabelMobile: {
-    fontSize: 8,
-    letterSpacing: 0.4,
-    color: theme.colors.textSoft,
-    marginTop: 1,
-    textAlign: "center",
   },
   searchRow: {
     flexDirection: "row",
@@ -1534,11 +910,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 8,
   },
-  sectionTitleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   sectionTitle: {
     fontFamily: "Fraunces_700Bold",
     color: theme.colors.textOnDark,
@@ -1554,129 +925,10 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     letterSpacing: 0.2,
   },
-  collectionListContent: {
-    gap: 12,
-    paddingVertical: 4,
-    paddingRight: 8,
-  },
-  collectionCard: {
-    width: COLLECTION_CARD_WIDTH,
-    borderRadius: 8,
-    overflow: "hidden",
-    backgroundColor: theme.colors.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderOnCard,
-  },
-  collectionCardMobile: {
-    width: COLLECTION_CARD_WIDTH_MOBILE,
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: theme.colors.card,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
-  },
-  collectionCoverWrap: {
-    position: "relative",
-    backgroundColor: theme.colors.bgSoft,
-  },
-  collectionHeart: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(35, 25, 16, 0.35)",
-    borderRadius: 999,
-    padding: 4,
-  },
-  collectionMeta: {
-    padding: 10,
-    gap: 4,
-  },
-  collectionTitle: {
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  collectionAuthor: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontStyle: "italic",
-  },
   starRow: {
     flexDirection: "row",
     gap: 2,
     marginTop: 2,
-  },
-  readingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 8,
-    backgroundColor: theme.colors.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderOnCard,
-  },
-  readingCardMobile: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: theme.colors.card,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
-  },
-  readingBody: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  readingTitle: {
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-  },
-  readingAuthor: {
-    color: theme.colors.textSoft,
-  },
-  readingProgressLabel: {
-    color: theme.colors.textSoft,
-    marginTop: 2,
-  },
-  readingProgressBar: {
-    height: 6,
-    borderRadius: 999,
-    marginTop: 4,
-    backgroundColor: theme.colors.bgSoft,
-  },
-  readingProgressBarMobile: {
-    height: 8,
-    borderRadius: 999,
-    marginTop: 4,
-    backgroundColor: theme.colors.bgSoft,
-  },
-  readingStack: {
-    gap: 10,
   },
   gridRow: {
     paddingHorizontal: 16,

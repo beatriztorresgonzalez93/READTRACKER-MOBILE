@@ -10,6 +10,12 @@ const LEYENDO_PREVIEW_QUERY: LibraryBooksQuery = {
   status: "leyendo",
 };
 
+const LEIDOS_HOME_CAROUSEL_QUERY: LibraryBooksQuery = {
+  ...defaultLibraryBooksQuery,
+  status: "leido",
+  sort: "recientes",
+};
+
 export function useLeyendoPreview() {
   const { token } = useAuth();
 
@@ -17,6 +23,20 @@ export function useLeyendoPreview() {
     queryKey: ["books", "leyendo-preview"],
     queryFn: async (): Promise<Book[]> => {
       const page = await getBooksPage(token ?? "", 0, 6, LEYENDO_PREVIEW_QUERY);
+      return page.items;
+    },
+    enabled: Boolean(token),
+  });
+}
+
+/** Hasta 10 libros terminados (estado leído), más recientes primero, para el carrusel del inicio. */
+export function useLeidosHomeCarousel() {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["books", "leidos-home-carousel"],
+    queryFn: async (): Promise<Book[]> => {
+      const page = await getBooksPage(token ?? "", 0, 10, LEIDOS_HOME_CAROUSEL_QUERY);
       return page.items;
     },
     enabled: Boolean(token),
@@ -79,6 +99,7 @@ export function useCreateReadingSession(bookId: string) {
       await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
     },
   });
 }
@@ -94,6 +115,7 @@ export function useUpdateBookStatus(bookId: string) {
       await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
     },
   });
 }
@@ -108,6 +130,7 @@ export function useCreateBook() {
       await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
     },
   });
 }
@@ -123,6 +146,7 @@ export function useUpdateBook(bookId: string) {
       await queryClient.invalidateQueries({ queryKey: ["books", "detail", bookId] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
     },
   });
 }
@@ -137,6 +161,7 @@ export function useDeleteBook(bookId: string) {
       await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
       await queryClient.removeQueries({ queryKey: ["books", "detail", bookId] });
     },
   });

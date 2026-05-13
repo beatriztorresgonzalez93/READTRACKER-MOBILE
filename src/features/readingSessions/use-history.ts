@@ -79,6 +79,7 @@ export function useDeleteReadingSession() {
       await queryClient.invalidateQueries({ queryKey: ["books", "feed"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "summary"] });
       await queryClient.invalidateQueries({ queryKey: ["books", "leyendo-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["books", "leidos-home-carousel"] });
     },
   });
 }
