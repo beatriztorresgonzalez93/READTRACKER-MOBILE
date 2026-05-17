@@ -576,15 +576,21 @@ export default function LibraryScreen() {
         numColumns={gridColumns}
         key={`library-grid-${gridColumns}`}
         columnWrapperStyle={styles.gridColumn}
-        renderItem={({ item, index }: { item: any; index: number }) => (
-          <Animated.View
-            entering={FadeInDown.delay(index * 20).duration(220)}
-            exiting={FadeOutLeft.duration(180)}
-            style={styles.gridItemWrap}
-          >
-            <BookGridCard book={item} />
-          </Animated.View>
-        )}
+        renderItem={({ item, index }: { item: any; index: number }) =>
+          isWeb ? (
+            <View style={styles.gridItemWrap}>
+              <BookGridCard book={item} />
+            </View>
+          ) : (
+            <Animated.View
+              entering={FadeInDown.delay(index * 20).duration(220)}
+              exiting={FadeOutLeft.duration(180)}
+              style={styles.gridItemWrap}
+            >
+              <BookGridCard book={item} />
+            </Animated.View>
+          )
+        }
         ListEmptyComponent={
           <View style={styles.listRowOuter}>
             <EmptyState title={emptyTitle} description={emptyDescription} />

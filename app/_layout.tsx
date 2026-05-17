@@ -3,10 +3,16 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Fraunces_400Regular, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
-import { Text, TextInput } from "react-native";
+import { StyleSheet, Text, TextInput } from "react-native";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/providers/app-providers";
+
+const defaultTextStyle = { fontFamily: "Fraunces_400Regular" as const };
+
+function mergeDefaultStyle(existing: unknown) {
+  return StyleSheet.flatten([defaultTextStyle, existing]);
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -18,13 +24,14 @@ export default function RootLayout() {
     return null;
   }
 
-  // Fuerza Fraunces como fuente base global.
+  // Fuerza Fraunces como fuente base global. En web, defaultProps.style no puede ser un array
+  // (provoca: "Failed to set an indexed property on CSSStyleDeclaration").
   const TextWithDefaults = Text as typeof Text & { defaultProps?: { style?: unknown } };
   const TextInputWithDefaults = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
   TextWithDefaults.defaultProps = TextWithDefaults.defaultProps || {};
-  TextWithDefaults.defaultProps.style = [{ fontFamily: "Fraunces_400Regular" }, TextWithDefaults.defaultProps.style];
+  TextWithDefaults.defaultProps.style = mergeDefaultStyle(TextWithDefaults.defaultProps.style);
   TextInputWithDefaults.defaultProps = TextInputWithDefaults.defaultProps || {};
-  TextInputWithDefaults.defaultProps.style = [{ fontFamily: "Fraunces_400Regular" }, TextInputWithDefaults.defaultProps.style];
+  TextInputWithDefaults.defaultProps.style = mergeDefaultStyle(TextInputWithDefaults.defaultProps.style);
 
   return (
     <AppProviders>
