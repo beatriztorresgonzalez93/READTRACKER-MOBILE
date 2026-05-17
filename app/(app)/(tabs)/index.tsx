@@ -1,6 +1,6 @@
 // Pantalla principal de biblioteca con filtros, resumen y listado de libros.
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,6 +37,7 @@ import type {
   LibraryShelfFilter,
   LibraryStatusFilter,
 } from "@/shared/types/books";
+import { AppLink } from "@/shared/ui/app-link";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -104,8 +105,7 @@ function StarRow({ rating }: { rating?: number | null }) {
 function BookGridCard({ book }: { book: Book }) {
   const year = book.updatedAt ? new Date(book.updatedAt).getFullYear() : null;
   return (
-    <Link href={`/(app)/books/${book.id}` as never} asChild>
-      <Pressable style={isWeb ? styles.gridCard : styles.gridCardMobile}>
+    <AppLink href={`/(app)/books/${book.id}` as never} style={isWeb ? styles.gridCard : styles.gridCardMobile}>
         <BookCover
           uri={book.coverUrl}
           width={GRID_COVER_WIDTH}
@@ -150,8 +150,7 @@ function BookGridCard({ book }: { book: Book }) {
           )}
           <StarRow rating={book.rating} />
         </View>
-      </Pressable>
-    </Link>
+    </AppLink>
   );
 }
 

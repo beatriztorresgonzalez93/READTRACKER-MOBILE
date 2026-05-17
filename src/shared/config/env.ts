@@ -30,9 +30,9 @@ function resolveApiBaseUrl(): string {
       ? (globalThis.location as Location).hostname
       : "";
 
+  // Expo web en local: misma API que en .env (p. ej. Render). CORS debe permitir localhost:8081 en Render.
   if (host === "localhost" || host === "127.0.0.1") {
-    if (configured && !configured.includes("onrender.com")) return configured;
-    return "http://localhost:4000/api/v1";
+    return configured || DEFAULT_API_BASE_URL;
   }
 
   if (!configured || configured.includes("onrender.com")) {

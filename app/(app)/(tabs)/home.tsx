@@ -1,6 +1,6 @@
 // Inicio: lectura actual, resumen y última actividad de lectura.
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useMemo } from "react";
 import {
   ActivityIndicator,
@@ -14,16 +14,14 @@ import {
 import { ProgressBar } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {
-  useBooksSummary,
-  useLeidosHomeCarousel,
-  useLeyendoPreview,
-} from "@/features/books/use-books";
+import { useBooksSummary, useLeidosHomeCarousel, useLeyendoPreview } from "@/features/books/use-books";
 import { useReadingSessionsList } from "@/features/readingSessions/use-history";
 import type { Book } from "@/shared/types/books";
 import type { ReadingSession } from "@/shared/types/reading-session";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookCover } from "@/shared/ui/book-cover";
+import { webFlattenStyle } from "@/shared/lib/web-style";
+import { AppLink } from "@/shared/ui/app-link";
 import { Screen } from "@/shared/ui/screen";
 import { theme } from "@/shared/ui/theme";
 
@@ -93,8 +91,7 @@ export default function HomeScreen() {
 
   const genreVariety = useMemo(() => {
     const rows = summary.data?.genres ?? [];
-    return rows.filter((g) => g && typeof g.genre === "string" && g.count > 0)
-      .length;
+    return rows.filter((g) => g && typeof g.genre === "string" && g.count > 0).length;
   }, [summary.data?.genres]);
 
   const bookDateFmt = useMemo(
@@ -135,18 +132,14 @@ export default function HomeScreen() {
         <Text style={styles.greeting}>Tu espacio de lectura</Text>
 
         {primaryBook ? (
-          <Link href={`/(app)/books/${primaryBook.id}` as never} asChild>
-            <Pressable
-              style={[styles.heroCard, isWeb && styles.heroCardWeb]}
-              accessibilityRole="button"
-              accessibilityLabel={`Continuar leyendo: ${primaryBook.title}`}
-            >
+          <AppLink
+            href={`/(app)/books/${primaryBook.id}` as never}
+            style={webFlattenStyle([styles.heroCard, isWeb && styles.heroCardWeb])}
+            accessibilityRole="button"
+            accessibilityLabel={`Continuar leyendo: ${primaryBook.title}`}
+          >
               <View style={styles.heroLabelRow}>
-                <Ionicons
-                  name="book-outline"
-                  size={18}
-                  color={theme.colors.primary}
-                />
+                <Ionicons name="book-outline" size={18} color={theme.colors.primary} />
                 <Text style={styles.heroLabel}>Leyendo ahora</Text>
               </View>
               <View style={styles.heroBody}>
@@ -164,9 +157,7 @@ export default function HomeScreen() {
                   <Text style={styles.heroAuthor} numberOfLines={2}>
                     {primaryBook.author ?? "Autor desconocido"}
                   </Text>
-                  <Text style={styles.heroProgressLabel}>
-                    Avance · {progress}%
-                  </Text>
+                  <Text style={styles.heroProgressLabel}>Avance · {progress}%</Text>
                   <ProgressBar
                     progress={progress / 100}
                     color={theme.colors.primary}
@@ -176,47 +167,28 @@ export default function HomeScreen() {
               </View>
               <View style={styles.heroCtaRow}>
                 <Text style={styles.heroCta}>Abrir libro</Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={theme.colors.primary}
-                />
+                <Ionicons name="chevron-forward" size={18} color={theme.colors.primary} />
               </View>
-            </Pressable>
-          </Link>
+          </AppLink>
         ) : (
           <Pressable
             style={[styles.emptyHero, isWeb && styles.heroCardWeb]}
             onPress={() => router.push("/(app)/(tabs)/index" as never)}
           >
-            <Ionicons
-              name="library-outline"
-              size={36}
-              color={theme.colors.textSoft}
-            />
-            <Text style={styles.emptyHeroTitle}>
-              Aún no tienes un libro en curso
-            </Text>
+            <Ionicons name="library-outline" size={36} color={theme.colors.textSoft} />
+            <Text style={styles.emptyHeroTitle}>Aún no tienes un libro en curso</Text>
             <Text style={styles.emptyHeroSub}>
               Marca un libro como «Leyendo» en tu biblioteca o añade uno nuevo.
             </Text>
             <View style={styles.emptyHeroBtn}>
               <Text style={styles.emptyHeroBtnText}>Ir a la biblioteca</Text>
-              <Ionicons
-                name="arrow-forward"
-                size={16}
-                color={theme.colors.onPrimary}
-              />
+              <Ionicons name="arrow-forward" size={16} color={theme.colors.onPrimary} />
             </View>
           </Pressable>
         )}
 
         <View style={[styles.insightCard, isWeb && styles.heroCardWeb]}>
-          <Ionicons
-            name="pulse-outline"
-            size={22}
-            color={theme.colors.primary}
-          />
+          <Ionicons name="pulse-outline" size={22} color={theme.colors.primary} />
           <View style={styles.insightTextCol}>
             <Text style={styles.insightTitle}>Actividad reciente</Text>
             <Text style={styles.insightBody}>
@@ -230,6 +202,9 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Resumen rápido</Text>
+        <Text style={styles.sectionHint}>
+          Total y leídos en tu biblioteca; pendientes, favoritos, géneros y el año más reciente en catálogo.
+        </Text>
         <View style={styles.metricsGrid}>
           <MetricTile
             icon="library-outline"
@@ -264,11 +239,7 @@ export default function HomeScreen() {
           <MetricTile
             icon="trophy-outline"
             label="Mejor año"
-            value={
-              s?.latestYear != null && s.latestYear > 0
-                ? String(s.latestYear)
-                : "—"
-            }
+            value={s?.latestYear != null && s.latestYear > 0 ? String(s.latestYear) : "—"}
             onPress={() => router.push("/(app)/(tabs)/stats" as never)}
           />
         </View>
@@ -284,18 +255,18 @@ export default function HomeScreen() {
             <Text style={styles.carouselLink}>Biblioteca</Text>
           </Pressable>
         </View>
+        <Text style={styles.carouselSub}>
+          Libros en estado «Leído», ordenados por la última actividad (máx. 10).
+        </Text>
         {leidosCarousel.isLoading && !leidosCarousel.data ? (
           <View style={styles.carouselLoading}>
             <ActivityIndicator color={theme.colors.primary} />
           </View>
         ) : leidosCarousel.isError ? (
-          <Text style={styles.carouselEmpty}>
-            No se pudieron cargar los libros leídos.
-          </Text>
+          <Text style={styles.carouselEmpty}>No se pudieron cargar los libros leídos.</Text>
         ) : leidosSorted.length === 0 ? (
           <Text style={styles.carouselEmpty}>
-            Cuando marques un libro como terminado, aparecerá aquí con su
-            portada.
+            Cuando marques un libro como terminado, aparecerá aquí con su portada.
           </Text>
         ) : (
           <ScrollView
@@ -314,12 +285,12 @@ export default function HomeScreen() {
                 }
               }
               return (
-                <Link
+                <AppLink
                   key={book.id}
                   href={`/(app)/books/${book.id}` as never}
-                  asChild
+                  style={styles.readCard}
+                  accessibilityRole="button"
                 >
-                  <Pressable style={styles.readCard} accessibilityRole="button">
                     <BookCover
                       uri={book.coverUrl}
                       width={72}
@@ -333,11 +304,8 @@ export default function HomeScreen() {
                     <Text style={styles.readCardAuthor} numberOfLines={1}>
                       {book.author ?? "Autor desconocido"}
                     </Text>
-                    {dateStr ? (
-                      <Text style={styles.readCardDate}>{dateStr}</Text>
-                    ) : null}
-                  </Pressable>
-                </Link>
+                    {dateStr ? <Text style={styles.readCardDate}>{dateStr}</Text> : null}
+                </AppLink>
               );
             })}
           </ScrollView>

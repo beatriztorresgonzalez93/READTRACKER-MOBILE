@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Fraunces_400Regular, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
-import { StyleSheet, Text, TextInput } from "react-native";
+import { Platform, StyleSheet, Text, TextInput } from "react-native";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/providers/app-providers";
@@ -24,14 +24,15 @@ export default function RootLayout() {
     return null;
   }
 
-  // Fuerza Fraunces como fuente base global. En web, defaultProps.style no puede ser un array
-  // (provoca: "Failed to set an indexed property on CSSStyleDeclaration").
-  const TextWithDefaults = Text as typeof Text & { defaultProps?: { style?: unknown } };
-  const TextInputWithDefaults = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
-  TextWithDefaults.defaultProps = TextWithDefaults.defaultProps || {};
-  TextWithDefaults.defaultProps.style = mergeDefaultStyle(TextWithDefaults.defaultProps.style);
-  TextInputWithDefaults.defaultProps = TextInputWithDefaults.defaultProps || {};
-  TextInputWithDefaults.defaultProps.style = mergeDefaultStyle(TextInputWithDefaults.defaultProps.style);
+  // Fuente global Fraunces solo en nativo; en web defaultProps.style rompe el DOM.
+  if (Platform.OS !== "web") {
+    const TextWithDefaults = Text as typeof Text & { defaultProps?: { style?: unknown } };
+    const TextInputWithDefaults = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
+    TextWithDefaults.defaultProps = TextWithDefaults.defaultProps || {};
+    TextWithDefaults.defaultProps.style = mergeDefaultStyle(TextWithDefaults.defaultProps.style);
+    TextInputWithDefaults.defaultProps = TextInputWithDefaults.defaultProps || {};
+    TextInputWithDefaults.defaultProps.style = mergeDefaultStyle(TextInputWithDefaults.defaultProps.style);
+  }
 
   return (
     <AppProviders>

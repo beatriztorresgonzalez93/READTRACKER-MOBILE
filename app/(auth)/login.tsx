@@ -1,7 +1,7 @@
 // Pantalla de inicio de sesion con validacion de formulario.
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useCallback, useEffect, useState } from "react";
@@ -23,6 +23,7 @@ import { useAuth } from "@/features/auth/use-auth";
 import { formatFirebaseAuthError } from "@/shared/lib/firebase-auth-errors";
 import { showAppAlert } from "@/shared/lib/show-app-alert";
 import { showPlaceholderAlert } from "@/shared/ui/placeholder-alerts";
+import { AppLink } from "@/shared/ui/app-link";
 import { Screen } from "@/shared/ui/screen";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
 
@@ -362,9 +363,9 @@ export default function LoginScreen() {
 
           <View style={styles.registerBlock}>
             <Text style={styles.registerHint}>¿No tienes cuenta?</Text>
-            <Link href={"/(auth)/register" as never} style={styles.registerLink}>
-              Crea una aquí
-            </Link>
+            <AppLink href={"/(auth)/register" as never}>
+              <Text style={styles.registerLink}>Crea una aquí</Text>
+            </AppLink>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

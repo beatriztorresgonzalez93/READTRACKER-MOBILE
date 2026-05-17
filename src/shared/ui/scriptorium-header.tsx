@@ -1,12 +1,13 @@
 // Cabecera reutilizable con titulo y accesos de navegacion.
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
+import { AppLink } from "@/shared/ui/app-link";
 import { showNotificationsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { theme } from "@/shared/ui/theme";
 import { useAppTheme } from "@/shared/ui/use-app-theme";
@@ -88,15 +89,13 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
         </View>
         <View style={styles.right}>
           {proChip}
-          <Link href={"/(app)/profile" as never} asChild>
-            <Pressable hitSlop={12} style={styles.iconBtn} accessibilityLabel="Perfil">
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
-              ) : (
-                <Ionicons name="person-circle-outline" size={28} color={theme.colors.text} />
-              )}
-            </Pressable>
-          </Link>
+          <AppLink href={"/(app)/profile" as never} hitSlop={12} style={styles.iconBtn} accessibilityLabel="Perfil">
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+            ) : (
+              <Ionicons name="person-circle-outline" size={28} color={theme.colors.text} />
+            )}
+          </AppLink>
           <Pressable
             hitSlop={12}
             style={styles.iconBtn}
