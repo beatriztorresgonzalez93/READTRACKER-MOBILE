@@ -50,7 +50,15 @@ function parseClientOrigins(): string[] {
   if (isProduction && !process.env.CLIENT_ORIGIN?.trim()) {
     throw new Error("CLIENT_ORIGIN o CLIENT_ORIGINS son obligatorios en producción");
   }
-  return [normalizeOrigin(process.env.CLIENT_ORIGIN ?? "http://localhost:5173")];
+  const base = normalizeOrigin(process.env.CLIENT_ORIGIN ?? "http://localhost:5173");
+  const origins = new Set<string>([base]);
+  if (!isProduction) {
+    for (const port of ["5173", "8081", "19006", "3000", "4000"]) {
+      origins.add(normalizeOrigin(`http://localhost:${port}`));
+      origins.add(normalizeOrigin(`http://127.0.0.1:${port}`));
+    }
+  }
+  return [...origins];
 }
 
 /** Sufijos HTTPS de host (p. ej. previews Vercel: `-teamslug.vercel.app`) — una URL por preview distinta. */
@@ -68,6 +76,8 @@ export const env = {
   /** Orígenes https://... que terminan en uno de estos sufijos pasan CORS (útil para previews Vercel). */
   corsOriginSuffixes: parseCorsOriginSuffixes(),
   corsAllowVercelPreviews: parseBoolean(process.env.CORS_ALLOW_VERCEL_PREVIEWS, !isProduction),
+  /** Permite http://localhost:* y 127.0.0.1:* (útil con Expo web en :8081 contra API en Render). */
+  corsAllowLocalhost: parseBoolean(process.env.CORS_ALLOW_LOCALHOST, false),
   rateLimitWindowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMaxRequests: parseNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 120),
   databaseUrl: process.env.DATABASE_URL ?? "",
