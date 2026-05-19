@@ -7,7 +7,11 @@ export class CoversSearchError extends Error {
   }
 }
 
-type OpenLibrarySearchDoc = { cover_i?: number };
+type OpenLibrarySearchDoc = {
+  cover_i?: number;
+  cover_edition_key?: string | string[];
+  isbn?: string[];
+};
 
 type OpenLibrarySearchJson = {
   docs?: OpenLibrarySearchDoc[];
@@ -18,6 +22,7 @@ type GoogleVolumeItem = {
     imageLinks?: {
       thumbnail?: string;
       smallThumbnail?: string;
+      medium?: string;
     };
   };
 };
@@ -26,52 +31,91 @@ type GoogleBooksJson = {
   items?: GoogleVolumeItem[];
 };
 
-const OPEN_LIBRARY_LIMIT = 12;
+const OPEN_LIBRARY_LIMIT = 16;
 const RESULT_LIMIT = 8;
 
 /** Algunos proveedores devuelven 403 si la petición no lleva User-Agent (típico en Node). */
 const OUTBOUND_FETCH_HEADERS: HeadersInit = {
   Accept: "application/json",
-  "User-Agent": "ReadTracker/1.0 (+https://github.com/beatriztorresgonzalez93/READTRACKER)"
+  "User-Agent": "ReadTracker/1.0 (+https://github.com/beatriztorresgonzalez93/READTRACKER)",
 };
 
+function editionKeyToOlid(key: string | string[] | undefined): string | null {
+  if (!key) return null;
+  const raw = Array.isArray(key) ? key[0] : key;
+  if (!raw?.trim()) return null;
+  return raw.replace(/^\/?books\//, "").replace(/^\/?editions\//, "").trim();
+}
+
+export function extractOpenLibraryCoverUrls(docs: OpenLibrarySearchDoc[]): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+
+  for (const doc of docs) {
+    const candidates: string[] = [];
+
+    if (typeof doc.cover_i === "number") {
+      candidates.push(`https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`);
+    }
+
+    const olid = editionKeyToOlid(doc.cover_edition_key);
+    if (olid) {
+      candidates.push(`https://covers.openlibrary.org/b/olid/${olid}-M.jpg`);
+    }
+
+    const isbn = doc.isbn?.find((value) => typeof value === "string" && value.trim());
+    if (isbn) {
+      candidates.push(`https://covers.openlibrary.org/b/isbn/${isbn.trim()}-M.jpg`);
+    }
+
+    for (const url of candidates) {
+      if (seen.has(url)) continue;
+      seen.add(url);
+      urls.push(url);
+      if (urls.length >= RESULT_LIMIT) return urls;
+    }
+  }
+
+  return urls;
+}
+
 export class CoversService {
-  async searchByTitle(title: string, author?: string): Promise<string[]> {
-    const openLibraryParams = new URLSearchParams({
-      title,
-      limit: String(OPEN_LIBRARY_LIMIT)
-    });
-    if (author?.trim()) {
-      openLibraryParams.set("author", author.trim());
-    }
-    const openLibraryResponse = await fetch(`https://openlibrary.org/search.json?${openLibraryParams.toString()}`, {
-      headers: OUTBOUND_FETCH_HEADERS
+  private async searchOpenLibrary(
+    params: Record<string, string>,
+  ): Promise<string[]> {
+    const searchParams = new URLSearchParams({
+      limit: String(OPEN_LIBRARY_LIMIT),
+      ...params,
     });
 
-    if (openLibraryResponse.ok) {
-      const data = (await openLibraryResponse.json()) as OpenLibrarySearchJson;
-      const covers = (data.docs ?? [])
-        .filter((doc) => typeof doc.cover_i === "number")
-        .map((doc) => `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`)
-        .slice(0, RESULT_LIMIT);
+    const response = await fetch(
+      `https://openlibrary.org/search.json?${searchParams.toString()}`,
+      { headers: OUTBOUND_FETCH_HEADERS },
+    );
 
-      if (covers.length > 0) {
-        return covers;
-      }
+    if (!response.ok) {
+      return [];
     }
 
-    const googleQuery = author?.trim() ? `intitle:${title} inauthor:${author.trim()}` : title;
+    const data = (await response.json()) as OpenLibrarySearchJson;
+    return extractOpenLibraryCoverUrls(data.docs ?? []);
+  }
+
+  private async searchGoogleBooks(title: string, author?: string): Promise<string[]> {
+    const parts = [title.trim()];
+    if (author?.trim()) parts.push(author.trim());
+    const googleQuery = parts.join(" ");
+
     const googleBooksResponse = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(googleQuery)}&maxResults=10`,
-      { headers: OUTBOUND_FETCH_HEADERS }
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(googleQuery)}&maxResults=12`,
+      { headers: OUTBOUND_FETCH_HEADERS },
     );
 
     if (!googleBooksResponse.ok) {
-      // No lanzamos error: el cliente ya muestra "no se encontraron portadas" con lista vacía.
       console.warn(
         "[ReadTracker] CoversService: Google Books respondió",
         googleBooksResponse.status,
-        googleBooksResponse.statusText
+        googleBooksResponse.statusText,
       );
       return [];
     }
@@ -81,10 +125,39 @@ export class CoversService {
     return (googleData.items ?? [])
       .map(
         (item) =>
-          item.volumeInfo?.imageLinks?.thumbnail ?? item.volumeInfo?.imageLinks?.smallThumbnail
+          item.volumeInfo?.imageLinks?.thumbnail ??
+          item.volumeInfo?.imageLinks?.smallThumbnail ??
+          item.volumeInfo?.imageLinks?.medium,
       )
-      .filter((url): url is string => typeof url === "string")
-      .map((url) => url.replace("http://", "https://"))
+      .filter((url): url is string => typeof url === "string" && url.length > 0)
+      .map((url) => url.replace("http://", "https://").replace("&edge=curl", ""))
       .slice(0, RESULT_LIMIT);
+  }
+
+  async searchByTitle(title: string, author?: string): Promise<string[]> {
+    const trimmedTitle = title.trim();
+    const trimmedAuthor = author?.trim() ?? "";
+
+    if (!trimmedTitle) {
+      return [];
+    }
+
+    const openLibraryAttempts: Record<string, string>[] = [];
+
+    if (trimmedAuthor) {
+      openLibraryAttempts.push({ q: `${trimmedTitle} ${trimmedAuthor}` });
+      openLibraryAttempts.push({ title: trimmedTitle, author: trimmedAuthor });
+    }
+    openLibraryAttempts.push({ q: trimmedTitle });
+    openLibraryAttempts.push({ title: trimmedTitle });
+
+    for (const params of openLibraryAttempts) {
+      const covers = await this.searchOpenLibrary(params);
+      if (covers.length > 0) {
+        return covers;
+      }
+    }
+
+    return this.searchGoogleBooks(trimmedTitle, trimmedAuthor || undefined);
   }
 }

@@ -45,9 +45,6 @@ export class BooksController {
       const sortRaw = this.getSingleQueryValue(req.query.sort)?.trim() ?? "recientes";
       const limit = parseIntBounded(req.query.limit, 12, 1, 100);
       const offset = parseIntBounded(req.query.offset, 0, 0, 1_000_000);
-      const hasReviewRaw = this.getSingleQueryValue(req.query.hasReview)?.trim().toLowerCase();
-      const hasReview =
-        hasReviewRaw === "true" || hasReviewRaw === "1" || hasReviewRaw === "yes" || hasReviewRaw === "si";
 
       if (!HOOK_STATUS_VALUES.includes(hookStatus as (typeof HOOK_STATUS_VALUES)[number])) {
         sendApiError(res, 400, "INVALID_BOOKS_STATUS", "Parámetro status no válido");
@@ -71,8 +68,7 @@ export class BooksController {
         hookStatus,
         shelf,
         genre: genreRaw || null,
-        sort: sortRaw as BookSortKey,
-        hasReview: hasReview || undefined,
+        sort: sortRaw as BookSortKey
       };
 
       const { rows, total } = await this.service.getBooksPage(userId, filters, limit, offset);

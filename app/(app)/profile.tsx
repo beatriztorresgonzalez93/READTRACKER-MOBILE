@@ -18,9 +18,11 @@ import { Alert, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { getFirebaseAuth } from "@/shared/config/firebase";
 import {
-  avatarUriNeedsS3Upload,
-  uploadLocalAvatarUriToS3,
+  avatarUriNeedsPrepare,
+  compressAvatarPickerAsset,
+  prepareAvatarUrlForFirestore,
 } from "@/shared/lib/upload-profile-avatar";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
@@ -102,15 +104,19 @@ export default function ProfileScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 0.9,
+      quality: 1,
       allowsEditing: true,
       aspect: [1, 1],
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
-      const asset = result.assets[0];
-      setAvatarUrlDraft(asset.uri);
-      setAvatarMimeDraft(asset.mimeType ?? null);
+      try {
+        const dataUrl = await compressAvatarPickerAsset(result.assets[0].uri);
+        setAvatarUrlDraft(dataUrl);
+        setAvatarMimeDraft(null);
+      } catch (error) {
+        Alert.alert("No se pudo usar la foto", (error as Error).message);
+      }
     }
   }
 
@@ -121,11 +127,17 @@ export default function ProfileScreen() {
       const normalizedFirstName = firstNameDraft.trim();
       const normalizedLastName = lastNameDraft.trim();
       let avatarUrlToSave = avatarUrlDraft;
-      if (avatarUriNeedsS3Upload(avatarUrlToSave)) {
-        if (!token) {
-          throw new Error("Sesión no disponible para subir la foto.");
+      if (avatarUriNeedsPrepare(avatarUrlToSave)) {
+        const firebaseUser = getFirebaseAuth().currentUser;
+        if (!firebaseUser) {
+          throw new Error("Sesión no disponible para guardar la foto.");
         }
-        avatarUrlToSave = await uploadLocalAvatarUriToS3(token, avatarUrlToSave, avatarMimeDraft);
+        const uploadToken = token ?? (await firebaseUser.getIdToken());
+        avatarUrlToSave = await prepareAvatarUrlForFirestore(
+          uploadToken,
+          avatarUrlToSave,
+          avatarMimeDraft,
+        );
         setAvatarUrlDraft(avatarUrlToSave);
         setAvatarMimeDraft(null);
       }
@@ -147,8 +159,8 @@ export default function ProfileScreen() {
 
   return (
     <Screen
-      backgroundColor={APP_CREAM_BG}
-      webBackgroundColor={APP_CREAM_BG}
+      backgroundColor="#F6F1E7"
+      webBackgroundColor="#F6F1E7"
       style={{
         paddingTop: isWeb ? insets.top + 8 : 12,
         paddingBottom: insets.bottom + 12,
