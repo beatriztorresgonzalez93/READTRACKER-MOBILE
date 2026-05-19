@@ -1,23 +1,11 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent } from "@testing-library/react-native";
 
 import { AppInput } from "@/shared/ui/app-input";
-
-jest.mock("@/shared/ui/use-app-theme", () => ({
-  useAppTheme: () => ({
-    colors: {
-      textOnDark: "#222",
-      borderOnCard: "#ccc",
-      card: "#fff",
-      text: "#111",
-      danger: "#c00",
-    },
-    radius: { sm: 10 },
-  }),
-}));
+import { renderWithGluestack } from "@/shared/ui/gluestack-test-utils";
 
 describe("AppInput", () => {
   it("renders label and current value", () => {
-    const { getByText, getByDisplayValue } = render(
+    const { getByText, getByDisplayValue } = renderWithGluestack(
       <AppInput label="Titulo" value="Dune" onChangeText={() => undefined} />,
     );
 
@@ -27,7 +15,7 @@ describe("AppInput", () => {
 
   it("shows error message and forwards text changes", () => {
     const onChangeText = jest.fn();
-    const { getByText, getByDisplayValue } = render(
+    const { getByText, getByDisplayValue } = renderWithGluestack(
       <AppInput
         label="Autor"
         value="Frank"

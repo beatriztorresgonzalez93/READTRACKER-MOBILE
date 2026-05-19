@@ -14,11 +14,12 @@ ReadTracker organiza la lectura personal: libros, pagina actual y progreso en el
 
 Funcionalidades para la persona lectora:
 
-- Biblioteca personal de libros
+- **Inicio**: lectura actual, resumen rápido y carrusel de libros terminados
+- Biblioteca personal de libros (búsqueda, filtros y scroll infinito)
 - Progreso por paginas al avanzar en la lectura
 - Historial de lectura por fechas
 - Estadisticas de habitos de lectura
-- Lista de deseos y registro de compras
+- Lista de deseos y registro de compras (pantalla de compras accesible desde el menú, no en la barra inferior)
 
 ## Stack
 
@@ -27,8 +28,9 @@ Funcionalidades para la persona lectora:
 - React Query para estado remoto
 - Zustand para estado local/persistente
 - React Native Paper (componentes MD3)
-- **Firebase Auth** (cliente) + **Firebase Admin** en la API (validación de ID token)
-- **PostgreSQL** (p. ej. Neon) para datos de usuario, libros, sesiones, wishlist y facturación
+- **Firebase Auth** (cliente, email/contraseña) + **Firestore** (perfil de usuario en colección `users`)
+- **Firebase Admin** en la API (validación de ID token en rutas protegidas)
+- **PostgreSQL** (p. ej. Neon) para libros, sesiones de lectura, wishlist y facturación
 - **Stripe** (Payment Intent + webhook) para activar **Scriptorium Pro**
 - **AWS S3** (opcional): subida de portadas con **URL firmada** (`PUT` directo al bucket tras validar Firebase en la API)
 
@@ -36,11 +38,16 @@ Funcionalidades para la persona lectora:
 
 - **Autenticacion**
   - Login y registro con **Firebase Auth** (email/contraseña)
-  - La API valida **ID tokens de Firebase** (Firebase Admin en el servidor)
-  - Persistencia de sesión Firebase + perfil con `GET /auth/me`
+  - Pantalla de login con branding **Scriptorium** (logo, tono marrón claro del tema de la app)
+  - Botones de Google y Apple visibles en UI; **aún no conectados** (muestran aviso «Próximamente»)
+  - Perfil de usuario en **Firestore** (`getMe` / `updateMe` en cliente); la API valida el **ID token** de Firebase en el resto de dominios
+- **Navegacion principal (5 pestañas)**
+  - **Inicio**, **Biblioteca**, **Historial**, **Estadísticas**, **Wishlist**
+  - Sin botón flotante «+» en la barra inferior; el alta de libro está en **Biblioteca** (botón «Añadir libro» bajo la búsqueda)
+  - Ajustes y perfil desde el icono de engranaje (menú / perfil), no como pestaña visible
 - **Biblioteca**
-  - Listado paginado de libros
-  - Busqueda y filtros
+  - Listado paginado con **carga automática al hacer scroll** (sin botón «Cargar más»)
+  - Busqueda y filtros (pantalla dedicada de filtros en móvil)
   - Resumen de biblioteca (`/books/summary`)
 - **Detalle de libro**
   - Vista completa del libro
@@ -67,10 +74,14 @@ Funcionalidades para la persona lectora:
 ## Estructura principal
 
 - `app/`: rutas Expo Router
-  - `app/(auth)/`: login y registro
-  - `app/(app)/(tabs)/`: biblioteca, historial, stats, wishlist, perfil
+  - `app/(auth)/`: login y registro (cabecera de stack oculta en login)
+  - `app/(app)/(tabs)/`: **home** (inicio), **index** (biblioteca), **history**, **stats**, **wishlist**
+  - `app/(app)/app-menu.tsx`, `profile.tsx`, `settings.tsx`: menú y cuenta
+  - `app/(app)/library-filters.tsx`, `wishlist-filters.tsx`: filtros en móvil
   - `app/(app)/books/[id].tsx`: detalle del libro
   - `app/(app)/books/new.tsx`, `edit.tsx`: alta y edición de libro
+  - `app/(app)/upgrade.tsx`: activación Pro
+  - Rutas ocultas de tabs: `add` (legacy), `purchases` (compras, `href: null`)
 - `src/features/`: modulos por dominio
 - `src/shared/`: API client, hooks y UI compartida
 - `server/`: API Express (TypeScript), migraciones SQL, Vitest
@@ -79,9 +90,10 @@ Funcionalidades para la persona lectora:
 
 ## PUNTOS A DESTACAR
 
-- `Producto real`, no solo demo: app de seguimiento lector con biblioteca, progreso por páginas, historial mensual, estadísticas y wishlist/compras.
+- `Producto real`, no solo demo: app de seguimiento lector con inicio, biblioteca, progreso por páginas, historial mensual, estadísticas y wishlist/compras.
+- `Identidad Scriptorium`: login y cabeceras con marca propia (logo en `assets/images/logo.png`).
 - `Multiplataforma con un solo código`: funciona en móvil (Expo) y web, compartiendo la misma API.
-- `Autenticación sólida`: Firebase Auth en cliente + validación de ID token en backend (Firebase Admin).
+- `Autenticación sólida`: Firebase Auth en cliente; perfil en Firestore; validación de ID token en backend para libros, sesiones y facturación.
 - `Backend completo propio`: API en Express + TypeScript + PostgreSQL, con endpoints por dominio (auth, books, reading-sessions, wishlist, billing).
 - `Pago integrado con Stripe`: flujo de prueba gratis + activación de plan Pro con webhook de confirmación en backend.
 - `Calidad de ingeniería`: CI en GitHub Actions con lint, typecheck y tests; además E2E con Maestro para flujos críticos.

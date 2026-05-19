@@ -44,9 +44,15 @@ function normalizeOrigin(origin: string): string {
   return origin.trim().replace(/\/$/, "").toLowerCase();
 }
 
+const LOCAL_DEV_ORIGIN =
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
 function isCorsAllowedOrigin(origin: string): boolean {
   const normalized = normalizeOrigin(origin);
   if (env.clientOrigins.includes(normalized)) {
+    return true;
+  }
+  if (env.corsAllowLocalhost && LOCAL_DEV_ORIGIN.test(normalized)) {
     return true;
   }
   // Vercel previews dinámicos solo si está habilitado explícitamente por entorno.
@@ -96,7 +102,7 @@ export const createApp = () => {
           callback(null, true);
           return;
         }
-        callback(new Error("CORS origin blocked"));
+        callback(null, false);
       }
     })
   );

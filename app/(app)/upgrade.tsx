@@ -1,30 +1,37 @@
-// Pantalla Plan Pro: estado de trial, activación y pago (Stripe: Elements en web, Payment Sheet en nativo).
+// Pantalla Plan Pro: estado de trial, activación y pago (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Heading,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
+import { router } from "expo-router";
+import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
-import { ProUpgradeModal } from "@/features/billing/pro-upgrade-modal";
+import { BOOK_SHEET_BG } from "@/features/books/book-sheet-ui";
+import { DetailCard } from "@/features/books/book-detail-ui";
 import { subscriptionCopy } from "@/features/billing/subscription-copy";
-import { useBillingStatus, useRefreshBillingStatus } from "@/features/billing/use-billing";
+import { useBillingStatus } from "@/features/billing/use-billing";
+import { AppButton } from "@/shared/ui/app-button";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
 
 export default function UpgradeScreen() {
   const { token, isAuthenticated, isBootstrapping } = useAuth();
   const billingCanFetch = !isBootstrapping && isAuthenticated && Boolean(token?.trim());
   const billing = useBillingStatus();
-  const refreshBilling = useRefreshBillingStatus();
-  const [modalOpen, setModalOpen] = useState(false);
 
   if (
     !billingCanFetch ||
     (billingCanFetch && billing.status !== "success" && billing.status !== "error")
   ) {
     return (
-      <Screen style={styles.screen}>
+      <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG}>
         <AppLoader />
       </Screen>
     );
@@ -32,8 +39,8 @@ export default function UpgradeScreen() {
 
   if (billing.status === "error") {
     return (
-      <Screen style={styles.screen}>
-        <Text style={styles.errorText}>
+      <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG} style={{ padding: 16 }}>
+        <Text size="md" color="$error600">
           {billing.error instanceof Error ? billing.error.message : "No se pudo cargar tu plan."}
         </Text>
       </Screen>
@@ -42,7 +49,7 @@ export default function UpgradeScreen() {
 
   if (!billing.data) {
     return (
-      <Screen style={styles.screen}>
+      <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG}>
         <AppLoader />
       </Screen>
     );
@@ -59,181 +66,91 @@ export default function UpgradeScreen() {
     : null;
 
   return (
-    <Screen style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <Ionicons name="sparkles" size={28} color={theme.colors.primary} />
-          <Text style={styles.heroTitle}>{subscriptionCopy.proTitle}</Text>
-          <Text style={styles.heroSubtitle}>{subscriptionCopy.proSubtitle}</Text>
-        </View>
+    <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <VStack space="md">
+          <VStack alignItems="center" space="sm">
+            <Ionicons name="sparkles" size={28} color="#A87D42" />
+            <Heading size="xl" color="$primary800" textAlign="center">
+              {subscriptionCopy.proTitle}
+            </Heading>
+            <Text size="sm" color="$textLight700" textAlign="center">
+              {subscriptionCopy.proSubtitle}
+            </Text>
+          </VStack>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Tu situación</Text>
-          {isPro ? (
-            <Text style={styles.cardBody}>
-              Tienes Pro activo
-              {proActivatedAt
-                ? ` desde ${new Date(proActivatedAt).toLocaleDateString("es-ES")}.`
-                : "."}
+          <DetailCard>
+            <Text size="md" fontWeight="$bold" color="$primary800" mb="$2">
+              Tu situación
             </Text>
-          ) : trialActive ? (
-            <Text style={styles.cardBody}>
-              Estás en periodo de prueba gratuita.
-              {trialEndLabel ? `\nLa prueba termina el ${trialEndLabel}.` : ""}
+            {isPro ? (
+              <Text size="md" color="$primary800" lineHeight={22}>
+                Tienes Pro activo
+                {proActivatedAt
+                  ? ` desde ${new Date(proActivatedAt).toLocaleDateString("es-ES")}.`
+                  : "."}
+              </Text>
+            ) : trialActive ? (
+              <Text size="md" color="$primary800" lineHeight={22}>
+                Estás en periodo de prueba gratuita.
+                {trialEndLabel ? `\nLa prueba termina el ${trialEndLabel}.` : ""}
+              </Text>
+            ) : (
+              <Text size="md" color="$primary800" lineHeight={22}>
+                La prueba ha terminado. Activa Pro con un solo pago para seguir usando la app al
+                completo, sin límites de tiempo ni cuotas mensuales.
+              </Text>
+            )}
+          </DetailCard>
+
+          <DetailCard>
+            <Text size="md" fontWeight="$bold" color="$primary800" mb="$2">
+              Qué incluye Pro
             </Text>
+            <Text size="md" color="$primary800" lineHeight={22}>
+              {subscriptionCopy.proBenefits}
+            </Text>
+            <Text size="sm" color="$textLight500" mt="$2" lineHeight={20}>
+              {subscriptionCopy.trialLead}
+            </Text>
+          </DetailCard>
+
+          {!isPro ? (
+            <AppButton
+              label={needsPayment ? "Activar Pro con tarjeta" : "Ver opción de pago Pro"}
+              onPress={() => router.push("/(app)/upgrade/checkout" as never)}
+            />
           ) : (
-            <Text style={styles.cardBody}>
-              La prueba ha terminado. Activa Pro con un solo pago para seguir usando la app al completo,
-              sin límites de tiempo ni cuotas mensuales.
-            </Text>
+            <HStack justifyContent="center" alignItems="center" space="sm" py="$3">
+              <Ionicons name="checkmark-circle" size={20} color="#A87D42" />
+              <Text size="md" fontWeight="$bold" color="$primary800">
+                Plan activo
+              </Text>
+            </HStack>
           )}
-        </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Qué incluye Pro</Text>
-          <Text style={styles.cardBody}>{subscriptionCopy.proBenefits}</Text>
-          <Text style={styles.cardMuted}>{subscriptionCopy.trialLead}</Text>
-        </View>
+          {Platform.OS !== "web" && !isPro ? (
+            <Text size="xs" color="$textLight500" textAlign="center" lineHeight={18}>
+              En Android/iOS el pago usa Stripe Payment Sheet dentro de la app. Con claves de test
+              puedes usar la tarjeta 4242 4242 4242 4242.
+            </Text>
+          ) : null}
 
-        {!isPro ? (
           <Pressable
-            style={styles.primaryBtn}
-            onPress={() => setModalOpen(true)}
+            alignSelf="center"
+            onPress={showLegalDocsComingSoonAlert}
+            accessibilityRole="button"
+            accessibilityLabel="Condiciones de uso y privacidad, próximamente"
           >
-            <Text style={styles.primaryBtnText}>
-              {needsPayment ? "Activar Pro con tarjeta" : "Ver opción de pago Pro"}
+            <Text size="sm" fontWeight="$bold" color="$primary600" textDecorationLine="underline">
+              Condiciones y privacidad (próximamente)
             </Text>
           </Pressable>
-        ) : (
-          <View style={styles.donePill}>
-            <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary} />
-            <Text style={styles.donePillText}>Plan activo</Text>
-          </View>
-        )}
-
-        {Platform.OS !== "web" && !isPro ? (
-          <Text style={styles.footnote}>
-            En Android/iOS el pago usa Stripe Payment Sheet dentro de la app. Con claves de test puedes usar la tarjeta
-            4242&nbsp;4242&nbsp;4242&nbsp;4242.
-          </Text>
-        ) : null}
-
-        <Pressable
-          style={styles.legalFootnote}
-          onPress={showLegalDocsComingSoonAlert}
-          accessibilityRole="button"
-          accessibilityLabel="Condiciones de uso y privacidad, próximamente"
-        >
-          <Text style={styles.legalFootnoteText}>Condiciones y privacidad (próximamente)</Text>
-        </Pressable>
+        </VStack>
       </ScrollView>
-
-      <ProUpgradeModal
-        visible={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={() => {
-          refreshBilling();
-          setModalOpen(false);
-        }}
-      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
-  scroll: {
-    gap: 14,
-    paddingBottom: 32,
-  },
-  hero: {
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  heroTitle: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 26,
-    color: theme.colors.text,
-    textAlign: "center",
-  },
-  heroSubtitle: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 15,
-    color: theme.colors.textSoft,
-    textAlign: "center",
-  },
-  card: {
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.borderOnCard,
-    backgroundColor: theme.colors.card,
-    padding: 16,
-    gap: 8,
-  },
-  cardTitle: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 17,
-    color: theme.colors.text,
-  },
-  cardBody: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: theme.colors.text,
-  },
-  cardMuted: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: theme.colors.textSoft,
-    marginTop: 4,
-  },
-  primaryBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  primaryBtnText: {
-    color: theme.colors.onPrimary,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-  },
-  donePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-  },
-  donePillText: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  footnote: {
-    fontSize: 12,
-    color: theme.colors.textSoft,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  legalFootnote: {
-    alignSelf: "center",
-    paddingVertical: 8,
-  },
-  legalFootnoteText: {
-    fontSize: 13,
-    color: theme.colors.primary,
-    fontFamily: "Fraunces_700Bold",
-    textDecorationLine: "underline",
-    textAlign: "center",
-  },
-  errorText: {
-    color: "#B42318",
-    padding: 16,
-  },
-});

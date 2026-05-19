@@ -1,23 +1,24 @@
-// Pantalla dedicada de filtros de biblioteca (sobre todo móvil); la web sigue usando el panel en index.
+// Filtros de biblioteca (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
+import {
+  Box,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect, useMemo } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useBooksFeed, useBooksSummary } from "@/features/books/use-books";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import type { BooksSortKey, LibraryShelfFilter, LibraryStatusFilter } from "@/shared/types/books";
-import { theme } from "@/shared/ui/theme";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { AppButton } from "@/shared/ui/app-button";
+import { Screen } from "@/shared/ui/screen";
 import { useLibraryPreferencesStore } from "@store/library-preferences";
 
 const SORT_LABELS: Record<BooksSortKey, string> = {
@@ -65,11 +66,58 @@ function shelfCount(
   return 0;
 }
 
+function FilterOption({
+  label,
+  count,
+  active,
+  onPress,
+  sortMode,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onPress: () => void;
+  sortMode?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <HStack
+        alignItems="center"
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor="$primary200"
+        bg="$white"
+        py="$3"
+        px="$4"
+        mb="$2"
+        gap="$2"
+      >
+        <Text flex={1} size="md" color="$primary800">
+          {label}
+        </Text>
+        {count != null ? (
+          <Text size="sm" fontWeight="$bold" color="$textLight500" minWidth={28} textAlign="right">
+            {count}
+          </Text>
+        ) : null}
+        {sortMode ? (
+          <Ionicons
+            name={active ? "radio-button-on" : "radio-button-off"}
+            size={22}
+            color={active ? "#A87D42" : "#7A6555"}
+          />
+        ) : active ? (
+          <Ionicons name="checkmark-circle" size={22} color="#A87D42" />
+        ) : null}
+      </HStack>
+    </Pressable>
+  );
+}
+
 export default function LibraryFiltersScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const appTheme = useAppTheme();
 
   const searchDraft = useLibraryPreferencesStore((s) => s.searchDraft);
   const status = useLibraryPreferencesStore((s) => s.status);
@@ -107,297 +155,124 @@ export default function LibraryFiltersScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: "Filtrar",
-      headerStyle: { backgroundColor: appTheme.colors.bgSoft },
-      headerTintColor: appTheme.colors.primary,
+      headerStyle: { backgroundColor: "#F6F1E7" },
+      headerTintColor: "#A87D42",
       headerTitleStyle: {
         fontFamily: "Fraunces_700Bold",
         fontSize: 20,
-        color: appTheme.colors.text,
+        color: "#2D1F15",
       },
       headerShadowVisible: false,
       headerRight: () => (
         <Pressable
           onPress={() => clearFilters()}
           hitSlop={12}
-          style={{ paddingRight: 16 }}
+          pr="$4"
           accessibilityRole="button"
           accessibilityLabel="Reiniciar filtros"
         >
-          <Text style={styles.headerReset}>REINICIAR</Text>
+          <Text size="xs" fontWeight="$bold" color="$textLight500" letterSpacing={0.6}>
+            REINICIAR
+          </Text>
         </Pressable>
       ),
     });
-  }, [navigation, clearFilters, appTheme.colors]);
-
-  const s = styles;
+  }, [navigation, clearFilters]);
 
   return (
-    <View style={[s.root, { backgroundColor: appTheme.colors.bgSoft }]}>
-        <ScrollView
-          contentContainerStyle={[
-            s.scrollContent,
-            { paddingBottom: 120 + insets.bottom },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={s.sectionHeading}>Estado en lista</Text>
-          {STATUS_OPTIONS.map((opt) => {
-            const active = status === opt.key;
-            const count = statusCount(summary.data, opt.key);
-            return (
-              <Pressable
-                key={opt.key}
-                onPress={() => setStatus(opt.key)}
-                style={[
-                  s.optionCard,
-                  {
-                    borderColor: appTheme.colors.borderOnCard,
-                    backgroundColor: appTheme.colors.card,
-                  },
-                ]}
-              >
-                <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>
-                  {opt.label}
-                </Text>
-                <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-                  {count}
-                </Text>
-                {active ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color={appTheme.colors.primary}
-                    style={s.optionCheck}
-                  />
-                ) : null}
-              </Pressable>
-            );
-          })}
+    <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7" style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 120 + insets.bottom,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <VStack space="md">
+          <Text size="md" fontWeight="$bold" color="$primary800">
+            Estado en lista
+          </Text>
+          {STATUS_OPTIONS.map((opt) => (
+            <FilterOption
+              key={opt.key}
+              label={opt.label}
+              count={statusCount(summary.data, opt.key)}
+              active={status === opt.key}
+              onPress={() => setStatus(opt.key)}
+            />
+          ))}
 
-          <Text style={[s.sectionHeading, s.sectionSpacer]}>Colección</Text>
-          {SHELF_OPTIONS.map((opt) => {
-            const active = shelf === opt.key;
-            const count = shelfCount(summary.data, opt.key);
-            return (
-              <Pressable
-                key={opt.key}
-                onPress={() => setShelf(opt.key)}
-                style={[
-                  s.optionCard,
-                  {
-                    borderColor: appTheme.colors.borderOnCard,
-                    backgroundColor: appTheme.colors.card,
-                  },
-                ]}
-              >
-                <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>
-                  {opt.label}
-                </Text>
-                <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-                  {count}
-                </Text>
-                {active ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color={appTheme.colors.primary}
-                    style={s.optionCheck}
-                  />
-                ) : null}
-              </Pressable>
-            );
-          })}
+          <Text size="md" fontWeight="$bold" color="$primary800" mt="$4">
+            Colección
+          </Text>
+          {SHELF_OPTIONS.map((opt) => (
+            <FilterOption
+              key={opt.key}
+              label={opt.label}
+              count={shelfCount(summary.data, opt.key)}
+              active={shelf === opt.key}
+              onPress={() => setShelf(opt.key)}
+            />
+          ))}
 
-          <Text style={[s.sectionHeading, s.sectionSpacer]}>Género</Text>
-          <Pressable
+          <Text size="md" fontWeight="$bold" color="$primary800" mt="$4">
+            Género
+          </Text>
+          <FilterOption
+            label="Todos los géneros"
+            count={summary.data?.total ?? 0}
+            active={!genre}
             onPress={() => setGenre(null)}
-            style={[
-              s.optionCard,
-              {
-                borderColor: appTheme.colors.borderOnCard,
-                backgroundColor: appTheme.colors.card,
-              },
-            ]}
-          >
-            <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>
-              Todos los géneros
-            </Text>
-            <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-              {summary.data?.total ?? 0}
-            </Text>
-            {!genre ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={22}
-                color={appTheme.colors.primary}
-                style={s.optionCheck}
-              />
-            ) : null}
-          </Pressable>
-          {genreRows.map((row) => {
-            const active = genre === row.genre;
-            return (
-              <Pressable
-                key={row.genre}
-                onPress={() => setGenre(row.genre)}
-                style={[
-                  s.optionCard,
-                  {
-                    borderColor: appTheme.colors.borderOnCard,
-                    backgroundColor: appTheme.colors.card,
-                  },
-                ]}
-              >
-                <Text
-                  style={[s.optionLabel, { color: appTheme.colors.text }]}
-                  numberOfLines={2}
-                >
-                  {row.genre}
-                </Text>
-                <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-                  {row.count}
-                </Text>
-                {active ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color={appTheme.colors.primary}
-                    style={s.optionCheck}
-                  />
-                ) : null}
-              </Pressable>
-            );
-          })}
+          />
+          {genreRows.map((row) => (
+            <FilterOption
+              key={row.genre}
+              label={row.genre}
+              count={row.count}
+              active={genre === row.genre}
+              onPress={() => setGenre(row.genre)}
+            />
+          ))}
 
-          <Text style={[s.sectionHeading, s.sectionSpacer]}>Ordenar por</Text>
-          {SORT_OPTIONS.map((opt) => {
-            const active = sort === opt.key;
-            return (
-              <Pressable
-                key={opt.key}
-                onPress={() => setSort(opt.key)}
-                style={[
-                  s.optionCard,
-                  {
-                    borderColor: appTheme.colors.borderOnCard,
-                    backgroundColor: appTheme.colors.card,
-                  },
-                ]}
-              >
-                <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>
-                  {opt.label}
-                </Text>
-                {active ? (
-                  <Ionicons
-                    name="radio-button-on"
-                    size={22}
-                    color={appTheme.colors.primary}
-                  />
-                ) : (
-                  <Ionicons
-                    name="radio-button-off"
-                    size={22}
-                    color={appTheme.colors.textMutedOnDark}
-                  />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          <Text size="md" fontWeight="$bold" color="$primary800" mt="$4">
+            Ordenar por
+          </Text>
+          {SORT_OPTIONS.map((opt) => (
+            <FilterOption
+              key={opt.key}
+              label={opt.label}
+              active={sort === opt.key}
+              onPress={() => setSort(opt.key)}
+              sortMode
+            />
+          ))}
+        </VStack>
+      </ScrollView>
 
-        <View
-          style={[
-            s.footer,
-            {
-              paddingBottom: Math.max(insets.bottom, 12),
-              backgroundColor: appTheme.colors.bgSoft,
-              borderTopColor: appTheme.colors.border,
-            },
-          ]}
-        >
-          <Pressable
-            style={[s.cta, { backgroundColor: appTheme.colors.primary }]}
+      <Box
+        position="absolute"
+        left={0}
+        right={0}
+        bottom={0}
+        px="$4"
+        pt="$3"
+        pb={Math.max(insets.bottom, 12)}
+        bg="#F6F1E7"
+        borderTopWidth={1}
+        borderTopColor="$primary200"
+      >
+        {isLoadingCount ? (
+          <Box py="$4" alignItems="center">
+            <ActivityIndicator color="#A87D42" />
+          </Box>
+        ) : (
+          <AppButton
+            label={`Ver ${totalResults} libro${totalResults === 1 ? "" : "s"}`}
             onPress={() => router.back()}
-            accessibilityRole="button"
-          >
-            {isLoadingCount ? (
-              <ActivityIndicator color={appTheme.colors.onPrimary} />
-            ) : (
-              <Text style={[s.ctaText, { color: appTheme.colors.onPrimary }]}>
-                Ver {totalResults} libro{totalResults === 1 ? "" : "s"}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
+          />
+        )}
+      </Box>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  sectionHeading: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 17,
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  sectionSpacer: {
-    marginTop: 22,
-  },
-  optionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    gap: 10,
-  },
-  optionLabel: {
-    flex: 1,
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 16,
-  },
-  optionCount: {
-    fontSize: 15,
-    fontFamily: "Fraunces_700Bold",
-    minWidth: 28,
-    textAlign: "right",
-  },
-  optionCheck: {
-    marginLeft: 4,
-  },
-  headerReset: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 13,
-    letterSpacing: 0.6,
-    color: theme.colors.textSoft,
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  cta: {
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  ctaText: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-  },
-});

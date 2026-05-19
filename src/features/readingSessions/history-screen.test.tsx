@@ -1,6 +1,8 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import HistoryScreen from "../../../app/(app)/(tabs)/history";
+import { renderWithGluestack } from "@/shared/ui/gluestack-test-utils";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: () => null,
@@ -10,10 +12,10 @@ jest.mock("expo-constants", () => ({
   appOwnership: "expo",
 }));
 
-jest.mock("@/shared/ui/use-app-theme", () => ({
-  useAppTheme: () => ({
-    colors: { textOnDark: "#222" },
-  }),
+jest.mock("expo-router", () => ({
+  router: {
+    push: jest.fn(),
+  },
 }));
 
 const mockDeleteMutateAsync = jest.fn(async () => undefined);
@@ -54,14 +56,16 @@ describe("HistoryScreen flow", () => {
     jest.clearAllMocks();
   });
 
-  it("opens custom delete confirmation modal from a session card", () => {
-    const { getByText, getByLabelText } = render(<HistoryScreen />);
+  it("navigates to delete-session when tapping delete on a session card", () => {
+    const { getByText, getByLabelText } = renderWithGluestack(<HistoryScreen />);
 
     fireEvent.press(getByText("1"));
     expect(getByText("Dune")).toBeTruthy();
 
     fireEvent.press(getByLabelText("Eliminar sesión"));
-    expect(getByText("Eliminar sesión")).toBeTruthy();
-    expect(getByText(/¿Seguro que quieres eliminar la sesión de "Dune"\?/)).toBeTruthy();
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/(app)/history/delete-session",
+      params: { sessionId: "session-1", title: "Dune" },
+    });
   });
 });

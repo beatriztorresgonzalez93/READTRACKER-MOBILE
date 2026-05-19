@@ -1,5 +1,14 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": null,
   "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://readtracker-api.onrender.com/api/v1/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/"

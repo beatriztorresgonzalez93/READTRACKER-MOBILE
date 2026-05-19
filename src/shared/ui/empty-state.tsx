@@ -1,6 +1,5 @@
-// Estado vacio reutilizable para listas sin resultados.
-import { StyleSheet, Text, View } from "react-native";
-import { theme } from "@/shared/ui/theme";
+// Estado vacio reutilizable para listas sin resultados (gluestack-ui).
+import { Box, Text, VStack } from "@gluestack-ui/themed";
 
 type EmptyStateProps = {
   title: string;
@@ -9,29 +8,23 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description }: EmptyStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {description ? <Text style={styles.description}>{description}</Text> : null}
-    </View>
+    <Box
+      borderRadius="$lg"
+      bg="$backgroundLight50"
+      p="$4"
+      borderWidth={1}
+      borderColor="$primary200"
+    >
+      <VStack space="xs">
+        <Text size="md" fontWeight="$bold" color="$primary800">
+          {title}
+        </Text>
+        {description ? (
+          <Text size="sm" color="$textLight500" lineHeight={20}>
+            {description}
+          </Text>
+        ) : null}
+      </VStack>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.card,
-    padding: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.borderOnCard,
-  },
-  title: {
-    fontWeight: "700",
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  description: {
-    color: theme.colors.textSoft,
-  },
-});
-

@@ -4,9 +4,9 @@ import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
+import { scriptoriumNativeHeader } from "@/shared/ui/app-colors";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
-import { theme } from "@/shared/ui/theme";
 
 export default function ProtectedLayout() {
   const { isAuthenticated, isBootstrapping, token } = useAuth();
@@ -40,31 +40,12 @@ export default function ProtectedLayout() {
     return <Redirect href="/upgrade" />;
   }
 
-  const nativeStackHeader = {
-    headerStyle: { backgroundColor: theme.colors.bgSoft },
-    headerTintColor: theme.colors.primary,
-    headerTitleStyle: {
-      color: theme.colors.text,
-      fontFamily: "Fraunces_700Bold",
-      fontSize: 18,
-    },
-    headerShadowVisible: false,
-  };
-
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.bg },
-        headerTintColor: theme.colors.textOnDark,
-        headerTitleStyle: {
-          color: theme.colors.textOnDark,
-          fontFamily: "Fraunces_700Bold",
-          fontSize: 18,
-        },
-        headerShadowVisible: false,
-      }}
-    >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack screenOptions={scriptoriumNativeHeader}>
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false, title: "" }}
+      />
       <Stack.Screen
         name="upgrade"
         options={
@@ -77,7 +58,7 @@ export default function ProtectedLayout() {
                 header: () => <ScriptoriumHeader showBackButton />,
               }
             : {
-                ...nativeStackHeader,
+                ...scriptoriumNativeHeader,
                 title: "Scriptorium Pro",
                 headerShown: true,
               }
@@ -89,11 +70,10 @@ export default function ProtectedLayout() {
           Platform.OS === "web"
             ? {
                 headerShown: false,
-                presentation: "modal",
-                animation: "slide_from_bottom",
+                presentation: "card",
               }
             : {
-                ...nativeStackHeader,
+                ...scriptoriumNativeHeader,
                 title: "Perfil",
                 headerShown: true,
                 presentation: "card",
@@ -104,14 +84,14 @@ export default function ProtectedLayout() {
         name="app-menu"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          title: "",
+          presentation: "card",
         }}
       />
       <Stack.Screen
         name="settings"
         options={{
-          ...nativeStackHeader,
+          ...scriptoriumNativeHeader,
           title: "Ajustes",
           headerShown: true,
         }}
@@ -119,7 +99,7 @@ export default function ProtectedLayout() {
       <Stack.Screen
         name="activity"
         options={{
-          ...nativeStackHeader,
+          ...scriptoriumNativeHeader,
           title: "Actividad de compras",
           headerShown: true,
         }}
@@ -127,7 +107,7 @@ export default function ProtectedLayout() {
       <Stack.Screen
         name="library-filters"
         options={{
-          ...nativeStackHeader,
+          ...scriptoriumNativeHeader,
           title: "Filtrar",
           headerShown: true,
         }}
@@ -135,7 +115,7 @@ export default function ProtectedLayout() {
       <Stack.Screen
         name="wishlist-filters"
         options={{
-          ...nativeStackHeader,
+          ...scriptoriumNativeHeader,
           title: "Filtrar",
           headerShown: true,
         }}
@@ -152,7 +132,7 @@ export default function ProtectedLayout() {
                 header: () => <ScriptoriumHeader showBackButton />,
               }
             : {
-                ...nativeStackHeader,
+                ...scriptoriumNativeHeader,
                 title: "Libro",
                 headerShown: true,
               }
@@ -167,14 +147,14 @@ export default function ProtectedLayout() {
                 headerShown: true,
                 headerTransparent: true,
                 headerShadowVisible: false,
-                presentation: "modal",
+                presentation: "card",
                 header: () => <ScriptoriumHeader showBackButton />,
               }
             : {
-                ...nativeStackHeader,
+                ...scriptoriumNativeHeader,
                 title: "Añadir libro",
                 headerShown: true,
-                presentation: "modal",
+                presentation: "card",
               }
         }
       />
@@ -187,16 +167,52 @@ export default function ProtectedLayout() {
                 headerShown: true,
                 headerTransparent: true,
                 headerShadowVisible: false,
-                presentation: "modal",
+                presentation: "card",
                 header: () => <ScriptoriumHeader showBackButton />,
               }
             : {
-                ...nativeStackHeader,
+                ...scriptoriumNativeHeader,
                 title: "Editar libro",
                 headerShown: true,
-                presentation: "modal",
+                presentation: "card",
               }
         }
+      />
+      <Stack.Screen
+        name="books/mark-page"
+        options={{ ...scriptoriumNativeHeader, title: "Marcar página", headerShown: true }}
+      />
+      <Stack.Screen
+        name="books/review"
+        options={{ ...scriptoriumNativeHeader, title: "Mi reseña", headerShown: true }}
+      />
+      <Stack.Screen
+        name="books/status"
+        options={{ ...scriptoriumNativeHeader, title: "Estado", headerShown: true }}
+      />
+      <Stack.Screen
+        name="books/times-read"
+        options={{ ...scriptoriumNativeHeader, title: "Veces leído", headerShown: true }}
+      />
+      <Stack.Screen
+        name="books/delete-book"
+        options={{ ...scriptoriumNativeHeader, title: "Eliminar libro", headerShown: true }}
+      />
+      <Stack.Screen
+        name="history/delete-session"
+        options={{ ...scriptoriumNativeHeader, title: "Eliminar sesión", headerShown: true }}
+      />
+      <Stack.Screen
+        name="wishlist/item-form"
+        options={{ ...scriptoriumNativeHeader, title: "Deseo", headerShown: true }}
+      />
+      <Stack.Screen
+        name="wishlist/confirm"
+        options={{ ...scriptoriumNativeHeader, title: "Confirmar", headerShown: true }}
+      />
+      <Stack.Screen
+        name="upgrade/checkout"
+        options={{ ...scriptoriumNativeHeader, title: "Pago Pro", headerShown: true }}
       />
     </Stack>
   );

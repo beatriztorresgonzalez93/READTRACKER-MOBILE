@@ -16,7 +16,7 @@ describe("shared ui theme exports", () => {
     expect(getThemeByScheme(undefined)).toBe(noteFlowDarkTheme);
   });
 
-  it("keeps backward-compatible default theme as dark", () => {
-    expect(theme).toBe(noteFlowDarkTheme);
+  it("uses light theme as app default (Scriptorium)", () => {
+    expect(theme).toBe(noteFlowLightTheme);
   });
 });

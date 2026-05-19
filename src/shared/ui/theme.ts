@@ -8,5 +8,5 @@ export function getThemeByScheme(colorScheme: "light" | "dark" | null | undefine
   return colorScheme === "light" ? noteFlowLightTheme : noteFlowDarkTheme;
 }
 
-// Backward-compatible export used across existing screens.
-export const theme = noteFlowDarkTheme;
+// Scriptorium usa la paleta clara por defecto.
+export const theme = noteFlowLightTheme;

@@ -1,43 +1,16 @@
 // Configura tabs principales y accesos rapidos de la seccion privada.
-import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import * as SystemUI from "expo-system-ui";
 import { Tabs, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { APP_CREAM_BG, scriptoriumColors } from "@/shared/ui/app-colors";
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
-
-function AddBookCenterButton(_props: BottomTabBarButtonProps) {
-  const theme = useAppTheme();
-  const router = useRouter();
-  const { width: windowWidth } = useWindowDimensions();
-  /** Seis pestañas visibles: el hueco del + está en 7/12 del ancho; el centro real es 6/12 → desplazamos −ancho/12. */
-  const centerNudgeX = -windowWidth / 12;
-
-  return (
-    <View style={[nativeStyles.addSlot, { transform: [{ translateX: centerNudgeX }] }]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Añadir libro"
-        onPress={() => router.push("/(app)/books/new")}
-        style={({ pressed }) => [
-          nativeStyles.addCircle,
-          { backgroundColor: theme.colors.primary },
-          pressed && nativeStyles.addCirclePressed,
-        ]}
-      >
-        <Ionicons name="add" size={28} color={theme.colors.onPrimary} />
-      </Pressable>
-    </View>
-  );
-}
 
 function NativeHeaderRight() {
-  const theme = useAppTheme();
   const router = useRouter();
 
   return (
@@ -47,8 +20,8 @@ function NativeHeaderRight() {
         hitSlop={10}
         accessibilityLabel="Más opciones y ajustes"
       >
-        <View style={[nativeStyles.headerGearWrap, { backgroundColor: theme.colors.bgPanel }]}>
-          <Ionicons name="settings-outline" size={22} color={theme.colors.primary} />
+        <View style={nativeStyles.headerGearWrap}>
+          <Ionicons name="settings-outline" size={22} color={scriptoriumColors.primary} />
         </View>
       </Pressable>
     </View>
@@ -56,15 +29,14 @@ function NativeHeaderRight() {
 }
 
 export default function AppTabsLayout() {
-  const theme = useAppTheme();
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (Platform.OS === "android") {
-      void SystemUI.setBackgroundColorAsync(theme.colors.bgSoft);
+      void SystemUI.setBackgroundColorAsync(APP_CREAM_BG);
     }
-  }, [theme.colors.bgSoft]);
+  }, []);
 
   return (
     <>
@@ -78,7 +50,7 @@ export default function AppTabsLayout() {
               }
             : {
                 headerStyle: {
-                  backgroundColor: theme.colors.bgSoft,
+                  backgroundColor: APP_CREAM_BG,
                   elevation: 0,
                   shadowOpacity: 0,
                   borderBottomWidth: 0,
@@ -86,25 +58,25 @@ export default function AppTabsLayout() {
                 headerTitleStyle: {
                   fontFamily: "Fraunces_700Bold",
                   fontSize: 26,
-                  color: theme.colors.text,
+                  color: scriptoriumColors.text,
                 },
                 headerTitleAlign: "left",
                 headerRight: () => <NativeHeaderRight />,
               }),
           headerShadowVisible: false,
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.textMutedOnDark,
+          tabBarActiveTintColor: scriptoriumColors.primary,
+          tabBarInactiveTintColor: scriptoriumColors.textMuted,
           tabBarPosition: "bottom",
           tabBarStyle: isWeb
             ? {
-                backgroundColor: theme.colors.bgPanel,
-                borderTopColor: theme.colors.border,
+                backgroundColor: scriptoriumColors.bgPanel,
+                borderTopColor: scriptoriumColors.border,
                 height: 72,
                 paddingTop: 8,
                 paddingBottom: 10,
               }
             : {
-                backgroundColor: theme.colors.bgSoft,
+                backgroundColor: APP_CREAM_BG,
                 borderTopWidth: 0,
                 elevation: 0,
                 shadowOpacity: 0,
@@ -148,15 +120,6 @@ export default function AppTabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="add"
-          options={{
-            title: "",
-            tabBarLabel: () => null,
-            tabBarIcon: () => null,
-            tabBarButton: (props) => <AddBookCenterButton {...props} />,
-          }}
-        />
-        <Tabs.Screen
           name="stats"
           options={{
             title: "Estadísticas",
@@ -175,6 +138,12 @@ export default function AppTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="add"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="purchases"
           options={{
             title: "Compras",
@@ -190,33 +159,6 @@ export default function AppTabsLayout() {
 }
 
 const nativeStyles = StyleSheet.create({
-  addSlot: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 0,
-  },
-  addCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginTop: -22,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-      },
-      android: { elevation: 6 },
-    }),
-  },
-  addCirclePressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.95 }],
-  },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,6 +172,7 @@ const nativeStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#D8C9AE",
+    borderColor: scriptoriumColors.border,
+    backgroundColor: scriptoriumColors.bgPanel,
   },
 });

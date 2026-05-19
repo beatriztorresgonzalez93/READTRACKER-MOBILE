@@ -1,15 +1,8 @@
 // Formulario para editar la informacion de un libro existente.
+import { Heading, Text, VStack } from "@gluestack-ui/themed";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { Alert, Platform, ScrollView } from "react-native";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -22,9 +15,9 @@ import {
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { AppLoader } from "@/shared/ui/app-loader";
+import { BookFormFooter } from "@/shared/ui/book-form-footer";
+import { BookFormLayout, BookFormMultilineInput } from "@/shared/ui/book-form-layout";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 const editBookSchema = z.object({
   title: z.string().trim().min(1, "El título es obligatorio."),
@@ -43,7 +36,6 @@ const editBookSchema = z.object({
 });
 
 export default function EditBookScreen() {
-  const appTheme = useAppTheme();
   const { token } = useAuth();
   const params = useLocalSearchParams<{ id: string }>();
   const bookId = params.id ?? "";
@@ -62,22 +54,6 @@ export default function EditBookScreen() {
   const hydratedBookIdRef = useRef<string | null>(null);
   const formScrollRef = useRef<ScrollView>(null);
   const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardVisible(true));
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardVisible(false));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  function scrollFormToBottom() {
-    setTimeout(() => {
-      formScrollRef.current?.scrollToEnd({ animated: true });
-    }, 120);
-  }
 
   const coverField = useBookCoverField({
     token,
@@ -160,142 +136,122 @@ export default function EditBookScreen() {
 
   if (detail.isLoading && !detail.data) return <AppLoader />;
 
-  return (
-    <Screen style={styles.screen}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "android" ? "height" : "padding"}
-      >
-        <ScrollView
-          ref={formScrollRef}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.content,
-            isKeyboardVisible ? styles.contentKeyboardOpen : null,
-          ]}
-        >
-          <Text style={[styles.title, { color: appTheme.colors.textOnDark }]}>Editar libro</Text>
-          <Text style={styles.subtitle}>
+  const formBody = (
+    <VStack space="md">
+      {Platform.OS === "web" ? (
+        <VStack space="xs">
+          <Heading size="xl" color="$primary800">
+            Editar libro
+          </Heading>
+          <Text size="sm" color="$textLight700">
             Actualiza los datos basicos de tu libro.
           </Text>
+        </VStack>
+      ) : null}
 
-        <AppInput
-          label="Título *"
-          value={title}
-          onChangeText={(value) => {
-            setTitle(value);
-            if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
-          }}
-          autoCapitalize="sentences"
-          placeholder="Ej: Alas de hierro"
-          error={errors.title}
-        />
-        <AppInput
-          label="Autor *"
-          value={author}
-          onChangeText={(value) => {
-            setAuthor(value);
-            if (errors.author) setErrors((prev) => ({ ...prev, author: undefined }));
-          }}
-          autoCapitalize="words"
-          placeholder="Ej: Rebecca Yarros"
-          error={errors.author}
-        />
-        <AppInput
-          label="Paginas"
-          value={pages}
-          onChangeText={(value) => {
-            setPages(value);
-            if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
-          }}
-          autoCapitalize="none"
-          keyboardType="number-pad"
-          placeholder="Ej: 520"
-          error={errors.pages}
-        />
-        <AppInput
-          label="Año de publicacion"
-          value={publishedYear}
-          onChangeText={(value) => {
-            setPublishedYear(value);
-            if (errors.publishedYear) setErrors((prev) => ({ ...prev, publishedYear: undefined }));
-          }}
-          autoCapitalize="none"
-          keyboardType="number-pad"
-          placeholder="Ej: 2025"
-          error={errors.publishedYear}
-        />
-        <AppInput
-          label="Género"
-          value={genre}
-          onChangeText={setGenre}
-          autoCapitalize="sentences"
-          placeholder="Ej: Fantasia"
-        />
-        <AppInput
-          label="Editorial"
-          value={publisher}
-          onChangeText={setPublisher}
-          autoCapitalize="sentences"
-          placeholder="Ej: Planeta"
-        />
-        <BookCoverPicker
-          accentLabelColor={appTheme.colors.textOnDark}
-          coverOptions={coverOptions}
-          selectedCoverUrl={selectedCoverUrl}
-          onSelectCover={setSelectedCoverUrl}
-          isSearchingCover={coverField.isSearchingCover}
-          isUploadingCover={coverField.isUploadingCover}
-          onSearchCover={coverField.onSearchCover}
-          onUploadCover={coverField.onUploadCover}
-        />
-        <AppInput
-          label="Sinopsis"
-          value={description}
-          onChangeText={setDescription}
-          onFocus={scrollFormToBottom}
-          autoCapitalize="sentences"
-          placeholder="Resumen breve del libro"
-          multiline
-          numberOfLines={4}
-          style={styles.multiline}
-        />
+      <AppInput
+        label="Título *"
+        value={title}
+        onChangeText={(value) => {
+          setTitle(value);
+          if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
+        }}
+        autoCapitalize="sentences"
+        placeholder="Ej: Alas de hierro"
+        error={errors.title}
+      />
+      <AppInput
+        label="Autor *"
+        value={author}
+        onChangeText={(value) => {
+          setAuthor(value);
+          if (errors.author) setErrors((prev) => ({ ...prev, author: undefined }));
+        }}
+        autoCapitalize="words"
+        placeholder="Ej: Rebecca Yarros"
+        error={errors.author}
+      />
+      <AppInput
+        label="Paginas"
+        value={pages}
+        onChangeText={(value) => {
+          setPages(value);
+          if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
+        }}
+        autoCapitalize="none"
+        keyboardType="number-pad"
+        placeholder="Ej: 520"
+        error={errors.pages}
+      />
+      <AppInput
+        label="Año de publicacion"
+        value={publishedYear}
+        onChangeText={(value) => {
+          setPublishedYear(value);
+          if (errors.publishedYear) setErrors((prev) => ({ ...prev, publishedYear: undefined }));
+        }}
+        autoCapitalize="none"
+        keyboardType="number-pad"
+        placeholder="Ej: 2025"
+        error={errors.publishedYear}
+      />
+      <AppInput
+        label="Género"
+        value={genre}
+        onChangeText={setGenre}
+        autoCapitalize="sentences"
+        placeholder="Ej: Fantasia"
+      />
+      <AppInput
+        label="Editorial"
+        value={publisher}
+        onChangeText={setPublisher}
+        autoCapitalize="sentences"
+        placeholder="Ej: Planeta"
+      />
+      <BookCoverPicker
+        coverOptions={coverOptions}
+        selectedCoverUrl={selectedCoverUrl}
+        onSelectCover={setSelectedCoverUrl}
+        isSearchingCover={coverField.isSearchingCover}
+        isUploadingCover={coverField.isUploadingCover}
+        onSearchCover={coverField.onSearchCover}
+        onUploadCover={coverField.onUploadCover}
+      />
+      <BookFormMultilineInput
+        label="Sinopsis"
+        value={description}
+        onChangeText={setDescription}
+        autoCapitalize="sentences"
+        placeholder="Resumen breve del libro"
+        numberOfLines={6}
+      />
+    </VStack>
+  );
 
-        <AppButton
-          label={updateBook.isPending ? "Guardando..." : "Guardar cambios"}
-          onPress={onSave}
-          disabled={updateBook.isPending}
-        />
-        </ScrollView>
-      </KeyboardAvoidingView>
+  return (
+    <Screen
+      backgroundColor="#F6F1E7"
+      webBackgroundColor="#F6F1E7"
+      edges={["bottom", "left", "right"]}
+      compactTop
+      style={{ flex: 1 }}
+    >
+      <BookFormLayout
+        scrollRef={formScrollRef}
+        footer={
+          <BookFormFooter>
+            <AppButton
+              label={updateBook.isPending ? "Guardando..." : "Guardar cambios"}
+              onPress={onSave}
+              isDisabled={updateBook.isPending}
+              isLoading={updateBook.isPending}
+            />
+          </BookFormFooter>
+        }
+      >
+        {formBody}
+      </BookFormLayout>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    paddingTop: 22,
-  },
-  content: {
-    gap: 12,
-    paddingBottom: 24,
-  },
-  contentKeyboardOpen: {
-    paddingBottom: 180,
-  },
-  title: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 24,
-    color: theme.colors.textOnDark,
-  },
-  subtitle: {
-    color: theme.colors.textMutedOnDark,
-    marginBottom: 4,
-    fontFamily: "Fraunces_400Regular",
-  },
-  multiline: {
-    minHeight: 96,
-    textAlignVertical: "top",
-  },
-});
