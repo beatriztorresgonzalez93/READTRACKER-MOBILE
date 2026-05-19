@@ -1,10 +1,6 @@
-// Hook para obtener el tema activo segun el sistema operativo.
-import { useColorScheme } from "react-native";
-
-import { getThemeByScheme } from "@/shared/ui/theme";
+// Hook de tema: Scriptorium fija paleta clara (sin seguir modo oscuro del sistema).
+import { noteFlowLightTheme } from "@/shared/ui/theme";
 
 export function useAppTheme() {
-  const colorScheme = useColorScheme();
-  return getThemeByScheme(colorScheme);
+  return noteFlowLightTheme;
 }
-

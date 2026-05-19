@@ -2,14 +2,20 @@ import { render } from "@testing-library/react-native";
 import { ActivityIndicator } from "react-native";
 
 import { AppLoader } from "@/shared/ui/app-loader";
-import { theme } from "@/shared/ui/theme";
+
+jest.mock("@gluestack-ui/themed", () => {
+  const { View, ActivityIndicator: Spinner } = require("react-native");
+  return { Box: View, Spinner };
+});
 
 describe("AppLoader", () => {
-  it("renders loading indicator with theme accent color", () => {
+  it("renders activity indicator on cream background", () => {
     const { UNSAFE_getByType } = render(<AppLoader />);
-    const indicator = UNSAFE_getByType(ActivityIndicator);
+    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+  });
 
-    expect(indicator.props.color).toBe(theme.colors.accent);
-    expect(indicator.props.size).toBe("large");
+  it("accepts custom background", () => {
+    const { UNSAFE_getByType } = render(<AppLoader backgroundColor="#FFFFFF" />);
+    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 });

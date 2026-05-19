@@ -7,11 +7,10 @@ import { useEffect } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { APP_CREAM_BG, scriptoriumColors } from "@/shared/ui/app-colors";
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 function NativeHeaderRight() {
-  const theme = useAppTheme();
   const router = useRouter();
 
   return (
@@ -21,8 +20,8 @@ function NativeHeaderRight() {
         hitSlop={10}
         accessibilityLabel="Más opciones y ajustes"
       >
-        <View style={[nativeStyles.headerGearWrap, { backgroundColor: theme.colors.bgPanel }]}>
-          <Ionicons name="settings-outline" size={22} color={theme.colors.primary} />
+        <View style={nativeStyles.headerGearWrap}>
+          <Ionicons name="settings-outline" size={22} color={scriptoriumColors.primary} />
         </View>
       </Pressable>
     </View>
@@ -30,15 +29,14 @@ function NativeHeaderRight() {
 }
 
 export default function AppTabsLayout() {
-  const theme = useAppTheme();
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (Platform.OS === "android") {
-      void SystemUI.setBackgroundColorAsync(theme.colors.bgSoft);
+      void SystemUI.setBackgroundColorAsync(APP_CREAM_BG);
     }
-  }, [theme.colors.bgSoft]);
+  }, []);
 
   return (
     <>
@@ -52,7 +50,7 @@ export default function AppTabsLayout() {
               }
             : {
                 headerStyle: {
-                  backgroundColor: theme.colors.bgSoft,
+                  backgroundColor: APP_CREAM_BG,
                   elevation: 0,
                   shadowOpacity: 0,
                   borderBottomWidth: 0,
@@ -60,25 +58,25 @@ export default function AppTabsLayout() {
                 headerTitleStyle: {
                   fontFamily: "Fraunces_700Bold",
                   fontSize: 26,
-                  color: theme.colors.text,
+                  color: scriptoriumColors.text,
                 },
                 headerTitleAlign: "left",
                 headerRight: () => <NativeHeaderRight />,
               }),
           headerShadowVisible: false,
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.textMutedOnDark,
+          tabBarActiveTintColor: scriptoriumColors.primary,
+          tabBarInactiveTintColor: scriptoriumColors.textMuted,
           tabBarPosition: "bottom",
           tabBarStyle: isWeb
             ? {
-                backgroundColor: theme.colors.bgPanel,
-                borderTopColor: theme.colors.border,
+                backgroundColor: scriptoriumColors.bgPanel,
+                borderTopColor: scriptoriumColors.border,
                 height: 72,
                 paddingTop: 8,
                 paddingBottom: 10,
               }
             : {
-                backgroundColor: theme.colors.bgSoft,
+                backgroundColor: APP_CREAM_BG,
                 borderTopWidth: 0,
                 elevation: 0,
                 shadowOpacity: 0,
@@ -145,12 +143,7 @@ export default function AppTabsLayout() {
             href: null,
           }}
         />
-                <Tabs.Screen
-          name="reviews"
-          options={{
-            href: null,
-          }}
-        /><Tabs.Screen
+        <Tabs.Screen
           name="purchases"
           options={{
             title: "Compras",
@@ -179,6 +172,7 @@ const nativeStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#D8C9AE",
+    borderColor: scriptoriumColors.border,
+    backgroundColor: scriptoriumColors.bgPanel,
   },
 });

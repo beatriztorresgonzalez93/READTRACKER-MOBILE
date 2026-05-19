@@ -1,21 +1,17 @@
-// Loader visual comun para estados de carga de pantallas.
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+// Loader visual comun para estados de carga (gluestack-ui).
+import { Box, Spinner } from "@gluestack-ui/themed";
 
-import { theme } from "@/shared/ui/theme";
+import { APP_CREAM_BG } from "@/shared/ui/app-colors";
 
-export function AppLoader() {
+type AppLoaderProps = {
+  /** Sustituye el fondo; por defecto crema Scriptorium. */
+  backgroundColor?: string;
+};
+
+export function AppLoader({ backgroundColor = APP_CREAM_BG }: AppLoaderProps) {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={theme.colors.accent} />
-    </View>
+    <Box flex={1} justifyContent="center" alignItems="center" bg={backgroundColor}>
+      <Spinner size="large" color="$primary500" />
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: theme.colors.bg,
-  },
-});

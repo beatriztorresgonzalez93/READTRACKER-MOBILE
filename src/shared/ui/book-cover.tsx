@@ -1,9 +1,10 @@
-// Componente para renderizar portada de libro con fallback.
+// Componente para renderizar portada de libro con fallback (gluestack-ui).
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Box } from "@gluestack-ui/themed";
 import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { theme } from "@/shared/ui/theme";
+import { APP_CARD_BG } from "@/shared/ui/app-colors";
 
 type BookCoverProps = {
   uri?: string | null;
@@ -15,11 +16,13 @@ type BookCoverProps = {
   accessibilityLabel?: string;
 };
 
+const DEFAULT_RADIUS = 6;
+
 export function BookCover({
   uri,
   width = 72,
   aspectRatio = 1.45,
-  borderRadius = theme.radius.sm,
+  borderRadius = DEFAULT_RADIUS,
   accessibilityLabel = "Portada del libro",
 }: BookCoverProps) {
   const height = Math.round(width * aspectRatio);
@@ -27,13 +30,24 @@ export function BookCover({
 
   if (!resolved) {
     return (
-      <View
-        style={[styles.placeholder, { width, height, borderRadius }]}
+      <Box
+        width={width}
+        height={height}
+        borderRadius={borderRadius}
+        bg="$primary100"
+        borderWidth={1}
+        borderColor="$primary200"
+        alignItems="center"
+        justifyContent="center"
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="image"
       >
-        <MaterialCommunityIcons name="book-outline" size={Math.min(width, height) * 0.4} color={theme.colors.textSoft} />
-      </View>
+        <MaterialCommunityIcons
+          name="book-outline"
+          size={Math.min(width, height) * 0.4}
+          color="#7A6555"
+        />
+      </Box>
     );
   }
 
@@ -51,15 +65,6 @@ export function BookCover({
 
 const styles = StyleSheet.create({
   image: {
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.bgSoft,
-  },
-  placeholder: {
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.bgSoft,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: APP_CARD_BG,
   },
 });

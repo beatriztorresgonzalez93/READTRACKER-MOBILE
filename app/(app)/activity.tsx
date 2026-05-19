@@ -1,20 +1,22 @@
-// Historial completo de libros comprados desde la wishlist.
+// Historial completo de libros comprados desde la wishlist (gluestack-ui).
+import { Text } from "@gluestack-ui/themed";
 import Constants from "expo-constants";
 import { useMemo } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import { Card } from "react-native-paper";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 
+import { PurchaseListCard } from "@/features/wishlist/purchase-list-card";
 import { usePurchases } from "@/features/wishlist/use-wishlist";
+import { BOOK_SHEET_BG } from "@/features/books/book-sheet-ui";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
 
 export default function ActivityPurchasesScreen() {
   const purchases = usePurchases();
-  const ListComponent: any = Constants.appOwnership === "expo" ? FlatList : FlashList;
+  const ListComponent: typeof FlatList | typeof FlashList =
+    Constants.appOwnership === "expo" ? FlatList : FlashList;
 
   const sorted = useMemo(() => {
     const list = [...(purchases.data ?? [])];
@@ -38,7 +40,7 @@ export default function ActivityPurchasesScreen() {
 
   if (purchases.isError) {
     return (
-      <Screen>
+      <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG}>
         <EmptyState
           title="No se pudo cargar el historial"
           description="Revisa la conexion y vuelve a intentarlo."
@@ -48,8 +50,13 @@ export default function ActivityPurchasesScreen() {
   }
 
   return (
-    <Screen edges={["bottom", "left", "right"]} style={styles.screen}>
-      <Text style={styles.lead}>
+    <Screen
+      edges={["bottom", "left", "right"]}
+      backgroundColor={BOOK_SHEET_BG}
+      webBackgroundColor={BOOK_SHEET_BG}
+      style={styles.screen}
+    >
+      <Text size="sm" color="$textLight700" lineHeight={20} mb="$4">
         Registro de todas las compras registradas desde tu lista de deseos.
       </Text>
       <ListComponent
@@ -61,7 +68,7 @@ export default function ActivityPurchasesScreen() {
             description="Cuando marques deseos como comprados apareceran aqui."
           />
         }
-        renderItem={({ item, index }: { item: any; index: number }) => {
+        renderItem={({ item, index }: { item: (typeof sorted)[number]; index: number }) => {
           let dateStr = "";
           try {
             dateStr = dateFormatter.format(new Date(item.purchasedAt));
@@ -73,18 +80,13 @@ export default function ActivityPurchasesScreen() {
               entering={FadeInDown.delay(Math.min(index, 12) * 24).duration(220)}
               exiting={FadeOutLeft.duration(160)}
             >
-              <Card mode="outlined" style={styles.card}>
-                <Card.Content style={styles.cardInner}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.meta}>{item.author || "Autor no definido"}</Text>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaMuted}>{item.price || "Sin precio"}</Text>
-                    <Text style={styles.dot}>·</Text>
-                    <Text style={styles.metaMuted}>{item.store || "Sin tienda"}</Text>
-                  </View>
-                  <Text style={styles.date}>{dateStr}</Text>
-                </Card.Content>
-              </Card>
+              <PurchaseListCard
+                title={item.title}
+                author={item.author}
+                price={item.price}
+                store={item.store}
+                dateLabel={dateStr}
+              />
             </Animated.View>
           );
         }}
@@ -99,57 +101,10 @@ export default function ActivityPurchasesScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: theme.colors.bgSoft,
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  lead: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 14,
-    lineHeight: 20,
-    color: theme.colors.textSoft,
-    marginBottom: 16,
-  },
   listContent: {
     paddingBottom: 32,
-  },
-  card: {
-    borderRadius: theme.radius.md,
-    borderColor: theme.colors.borderOnCard,
-    backgroundColor: theme.colors.card,
-  },
-  cardInner: {
-    gap: 4,
-  },
-  title: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 17,
-    color: theme.colors.text,
-  },
-  meta: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 14,
-    color: theme.colors.textSoft,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 4,
-  },
-  metaMuted: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 13,
-    color: theme.colors.textMutedOnDark,
-  },
-  dot: {
-    color: theme.colors.textMutedOnDark,
-  },
-  date: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 12,
-    color: theme.colors.primary,
-    marginTop: 6,
   },
 });

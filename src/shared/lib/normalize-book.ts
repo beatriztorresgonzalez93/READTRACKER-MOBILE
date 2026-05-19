@@ -78,16 +78,6 @@ function pickStringFromObject(v: unknown, keys: string[]): string | undefined {
   return undefined;
 }
 
-function pickReviewText(r: Record<string, unknown>): string | undefined {
-  return (
-    pickString(r.review) ??
-    pickString(r.reviewText) ??
-    pickString(r.review_text) ??
-    pickString(r.resena) ??
-    pickString(r.reseña)
-  );
-}
-
 export function normalizeBook(raw: unknown): Book {
   if (!raw || typeof raw !== "object") {
     return { id: "", title: "Sin titulo" };
@@ -140,7 +130,6 @@ export function normalizeBook(raw: unknown): Book {
       pickString(r.publisherName) ??
       pickStringFromObject(r.publisher, ["name", "nombre", "title"]) ??
       pickStringFromObject(r.editorial, ["name", "nombre", "title"]),
-    reviewText: pickReviewText(r),
   };
 }
 
@@ -163,6 +152,12 @@ export function normalizeBookDetail(raw: unknown): BookDetail {
     pickString(r.sinopsis) ??
     pickString(r.blurb);
   const progressPercent = pickNumber(r.progressPercent) ?? pickNumber(r.progress_percent);
+  const reviewText =
+    pickString(r.review) ??
+    pickString(r.reviewText) ??
+    pickString(r.review_text) ??
+    pickString(r.resena) ??
+    pickString(r.reseña);
   const readCount = pickNumber(r.readCount) ?? pickNumber(r.read_count) ?? pickNumber(r.timesRead) ?? pickNumber(r.times_read);
   const readAt =
     pickString(r.readAt) ??
@@ -191,6 +186,7 @@ export function normalizeBookDetail(raw: unknown): BookDetail {
     ...base,
     description,
     progressPercent: progressPercent ?? base.progress,
+    reviewText,
     readCount,
     readAt,
     timesRead,

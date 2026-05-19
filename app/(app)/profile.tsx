@@ -1,20 +1,20 @@
-// Pantalla de perfil para ver y actualizar datos del usuario.
+// Perfil: ver y actualizar datos del usuario (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useNavigation } from "@react-navigation/native";
-import { router } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
-import { useLayoutEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  Platform,
+  Box,
+  Heading,
+  HStack,
   Pressable,
   ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
-import { Text } from "react-native-paper";
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { Alert, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -22,35 +22,27 @@ import {
   avatarUriNeedsS3Upload,
   uploadLocalAvatarUriToS3,
 } from "@/shared/lib/upload-profile-avatar";
-import { theme } from "@/shared/ui/theme";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { AppButton } from "@/shared/ui/app-button";
+import { AppInput } from "@/shared/ui/app-input";
+import { APP_CREAM_BG, scriptoriumNativeHeader } from "@/shared/ui/app-colors";
+import { Screen } from "@/shared/ui/screen";
 
-export default function ProfileSheetScreen() {
+export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const appTheme = useAppTheme();
   const { user, token, logout, updateUserProfile } = useAuth();
 
   useLayoutEffect(() => {
     if (Platform.OS === "web") return;
     navigation.setOptions({
       title: "Perfil",
-      headerStyle: { backgroundColor: appTheme.colors.bgSoft },
-      headerTintColor: appTheme.colors.primary,
-      headerTitleStyle: {
-        fontFamily: "Fraunces_700Bold",
-        fontSize: 18,
-        color: appTheme.colors.text,
-      },
-      headerShadowVisible: false,
+      ...scriptoriumNativeHeader,
     });
-  }, [navigation, appTheme.colors]);
+  }, [navigation]);
 
   const fullName = useMemo(() => {
     const fromParts = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
-    if (fromParts) {
-      return fromParts;
-    }
+    if (fromParts) return fromParts;
     return user?.name?.trim() || "Lector/a";
   }, [user?.firstName, user?.lastName, user?.name]);
 
@@ -61,6 +53,7 @@ export default function ProfileSheetScreen() {
   const [avatarUrlDraft, setAvatarUrlDraft] = useState<string | null>(user?.avatarUrl ?? null);
   const [avatarMimeDraft, setAvatarMimeDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
   const memberSince = useMemo(() => {
     const source =
       user?.createdAt ??
@@ -76,6 +69,16 @@ export default function ProfileSheetScreen() {
       year: "numeric",
     });
   }, [user?.createdAt, user?.created_at, user?.registeredAt, user?.registered_at]);
+
+  function closeProfile() {
+    if (router.canDismiss()) {
+      router.dismiss();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)/(tabs)/home" as never);
+    }
+  }
 
   async function onLogout() {
     await logout();
@@ -140,262 +143,130 @@ export default function ProfileSheetScreen() {
     }
   }
 
+  const isWeb = Platform.OS === "web";
+
   return (
-    <View
-      style={[
-        styles.screen,
-        {
-          paddingTop: Platform.OS === "web" ? insets.top + 8 : 12,
-          paddingBottom: insets.bottom + 12,
-          backgroundColor: Platform.OS === "web" ? theme.colors.bg : appTheme.colors.bgSoft,
-        },
-      ]}
+    <Screen
+      backgroundColor={APP_CREAM_BG}
+      webBackgroundColor={APP_CREAM_BG}
+      style={{
+        paddingTop: isWeb ? insets.top + 8 : 12,
+        paddingBottom: insets.bottom + 12,
+        paddingHorizontal: isWeb ? 16 : 10,
+      }}
     >
-      <View
-        style={[
-          styles.sheet,
-          Platform.OS !== "web" && {
-            borderWidth: 0,
-            borderRadius: 0,
-            maxHeight: undefined,
-            backgroundColor: "transparent",
-          },
-        ]}
+      <Box
+        flex={1}
+        width="100%"
+        maxWidth={1120}
+        alignSelf="center"
+        bg={isWeb ? "$white" : "transparent"}
+        borderRadius={isWeb ? "$2xl" : "$none"}
+        borderWidth={isWeb ? 1 : 0}
+        borderColor="$primary200"
+        px="$4"
+        pt="$3"
+        maxHeight={isWeb ? "96%" : undefined}
       >
-        {Platform.OS === "web" ? (
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Tu ficha</Text>
-            <Pressable
-              onPress={() => {
-                if (router.canDismiss()) {
-                  router.dismiss();
-                } else if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace("/(app)/(tabs)/home" as never);
-                }
-              }}
-              hitSlop={12}
-              accessibilityLabel="Cerrar ficha"
-            >
-              <Ionicons name="close" size={26} color={theme.colors.text} />
+        {isWeb ? (
+          <HStack justifyContent="space-between" alignItems="center">
+            <Heading size="2xl" color="$primary800">
+              Tu ficha
+            </Heading>
+            <Pressable onPress={closeProfile} hitSlop={12} accessibilityLabel="Cerrar ficha">
+              <Ionicons name="close" size={26} color="#2D1F15" />
             </Pressable>
-          </View>
+          </HStack>
         ) : (
-          <Text style={[styles.sheetTitle, styles.sheetTitleNative]}>Tu ficha</Text>
+          <Heading size="lg" color="$primary800" mb="$1">
+            Tu ficha
+          </Heading>
         )}
-        <Text style={styles.sheetSubtitle}>
+
+        <Text size="sm" color="$textLight500" lineHeight={22} mt="$2" pr="$5">
           Datos de tu cuenta en Scriptorium. El correo no se puede cambiar aqui.
         </Text>
-        <View style={styles.separator} />
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.topRow}>
-            <View style={styles.avatarWrap}>
-              {avatarUrlDraft ? (
-                <Image source={{ uri: avatarUrlDraft }} style={styles.avatarImage} contentFit="cover" />
-              ) : (
-                <Ionicons name="person" size={56} color={theme.colors.textSoft} />
-              )}
-            </View>
-            <View style={styles.avatarActions}>
-              <Pressable onPress={() => onPhotoAction("change")} hitSlop={8}>
-                <Text style={styles.actionText}>Cambiar foto</Text>
-              </Pressable>
-              <Pressable onPress={() => onPhotoAction("remove")} hitSlop={8}>
-                <Text style={styles.actionText}>Quitar foto</Text>
-              </Pressable>
-            </View>
-          </View>
+        <Box h={1} bg="$primary200" mt="$3" />
 
-          <View style={styles.fieldBlock}>
-            <Text style={styles.label}>NOMBRE</Text>
-            <TextInput
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 14, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <VStack space="lg">
+            <HStack space="lg" alignItems="center">
+              <Box
+                w={96}
+                h={96}
+                borderRadius="$full"
+                bg="$primary100"
+                borderWidth={2}
+                borderColor="$primary400"
+                alignItems="center"
+                justifyContent="center"
+                overflow="hidden"
+              >
+                {avatarUrlDraft ? (
+                  <Image source={{ uri: avatarUrlDraft }} style={{ width: 96, height: 96 }} contentFit="cover" />
+                ) : (
+                  <Ionicons name="person" size={56} color="#7A6555" />
+                )}
+              </Box>
+              <VStack space="md">
+                <Pressable onPress={() => onPhotoAction("change")} hitSlop={8}>
+                  <Text size="md" fontWeight="$bold" color="$primary600">
+                    Cambiar foto
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => onPhotoAction("remove")} hitSlop={8}>
+                  <Text size="md" fontWeight="$bold" color="$primary600">
+                    Quitar foto
+                  </Text>
+                </Pressable>
+              </VStack>
+            </HStack>
+
+            <AppInput
+              label="Nombre"
               value={firstNameDraft}
               onChangeText={setFirstNameDraft}
               editable={!saving}
-              style={styles.input}
-              placeholderTextColor={theme.colors.textSoft}
             />
-          </View>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.label}>APELLIDOS</Text>
-            <TextInput
+            <AppInput
+              label="Apellidos"
               value={lastNameDraft}
               onChangeText={setLastNameDraft}
               editable={!saving}
-              style={styles.input}
-              placeholderTextColor={theme.colors.textSoft}
             />
-          </View>
+            <AppInput label="Correo" value={user?.email ?? ""} editable={false} />
 
-          <View style={styles.fieldBlock}>
-            <Text style={styles.label}>CORREO</Text>
-            <TextInput value={user?.email ?? ""} editable={false} style={styles.input} placeholderTextColor={theme.colors.textSoft} />
-          </View>
+            <Box
+              mt="$2"
+              bg="$primary100"
+              borderRadius="$lg"
+              borderWidth={1}
+              borderColor="$primary200"
+              p="$3"
+              gap={6}
+            >
+              <Text size="md" fontWeight="$bold" color="$primary700">
+                Miembro desde: {memberSince}
+              </Text>
+              <Text size="sm" color="$primary700">
+                Fecha de alta de la cuenta: {memberSince}
+              </Text>
+            </Box>
 
-          <View style={styles.memberCard}>
-            <Text style={styles.memberTitle}>Miembro desde: {memberSince}</Text>
-            <Text style={styles.memberSubtitle}>Fecha de alta de la cuenta: {memberSince}</Text>
-          </View>
-
-          <Pressable style={styles.logoutBtn} onPress={onLogout}>
-            <Text style={styles.logoutText}>Cerrar sesión</Text>
-          </Pressable>
-          <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={onSave} disabled={saving}>
-            <Text style={styles.saveText}>{saving ? "Guardando..." : "Guardar cambios"}</Text>
-          </Pressable>
+            <AppButton label="Cerrar sesión" appearance="secondary" onPress={onLogout} />
+            <AppButton
+              label={saving ? "Guardando..." : "Guardar cambios"}
+              onPress={onSave}
+              isDisabled={saving}
+              isLoading={saving}
+            />
+          </VStack>
         </ScrollView>
-      </View>
-    </View>
+      </Box>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-    paddingHorizontal: 10,
-    ...(Platform.OS === "web"
-      ? { alignItems: "center", paddingHorizontal: 16 }
-      : null),
-  },
-  sheet: {
-    flex: 1,
-    width: "100%",
-    maxWidth: 1120,
-    backgroundColor: theme.colors.card,
-    borderColor: "#BE9A6A",
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    ...(Platform.OS === "web" ? { maxHeight: "96%" } : null),
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sheetTitle: {
-    fontSize: 42,
-    fontFamily: "Fraunces_700Bold",
-    color: theme.colors.text,
-  },
-  sheetTitleNative: {
-    fontSize: 22,
-    marginBottom: 4,
-  },
-  sheetSubtitle: {
-    marginTop: 8,
-    fontSize: 17,
-    lineHeight: 26,
-    fontFamily: "Fraunces_400Regular",
-    color: theme.colors.textSoft,
-    paddingRight: 20,
-  },
-  separator: {
-    marginTop: 14,
-    height: 1,
-    backgroundColor: theme.colors.borderOnCard,
-  },
-  content: {
-    paddingTop: 14,
-    paddingBottom: 20,
-    gap: 14,
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 22,
-  },
-  avatarWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#D8CCB7",
-    borderWidth: 2,
-    borderColor: "#A67B4D",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarActions: {
-    gap: 14,
-  },
-  actionText: {
-    fontSize: 19,
-    color: "#8C5E35",
-    fontFamily: "Fraunces_700Bold",
-  },
-  fieldBlock: {
-    gap: 8,
-  },
-  label: {
-    color: "#7A5C47",
-    fontFamily: "Fraunces_700Bold",
-    letterSpacing: 1.6,
-    fontSize: 13,
-  },
-  input: {
-    backgroundColor: "#F9F4EA",
-    borderWidth: 1,
-    borderColor: "#CDA97A",
-    borderRadius: 14,
-    color: theme.colors.text,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 17,
-    fontFamily: "Fraunces_400Regular",
-  },
-  memberCard: {
-    marginTop: 8,
-    backgroundColor: "#EEE2D1",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#D2BA97",
-    padding: 14,
-    gap: 6,
-  },
-  memberTitle: {
-    color: "#6F4F3A",
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 18,
-  },
-  memberSubtitle: {
-    color: "#775C4A",
-    fontSize: 15,
-    fontFamily: "Fraunces_400Regular",
-  },
-  logoutBtn: {
-    marginTop: 4,
-    backgroundColor: theme.colors.bgPanel,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  logoutText: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-  },
-  saveBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  saveBtnDisabled: {
-    opacity: 0.65,
-  },
-  saveText: {
-    color: theme.colors.onPrimary,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-  },
-});

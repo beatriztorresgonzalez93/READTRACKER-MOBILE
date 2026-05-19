@@ -1,21 +1,22 @@
-// Pantalla de filtros de wishlist (móvil); la web sigue usando modales en wishlist.tsx.
+// Filtros de wishlist (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
+import {
+  Box,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useLayoutEffect, useMemo } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useWishlistItems } from "@/features/wishlist/use-wishlist";
-import { theme } from "@/shared/ui/theme";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
+import { AppButton } from "@/shared/ui/app-button";
+import { Screen } from "@/shared/ui/screen";
 import {
   type WishlistSortKey,
   useWishlistPreferencesStore,
@@ -27,11 +28,58 @@ const SORT_OPTIONS: { key: WishlistSortKey; label: string }[] = [
   { key: "recent", label: "Más recientes" },
 ];
 
+function FilterOption({
+  label,
+  count,
+  active,
+  onPress,
+  sortMode,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onPress: () => void;
+  sortMode?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <HStack
+        alignItems="center"
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor="$primary200"
+        bg="$white"
+        py="$3"
+        px="$4"
+        mb="$2"
+        gap="$2"
+      >
+        <Text flex={1} size="md" color="$primary800" numberOfLines={2}>
+          {label}
+        </Text>
+        {count != null ? (
+          <Text size="sm" fontWeight="$bold" color="$textLight500" minWidth={28} textAlign="right">
+            {count}
+          </Text>
+        ) : null}
+        {sortMode ? (
+          <Ionicons
+            name={active ? "radio-button-on" : "radio-button-off"}
+            size={22}
+            color={active ? "#A87D42" : "#7A6555"}
+          />
+        ) : active ? (
+          <Ionicons name="checkmark-circle" size={22} color="#A87D42" />
+        ) : null}
+      </HStack>
+    </Pressable>
+  );
+}
+
 export default function WishlistFiltersScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const appTheme = useAppTheme();
   const itemsQuery = useWishlistItems();
 
   const storeFilter = useWishlistPreferencesStore((s) => s.storeFilter);
@@ -75,176 +123,99 @@ export default function WishlistFiltersScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: "Filtrar",
+      headerStyle: { backgroundColor: "#F6F1E7" },
+      headerTintColor: "#A87D42",
+      headerTitleStyle: {
+        fontFamily: "Fraunces_700Bold",
+        fontSize: 20,
+        color: "#2D1F15",
+      },
+      headerShadowVisible: false,
       headerRight: () => (
         <Pressable
           onPress={() => clearWishlistFilters()}
           hitSlop={12}
-          style={{ paddingRight: 16 }}
+          pr="$4"
           accessibilityRole="button"
           accessibilityLabel="Reiniciar filtros"
         >
-          <Text style={styles.headerReset}>REINICIAR</Text>
+          <Text size="xs" fontWeight="$bold" color="$textLight500" letterSpacing={0.6}>
+            REINICIAR
+          </Text>
         </Pressable>
       ),
     });
   }, [navigation, clearWishlistFilters]);
 
-  const s = styles;
-
   return (
-    <View style={[s.root, { backgroundColor: appTheme.colors.bgSoft }]}>
+    <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7" style={{ flex: 1 }}>
       <ScrollView
-        contentContainerStyle={[s.scrollContent, { paddingBottom: 120 + insets.bottom }]}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 120 + insets.bottom,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[s.sectionHeading, { color: appTheme.colors.text }]}>Tienda</Text>
-        <Pressable
-          onPress={() => setStoreFilter("all")}
-          style={[
-            s.optionCard,
-            {
-              borderColor: appTheme.colors.borderOnCard,
-              backgroundColor: appTheme.colors.card,
-            },
-          ]}
-        >
-          <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>Todas las tiendas</Text>
-          <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-            {storeCounts.get("__all__") ?? 0}
+        <VStack space="md">
+          <Text size="md" fontWeight="$bold" color="$primary800">
+            Tienda
           </Text>
-          {storeFilter === "all" ? (
-            <Ionicons name="checkmark-circle" size={22} color={appTheme.colors.primary} />
-          ) : null}
-        </Pressable>
-        {uniqueStores.map((storeName) => {
-          const active = storeFilter === storeName;
-          return (
-            <Pressable
+          <FilterOption
+            label="Todas las tiendas"
+            count={storeCounts.get("__all__") ?? 0}
+            active={storeFilter === "all"}
+            onPress={() => setStoreFilter("all")}
+          />
+          {uniqueStores.map((storeName) => (
+            <FilterOption
               key={storeName}
+              label={storeName}
+              count={storeCounts.get(storeName) ?? 0}
+              active={storeFilter === storeName}
               onPress={() => setStoreFilter(storeName)}
-              style={[
-                s.optionCard,
-                {
-                  borderColor: appTheme.colors.borderOnCard,
-                  backgroundColor: appTheme.colors.card,
-                },
-              ]}
-            >
-              <Text style={[s.optionLabel, { color: appTheme.colors.text }]} numberOfLines={2}>
-                {storeName}
-              </Text>
-              <Text style={[s.optionCount, { color: appTheme.colors.textSoft }]}>
-                {storeCounts.get(storeName) ?? 0}
-              </Text>
-              {active ? (
-                <Ionicons name="checkmark-circle" size={22} color={appTheme.colors.primary} />
-              ) : null}
-            </Pressable>
-          );
-        })}
+            />
+          ))}
 
-        <Text style={[s.sectionHeading, s.sectionSpacer, { color: appTheme.colors.text }]}>
-          Ordenar por
-        </Text>
-        {SORT_OPTIONS.map((opt) => {
-          const active = sortBy === opt.key;
-          return (
-            <Pressable
+          <Text size="md" fontWeight="$bold" color="$primary800" mt="$4">
+            Ordenar por
+          </Text>
+          {SORT_OPTIONS.map((opt) => (
+            <FilterOption
               key={opt.key}
+              label={opt.label}
+              active={sortBy === opt.key}
               onPress={() => setSortBy(opt.key)}
-              style={[
-                s.optionCard,
-                {
-                  borderColor: appTheme.colors.borderOnCard,
-                  backgroundColor: appTheme.colors.card,
-                },
-              ]}
-            >
-              <Text style={[s.optionLabel, { color: appTheme.colors.text }]}>{opt.label}</Text>
-              {active ? (
-                <Ionicons name="radio-button-on" size={22} color={appTheme.colors.primary} />
-              ) : (
-                <Ionicons name="radio-button-off" size={22} color={appTheme.colors.textMutedOnDark} />
-              )}
-            </Pressable>
-          );
-        })}
+              sortMode
+            />
+          ))}
+        </VStack>
       </ScrollView>
 
-      <View
-        style={[
-          s.footer,
-          {
-            paddingBottom: Math.max(insets.bottom, 12),
-            backgroundColor: appTheme.colors.bgSoft,
-            borderTopColor: appTheme.colors.border,
-          },
-        ]}
+      <Box
+        position="absolute"
+        left={0}
+        right={0}
+        bottom={0}
+        px="$4"
+        pt="$3"
+        pb={Math.max(insets.bottom, 12)}
+        bg="#F6F1E7"
+        borderTopWidth={1}
+        borderTopColor="$primary200"
       >
-        <Pressable
-          style={[s.cta, { backgroundColor: appTheme.colors.primary }]}
-          onPress={() => router.back()}
-        >
-          {itemsQuery.isLoading ? (
-            <ActivityIndicator color={appTheme.colors.onPrimary} />
-          ) : (
-            <Text style={[s.ctaText, { color: appTheme.colors.onPrimary }]}>
-              Ver {filteredCount} deseo{filteredCount === 1 ? "" : "s"}
-            </Text>
-          )}
-        </Pressable>
-      </View>
-    </View>
+        {itemsQuery.isLoading ? (
+          <Box py="$4" alignItems="center">
+            <ActivityIndicator color="#A87D42" />
+          </Box>
+        ) : (
+          <AppButton
+            label={`Ver ${filteredCount} deseo${filteredCount === 1 ? "" : "s"}`}
+            onPress={() => router.back()}
+          />
+        )}
+      </Box>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  sectionHeading: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 17,
-    marginBottom: 10,
-  },
-  sectionSpacer: { marginTop: 22 },
-  optionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    gap: 10,
-  },
-  optionLabel: { flex: 1, fontFamily: "Fraunces_400Regular", fontSize: 16 },
-  optionCount: {
-    fontSize: 15,
-    fontFamily: "Fraunces_700Bold",
-    minWidth: 28,
-    textAlign: "right",
-  },
-  headerReset: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 13,
-    letterSpacing: 0.6,
-    color: theme.colors.textSoft,
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  cta: {
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  ctaText: { fontFamily: "Fraunces_700Bold", fontSize: 16 },
-});

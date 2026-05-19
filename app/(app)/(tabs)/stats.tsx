@@ -1,58 +1,62 @@
-// Panel de estadisticas de lectura y progreso global.
+// Panel de estadísticas de lectura (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
-import type { PropsWithChildren } from "react";
 import {
-  Platform,
+  Box,
+  HStack,
   ScrollView,
-  StyleSheet,
   Text,
-  View,
-  useColorScheme,
-} from "react-native";
-import { Card } from "react-native-paper";
+  VStack,
+} from "@gluestack-ui/themed";
+import type { PropsWithChildren } from "react";
+import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBooksFeed, useBooksSummary } from "@/features/books/use-books";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import {
-    useReadingSessionsList,
-    useReadingStats,
+  useReadingSessionsList,
+  useReadingStats,
 } from "@/features/readingSessions/use-history";
 import { usePurchases } from "@/features/wishlist/use-wishlist";
 import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
 
-function StatsPanel({
-  isDark,
-  variant,
+const isWeb = Platform.OS === "web";
+
+function StatsCard({
   children,
-}: PropsWithChildren<{
-  isDark: boolean;
-  variant: "hero" | "default";
-}>) {
-  const webStyle = variant === "hero" ? styles.heroPanel : styles.panel;
-  if (Platform.OS === "web") {
-    return (
-      <Card
-        mode="contained"
-        style={[webStyle, isDark && styles.panelDarkMode]}
-      >
-        <Card.Content>{children}</Card.Content>
-      </Card>
-    );
-  }
+  hero,
+}: PropsWithChildren<{ hero?: boolean }>) {
   return (
-    <View
-      style={[
-        styles.nativePanelOuter,
-        isDark && styles.panelDarkMode,
-      ]}
+    <Box
+      borderRadius="$xl"
+      bg="$white"
+      borderWidth={1}
+      borderColor="$primary200"
+      p="$4"
+      mb={hero ? "$2" : "$3"}
     >
-      <View style={styles.nativePanelPadding}>{children}</View>
-    </View>
+      {children}
+    </Box>
+  );
+}
+
+function PanelTitle({
+  title,
+  icon,
+}: {
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}) {
+  return (
+    <HStack space="sm" alignItems="center" mb="$2">
+      <Ionicons name={icon} size={isWeb ? 16 : 18} color="#A87D42" />
+      <Text size={isWeb ? "md" : "lg"} fontWeight="$bold" color="$primary800">
+        {title}
+      </Text>
+    </HStack>
   );
 }
 
@@ -65,32 +69,93 @@ function MetricPill({
   value: string | number;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
-  const isWeb = Platform.OS === "web";
   return (
-    <View style={[styles.metricPill, !isWeb && styles.metricPillNative]}>
-      <View style={styles.metricPillHeader}>
-        <Ionicons
-          name={icon}
-          size={isWeb ? 13 : 15}
-          color={theme.colors.textSoft}
-        />
-        <Text
-          style={[styles.metricPillLabel, !isWeb && styles.metricPillLabelNative]}
-        >
+    <Box
+      width="48%"
+      flexGrow={1}
+      minWidth="45%"
+      borderRadius="$lg"
+      bg="$primary50"
+      borderWidth={isWeb ? 0 : 0}
+      borderBottomWidth={isWeb ? 1 : 0}
+      borderBottomColor="$primary200"
+      py="$2"
+      px="$2"
+    >
+      <HStack space="xs" alignItems="center" mb="$0.5">
+        <Ionicons name={icon} size={isWeb ? 13 : 15} color="#7A6555" />
+        <Text size="xs" color="$textLight500">
           {label}
         </Text>
-      </View>
-      <Text
-        style={[styles.metricPillValue, !isWeb && styles.metricPillValueNative]}
-      >
+      </HStack>
+      <Text size={isWeb ? "xl" : "2xl"} fontWeight="$bold" color="$primary800">
         {value}
       </Text>
-    </View>
+    </Box>
+  );
+}
+
+function GenreBars({ items }: { items: { genre: string; count: number }[] }) {
+  const total = items.reduce((acc, item) => acc + item.count, 0);
+  if (total === 0) return null;
+
+  return (
+    <VStack space="sm">
+      {items.map((item) => {
+        const pct = Math.round((item.count / total) * 100);
+        return (
+          <HStack key={item.genre} alignItems="center" space="sm" py="$1">
+            <Text width={96} size="sm" fontWeight="$bold" color="$primary800" numberOfLines={1}>
+              {item.genre}
+            </Text>
+            <Box flex={1} h={12} borderRadius="$full" bg="$primary100" overflow="hidden">
+              <Box h="100%" borderRadius="$full" bg="$primary500" width={`${Math.max(6, pct)}%`} />
+            </Box>
+            <Text width={36} textAlign="right" size="xs" fontWeight="$bold" color="$textLight500">
+              {pct}%
+            </Text>
+          </HStack>
+        );
+      })}
+    </VStack>
+  );
+}
+
+function GenrePills({ items }: { items: { genre: string; count: number }[] }) {
+  const total = items.reduce((acc, item) => acc + item.count, 0);
+  if (total === 0) return null;
+
+  return (
+    <HStack flexWrap="wrap" gap={10}>
+      {items.map((item) => {
+        const pct = Math.round((item.count / total) * 100);
+        return (
+          <HStack
+            key={item.genre}
+            alignItems="center"
+            maxWidth="100%"
+            gap={8}
+            py="$2"
+            px="$3"
+            borderRadius="$full"
+            bg="$primary50"
+          >
+            <Text flexShrink={1} size="sm" color="$primary800" numberOfLines={1} textTransform="capitalize">
+              {item.genre}
+            </Text>
+            <Box borderRadius="$full" py="$0.5" px="$2" bg="$white">
+              <Text size="sm" fontWeight="$bold" color="$primary600">
+                {pct}%
+              </Text>
+            </Box>
+          </HStack>
+        );
+      })}
+    </HStack>
   );
 }
 
 export default function StatsScreen() {
-  const isDark = useColorScheme() !== "light";
   const { token, isAuthenticated, isBootstrapping } = useAuth();
   const billing = useBillingStatus();
   const billingCanFetch = !isBootstrapping && isAuthenticated && Boolean(token?.trim());
@@ -123,11 +188,8 @@ export default function StatsScreen() {
         ? billing.error.message
         : "Revisa la conexión e inténtalo de nuevo.";
     return (
-      <Screen>
-        <EmptyState
-          title="No se pudo cargar tu plan"
-          description={hint}
-        />
+      <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7">
+        <EmptyState title="No se pudo cargar tu plan" description={hint} />
       </Screen>
     );
   }
@@ -136,14 +198,9 @@ export default function StatsScreen() {
     return <AppLoader />;
   }
 
-  if (
-    stats.isError ||
-    summary.isError ||
-    purchases.isError ||
-    sessions.isError
-  ) {
+  if (stats.isError || summary.isError || purchases.isError || sessions.isError) {
     return (
-      <Screen>
+      <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7">
         <EmptyState
           title="No se pudieron cargar las estadisticas"
           description="Intenta recargar la app o revisa la conexion."
@@ -154,11 +211,11 @@ export default function StatsScreen() {
 
   const genreTop = (summary.data?.genres ?? []).slice(0, 5);
   const now = new Date();
+  const chartYear = now.getFullYear();
   const dayOfYear = Math.max(
     1,
     Math.floor(
-      (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
-        86_400_000,
+      (now.getTime() - new Date(chartYear, 0, 1).getTime()) / 86_400_000,
     ) + 1,
   );
   const monthsElapsed = Math.max(1, now.getMonth() + 1);
@@ -169,12 +226,17 @@ export default function StatsScreen() {
   const sessionsPerMonth = (stats.data?.yearlySessions ?? 0) / monthsElapsed;
   const pagesPerDay = (stats.data?.yearlyPages ?? 0) / dayOfYear;
   const yearlyPagesProjection = Math.round(pagesPerDay * 365);
+
   const readingByMonth = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
     const monthSessions =
       sessions.data?.filter((item) => {
         const date = new Date(item.recordedAt);
-        return !Number.isNaN(date.getTime()) && date.getMonth() + 1 === month;
+        return (
+          !Number.isNaN(date.getTime()) &&
+          date.getFullYear() === chartYear &&
+          date.getMonth() + 1 === month
+        );
       }) ?? [];
     return {
       sessions: monthSessions.length,
@@ -184,17 +246,18 @@ export default function StatsScreen() {
       ),
     };
   });
-  const maxReadingSessions = Math.max(
-    ...readingByMonth.map((item) => item.sessions),
-    1,
-  );
+  const maxReadingSessions = Math.max(...readingByMonth.map((item) => item.sessions), 1);
 
   const purchasesByMonth = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
     const monthPurchases =
       purchases.data?.filter((item) => {
         const date = new Date(item.purchasedAt);
-        return !Number.isNaN(date.getTime()) && date.getMonth() + 1 === month;
+        return (
+          !Number.isNaN(date.getTime()) &&
+          date.getFullYear() === chartYear &&
+          date.getMonth() + 1 === month
+        );
       }) ?? [];
 
     const amount = monthPurchases.reduce((acc, item) => {
@@ -204,15 +267,10 @@ export default function StatsScreen() {
       return Number.isFinite(parsed) ? acc + parsed : acc;
     }, 0);
 
-    return {
-      count: monthPurchases.length,
-      amount,
-    };
+    return { count: monthPurchases.length, amount };
   });
-  const yearlyPurchaseAmount = purchasesByMonth.reduce(
-    (acc, item) => acc + item.amount,
-    0,
-  );
+  const yearlyPurchaseAmount = purchasesByMonth.reduce((acc, item) => acc + item.amount, 0);
+
   const topRatedBooks = (
     topRatedFeed.data?.pages.flatMap((page) => page.items) ?? []
   )
@@ -220,1104 +278,193 @@ export default function StatsScreen() {
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 5);
 
+  const rhythmMetrics = [
+    { label: "Páginas/sesión", value: pagesPerSession.toFixed(1) },
+    { label: "Sesiones/mes", value: sessionsPerMonth.toFixed(1) },
+    { label: "Páginas/día", value: pagesPerDay.toFixed(1) },
+    { label: "Proyección anual", value: String(yearlyPagesProjection) },
+  ];
+
   return (
     <Screen
       edges={["bottom", "left", "right"]}
-      style={[styles.screen, Platform.OS !== "web" && styles.screenNative]}
+      backgroundColor="#F6F1E7"
+      webBackgroundColor="#F6F1E7"
+      style={{ paddingTop: isWeb ? 10 : 12 }}
     >
       <ScrollView
-        contentContainerStyle={
-          Platform.OS === "web"
-            ? styles.contentContainer
-            : styles.contentContainerNative
-        }
+        contentContainerStyle={{
+          paddingBottom: isWeb ? 24 : 32,
+          paddingHorizontal: isWeb ? 0 : 2,
+          gap: isWeb ? 10 : 16,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <StatsPanel isDark={isDark} variant="hero">
-            <View
-              style={[
-                styles.titleRow,
-                Platform.OS !== "web" && styles.titleRowNative,
-              ]}
-            >
-              <Ionicons
-                name="stats-chart"
-                size={18}
-                color={theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.heroTitle,
-                  Platform.OS !== "web" && styles.heroTitleNative,
-                ]}
+        <StatsCard hero>
+          <PanelTitle title="Resumen de lectura" icon="stats-chart" />
+          <Text size="sm" color="$textLight500" mb="$3">
+            Tu progreso global de este año.
+          </Text>
+          <HStack flexWrap="wrap" gap={10}>
+            <MetricPill label="Racha actual" value={stats.data?.currentStreak ?? 0} icon="flame-outline" />
+            <MetricPill label="Mejor racha" value={stats.data?.bestStreak ?? 0} icon="trophy-outline" />
+            <MetricPill label="Páginas" value={stats.data?.yearlyPages ?? 0} icon="book-outline" />
+            <MetricPill label="Sesiones" value={stats.data?.yearlySessions ?? 0} icon="time-outline" />
+            <MetricPill label="Leídos" value={summary.data?.leido ?? 0} icon="checkmark-done-outline" />
+            <MetricPill label="Leyendo" value={summary.data?.leyendo ?? 0} icon="bookmark-outline" />
+            <MetricPill label="Comprados" value={purchases.data?.length ?? 0} icon="bag-handle-outline" />
+          </HStack>
+        </StatsCard>
+
+        <StatsCard>
+          <PanelTitle title="Ritmo de lectura" icon="speedometer-outline" />
+          <HStack flexWrap="wrap" gap={10} mt="$1">
+            {rhythmMetrics.map((m) => (
+              <Box
+                key={m.label}
+                width="48%"
+                flexGrow={1}
+                minWidth="45%"
+                borderRadius="$lg"
+                bg="$primary50"
+                p="$3"
+                gap={4}
               >
-                Resumen de lectura
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.heroSubtitle,
-                Platform.OS !== "web" && styles.heroSubtitleNative,
-              ]}
-            >
-              Tu progreso global de este año.
+                <Text size="xs" color="$textLight500">
+                  {m.label}
+                </Text>
+                <Text size="xl" fontWeight="$bold" color="$primary800">
+                  {m.value}
+                </Text>
+              </Box>
+            ))}
+          </HStack>
+        </StatsCard>
+
+        <StatsCard>
+          <HStack alignItems="center" space="sm" mb="$3">
+            <Box flex={1} h={1} bg="$primary200" />
+            <Text size="xs" fontWeight="$bold" color="$primary800" letterSpacing={1}>
+              GÉNEROS FAVORITOS
             </Text>
-            <View
-              style={[
-                styles.metricPillsRow,
-                Platform.OS !== "web" && styles.metricPillsRowNative,
-              ]}
-            >
-              <MetricPill
-                label="Racha actual"
-                value={stats.data?.currentStreak ?? 0}
-                icon="flame-outline"
-              />
-              <MetricPill
-                label="Mejor racha"
-                value={stats.data?.bestStreak ?? 0}
-                icon="trophy-outline"
-              />
-              <MetricPill
-                label="Páginas"
-                value={stats.data?.yearlyPages ?? 0}
-                icon="book-outline"
-              />
-              <MetricPill
-                label="Sesiones"
-                value={stats.data?.yearlySessions ?? 0}
-                icon="time-outline"
-              />
-              <MetricPill
-                label="Leídos"
-                value={summary.data?.leido ?? 0}
-                icon="checkmark-done-outline"
-              />
-              <MetricPill
-                label="Leyendo"
-                value={summary.data?.leyendo ?? 0}
-                icon="bookmark-outline"
-              />
-              <MetricPill
-                label="Comprados"
-                value={purchases.data?.length ?? 0}
-                icon="bag-handle-outline"
-              />
-            </View>
-        </StatsPanel>
+            <Box flex={1} h={1} bg="$primary200" />
+          </HStack>
+          {genreTop.length === 0 ? (
+            <Text size="sm" color="$textLight500">
+              Sin datos de géneros todavía.
+            </Text>
+          ) : isWeb ? (
+            <GenreBars items={genreTop} />
+          ) : (
+            <GenrePills items={genreTop} />
+          )}
+        </StatsCard>
 
-        <StatsPanel isDark={isDark} variant="default">
-            <View
-              style={[
-                styles.titleRow,
-                Platform.OS !== "web" && styles.titleRowNative,
-              ]}
-            >
-              <Ionicons
-                name="speedometer-outline"
-                size={16}
-                color={theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.panelTitle,
-                  Platform.OS !== "web" && styles.panelTitleNative,
-                ]}
-              >
-                Ritmo de lectura
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.rhythmGrid,
-                Platform.OS !== "web" && styles.rhythmGridNative,
-              ]}
-            >
-              <View
-                style={[
-                  styles.rhythmCard,
-                  isDark && styles.innerCardDarkMode,
-                  Platform.OS !== "web" && styles.rhythmCardNative,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.rhythmLabel,
-                    Platform.OS !== "web" && styles.rhythmLabelNative,
-                  ]}
+        <StatsCard>
+          <PanelTitle title="Top 5 libros por valoración" icon="star-outline" />
+          {topRatedBooks.length === 0 ? (
+            <Text size="sm" color="$textLight500">
+              Aún no hay libros valorados.
+            </Text>
+          ) : (
+            <VStack space="sm">
+              {topRatedBooks.map((book, index) => (
+                <HStack
+                  key={book.id}
+                  alignItems="center"
+                  space="sm"
+                  py="$2"
+                  px="$3"
+                  borderRadius="$lg"
+                  bg="$primary50"
                 >
-                  Páginas/sesión
-                </Text>
-                <Text
-                  style={[
-                    styles.rhythmValue,
-                    Platform.OS !== "web" && styles.rhythmValueNative,
-                  ]}
-                >
-                  {pagesPerSession.toFixed(1)}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.rhythmCard,
-                  isDark && styles.innerCardDarkMode,
-                  Platform.OS !== "web" && styles.rhythmCardNative,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.rhythmLabel,
-                    Platform.OS !== "web" && styles.rhythmLabelNative,
-                  ]}
-                >
-                  Sesiones/mes
-                </Text>
-                <Text
-                  style={[
-                    styles.rhythmValue,
-                    Platform.OS !== "web" && styles.rhythmValueNative,
-                  ]}
-                >
-                  {sessionsPerMonth.toFixed(1)}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.rhythmCard,
-                  isDark && styles.innerCardDarkMode,
-                  Platform.OS !== "web" && styles.rhythmCardNative,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.rhythmLabel,
-                    Platform.OS !== "web" && styles.rhythmLabelNative,
-                  ]}
-                >
-                  Páginas/día
-                </Text>
-                <Text
-                  style={[
-                    styles.rhythmValue,
-                    Platform.OS !== "web" && styles.rhythmValueNative,
-                  ]}
-                >
-                  {pagesPerDay.toFixed(1)}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.rhythmCard,
-                  isDark && styles.innerCardDarkMode,
-                  Platform.OS !== "web" && styles.rhythmCardNative,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.rhythmLabel,
-                    Platform.OS !== "web" && styles.rhythmLabelNative,
-                  ]}
-                >
-                  Proyección anual
-                </Text>
-                <Text
-                  style={[
-                    styles.rhythmValue,
-                    Platform.OS !== "web" && styles.rhythmValueNative,
-                  ]}
-                >
-                  {yearlyPagesProjection}
-                </Text>
-              </View>
-            </View>
-        </StatsPanel>
-
-        <StatsPanel isDark={isDark} variant="default">
-            <View
-              style={[
-                styles.genreHeaderRow,
-                Platform.OS !== "web" && styles.genreHeaderRowNative,
-              ]}
-            >
-              <View style={styles.genreHeaderLine} />
-              <Text
-                style={[
-                  styles.genreHeaderTitle,
-                  Platform.OS !== "web" && styles.genreHeaderTitleNative,
-                ]}
-              >
-                ✦ GÉNEROS FAVORITOS
-              </Text>
-              <View style={styles.genreHeaderLine} />
-            </View>
-            {genreTop.length === 0 ? (
-              <Text
-                style={[
-                  styles.panelText,
-                  Platform.OS !== "web" && styles.panelTextNative,
-                ]}
-              >
-                Sin datos de géneros todavía.
-              </Text>
-            ) : Platform.OS === "web" ? (
-              (() => {
-                const totalGenres = genreTop.reduce(
-                  (acc, item) => acc + item.count,
-                  0,
-                );
-                return genreTop.map((item, index) => {
-                  const pct =
-                    totalGenres > 0
-                      ? Math.round((item.count / totalGenres) * 100)
-                      : 0;
-                  return (
-                    <View
-                      key={item.genre}
-                      style={[
-                        styles.genreRow,
-                        index === genreTop.length - 1 && styles.genreRowLast,
-                      ]}
-                    >
-                      <Text
-                        style={styles.genreLabel}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        {item.genre}
-                      </Text>
-                      <View style={styles.genreTrack}>
-                        <View
-                          style={[
-                            styles.genreFill,
-                            { width: `${Math.max(6, pct)}%` },
-                          ]}
-                        />
-                      </View>
-                      <Text style={styles.genrePct}>{pct}%</Text>
-                    </View>
-                  );
-                });
-              })()
-            ) : (
-              (() => {
-                const totalGenres = genreTop.reduce(
-                  (acc, item) => acc + item.count,
-                  0,
-                );
-                return (
-                  <View style={styles.genrePillsWrap}>
-                    {genreTop.map((item) => {
-                      const pct =
-                        totalGenres > 0
-                          ? Math.round((item.count / totalGenres) * 100)
-                          : 0;
-                      return (
-                        <View key={item.genre} style={styles.genrePillNative}>
-                          <Text
-                            style={styles.genrePillNameNative}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {item.genre}
-                          </Text>
-                          <View style={styles.genrePillPctBadge}>
-                            <Text style={styles.genrePillPctNative}>{pct}%</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                );
-              })()
-            )}
-        </StatsPanel>
-
-        <StatsPanel isDark={isDark} variant="default">
-            <View
-              style={[
-                styles.titleRow,
-                Platform.OS !== "web" && styles.titleRowNative,
-              ]}
-            >
-              <Ionicons
-                name="star-outline"
-                size={16}
-                color={theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.panelTitle,
-                  Platform.OS !== "web" && styles.panelTitleNative,
-                ]}
-              >
-                Top 5 libros por valoración
-              </Text>
-            </View>
-            {topRatedBooks.length === 0 ? (
-              <Text
-                style={[
-                  styles.panelText,
-                  Platform.OS !== "web" && styles.panelTextNative,
-                ]}
-              >
-                Aún no hay libros valorados.
-              </Text>
-            ) : (
-              topRatedBooks.map((book, index) => {
-                const rowInner = (
-                  <>
-                    <Text style={styles.rankIndex}>{index + 1}.</Text>
-                    <Text
-                      style={[
-                        styles.rankTitle,
-                        Platform.OS !== "web" && styles.rankTitleNative,
-                      ]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {book.title}
+                  <Text width={22} size="sm" fontWeight="$bold" color="$textLight500">
+                    {index + 1}.
+                  </Text>
+                  <Text flex={1} size="sm" color="$primary800" numberOfLines={1}>
+                    {book.title}
+                  </Text>
+                  <HStack alignItems="center" space="xs" minWidth={42}>
+                    <Ionicons name="star" size={12} color="#C4A35A" />
+                    <Text size="sm" fontWeight="$bold" color="#C4A35A">
+                      {(book.rating ?? 0).toFixed(1)}
                     </Text>
-                    <View style={styles.rankScoreWrap}>
-                      <Ionicons
-                        name="star"
-                        size={12}
-                        color={theme.colors.accent}
-                      />
-                      <Text
-                        style={[
-                          styles.rankScore,
-                          Platform.OS !== "web" && styles.rankScoreNative,
-                        ]}
-                      >
-                        {(book.rating ?? 0).toFixed(1)}
-                      </Text>
-                    </View>
-                  </>
-                );
-                if (Platform.OS === "web") {
-                  return (
-                    <View key={book.id} style={styles.rankRow}>
-                      {rowInner}
-                    </View>
-                  );
-                }
-                return (
-                  <View key={book.id} style={styles.rankCardNative}>
-                    <View style={styles.rankRow}>{rowInner}</View>
-                  </View>
-                );
-              })
-            )}
-        </StatsPanel>
+                  </HStack>
+                </HStack>
+              ))}
+            </VStack>
+          )}
+        </StatsCard>
 
-        <StatsPanel isDark={isDark} variant="default">
-            <View
-              style={[
-                styles.titleRow,
-                Platform.OS !== "web" && styles.titleRowNative,
-              ]}
-            >
-              <Ionicons
-                name="bar-chart-outline"
-                size={16}
-                color={theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.panelTitle,
-                  Platform.OS !== "web" && styles.panelTitleNative,
-                ]}
-              >
-                Actividad de lectura por mes
-              </Text>
-            </View>
+        <StatsCard>
+          <PanelTitle title="Actividad de lectura por mes" icon="bar-chart-outline" />
+          <VStack space="sm" mt="$1">
             {readingByMonth.map((item, index) => (
-              <View
-                key={`read-${index}`}
-                style={[
-                  styles.barRow,
-                  Platform.OS !== "web" && styles.barRowNative,
-                ]}
-              >
+              <HStack key={`read-${index}`} alignItems="center" space="sm" py="$1">
                 <Text
-                  style={[
-                    styles.barLabel,
-                    Platform.OS !== "web" && styles.barLabelNative,
-                  ]}
+                  width={38}
+                  size="xs"
+                  color="$textLight500"
+                  textTransform="capitalize"
                 >
-                  {monthFormatter.format(new Date(2026, index, 1))}
+                  {monthFormatter.format(new Date(chartYear, index, 1))}
                 </Text>
-                <View
-                  style={[
-                    styles.barTrack,
-                    Platform.OS !== "web" && styles.barTrackNative,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.barFillReading,
-                      {
-                        width: `${Math.max(8, (item.sessions / maxReadingSessions) * 100)}%`,
-                      },
-                    ]}
+                <Box flex={1} h={12} borderRadius="$full" bg="$primary100" overflow="hidden">
+                  <Box
+                    h="100%"
+                    borderRadius="$full"
+                    bg="#C4A35A"
+                    width={`${Math.max(8, (item.sessions / maxReadingSessions) * 100)}%`}
                   />
-                </View>
-                <Text
-                  style={[
-                    styles.barValue,
-                    Platform.OS !== "web" && styles.barValueNative,
-                  ]}
-                >
+                </Box>
+                <Text width={28} textAlign="right" size="sm" fontWeight="$bold" color="$primary800">
                   {item.sessions}
                 </Text>
-                <Text
-                  style={[
-                    styles.barAmount,
-                    Platform.OS !== "web" && styles.barAmountNative,
-                  ]}
-                >
+                <Text width={48} textAlign="right" size="xs" fontWeight="$bold" color="$primary800">
                   {item.pages}p
                 </Text>
-              </View>
+              </HStack>
             ))}
-        </StatsPanel>
+          </VStack>
+        </StatsCard>
 
-        <StatsPanel isDark={isDark} variant="default">
-            <View
-              style={[
-                styles.titleRow,
-                Platform.OS !== "web" && styles.titleRowNative,
-              ]}
-            >
-              <Ionicons
-                name="cart-outline"
-                size={16}
-                color={theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.panelTitle,
-                  Platform.OS !== "web" && styles.panelTitleNative,
-                ]}
-              >
-                Compras por mes
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.panelSubtitle,
-                Platform.OS !== "web" && styles.panelSubtitleNative,
-              ]}
-            >
-              Total estimado anual:{" "}
-              {moneyFormatter.format(yearlyPurchaseAmount)}
-            </Text>
+        <StatsCard>
+          <PanelTitle title="Compras por mes" icon="cart-outline" />
+          <Text size="xs" color="$textLight500" mb="$3">
+            Total estimado anual: {moneyFormatter.format(yearlyPurchaseAmount)}
+          </Text>
+          <VStack space="sm">
             {purchasesByMonth.map((item, index) => (
-              <View
-                key={`m-${index}`}
-                style={[
-                  styles.purchaseRow,
-                  isDark && styles.innerCardDarkMode,
-                  Platform.OS !== "web" && styles.purchaseRowNative,
-                ]}
+              <HStack
+                key={`purchase-${index}`}
+                alignItems="center"
+                justifyContent="space-between"
+                borderRadius="$lg"
+                bg="$primary50"
+                py="$3"
+                px="$3"
               >
-                <View
-                  style={[
-                    styles.purchaseMonthPill,
-                    isDark && styles.purchaseMonthPillDarkMode,
-                    Platform.OS !== "web" && styles.purchaseMonthPillNative,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.purchaseMonthText,
-                      Platform.OS !== "web" && styles.purchaseMonthTextNative,
-                    ]}
-                  >
-                    {monthFormatter.format(new Date(2026, index, 1))}
+                <Box borderRadius="$full" bg="$white" py="$1" px="$3">
+                  <Text size="xs" color="$primary800" textTransform="capitalize">
+                    {monthFormatter.format(new Date(chartYear, index, 1))}
                   </Text>
-                </View>
-                <View style={styles.purchaseMeta}>
-                  <View style={styles.purchaseCountWrap}>
-                    <Ionicons
-                      name="bag-handle-outline"
-                      size={13}
-                      color={theme.colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.purchaseCount,
-                        Platform.OS !== "web" && styles.purchaseCountNative,
-                      ]}
-                    >
+                </Box>
+                <HStack alignItems="center" space="md">
+                  <HStack alignItems="center" space="xs">
+                    <Ionicons name="bag-handle-outline" size={13} color="#A87D42" />
+                    <Text size="sm" fontWeight="$bold" color="$primary800">
                       {item.count}
                     </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.purchaseAmount,
-                      Platform.OS !== "web" && styles.purchaseAmountNative,
-                    ]}
-                  >
+                  </HStack>
+                  <Text size="sm" fontWeight="$bold" color="$primary600" minWidth={64} textAlign="right">
                     {moneyFormatter.format(item.amount)}
                   </Text>
-                </View>
-              </View>
+                </HStack>
+              </HStack>
             ))}
-        </StatsPanel>
+          </VStack>
+        </StatsCard>
       </ScrollView>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    paddingTop: 10,
-  },
-  contentContainer: {
-    paddingBottom: 24,
-    gap: 10,
-  },
-  contentContainerNative: {
-    paddingBottom: 32,
-    gap: 20,
-    paddingHorizontal: 2,
-  },
-  screenNative: {
-    paddingTop: 12,
-  },
-  nativePanelOuter: {
-    borderRadius: 16,
-    backgroundColor: theme.colors.card,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.14,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 5,
-      },
-      default: {},
-    }),
-  },
-  nativePanelPadding: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  heroPanel: {
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.card,
-    borderWidth: 0,
-    borderColor: "transparent",
-    overflow: "hidden",
-    elevation: 0,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  heroTitle: {
-    color: theme.colors.text,
-    fontWeight: "800",
-    fontSize: 20,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
-  },
-  titleRowNative: {
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    color: theme.colors.textSoft,
-    marginTop: 2,
-    marginBottom: 10,
-  },
-  metricPillsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    rowGap: 6,
-    columnGap: 10,
-  },
-  metricPill: {
-    width: "48%",
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-  },
-  metricPillValue: {
-    color: theme.colors.text,
-    fontWeight: "800",
-    fontSize: 19,
-  },
-  metricPillLabel: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    marginBottom: 1,
-  },
-  metricPillHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 1,
-  },
-  panel: {
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.card,
-    borderWidth: 0,
-    borderColor: "transparent",
-    overflow: "hidden",
-    elevation: 0,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  panelDarkMode: {
-    backgroundColor: "rgba(244, 233, 212, 0.78)",
-    shadowOpacity: 0.015,
-  },
-  panelTitle: {
-    color: theme.colors.text,
-    fontWeight: "700",
-  },
-  panelText: {
-    color: theme.colors.textSoft,
-  },
-  genreHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
-  },
-  genreHeaderRowNative: {
-    marginBottom: 14,
-  },
-  genreHeaderLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
-  },
-  genreHeaderTitle: {
-    color: theme.colors.text,
-    fontWeight: "700",
-    letterSpacing: 1,
-    fontSize: 12,
-  },
-  genreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 6,
-  },
-  genreRowLast: {
-    paddingBottom: 2,
-  },
-  genreLabel: {
-    width: 96,
-    color: theme.colors.text,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  genreTrack: {
-    flex: 1,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: theme.colors.bgSoft,
-    overflow: "hidden",
-  },
-  genreFill: {
-    height: "100%",
-    borderRadius: 999,
-    backgroundColor: theme.colors.primary,
-  },
-  genrePct: {
-    width: 36,
-    textAlign: "right",
-    color: theme.colors.textSoft,
-    fontWeight: "700",
-  },
-  rankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  rankIndex: {
-    width: 22,
-    color: theme.colors.textSoft,
-    fontWeight: "700",
-  },
-  rankTitle: {
-    flex: 1,
-    color: theme.colors.text,
-    fontWeight: "600",
-  },
-  rankScore: {
-    color: theme.colors.accent,
-    fontWeight: "700",
-  },
-  rankScoreWrap: {
-    minWidth: 42,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 4,
-  },
-  panelSubtitle: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  rhythmGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  rhythmGridNative: {
-    gap: 12,
-  },
-  rhythmCard: {
-    width: "48%",
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.bgSoft,
-    borderWidth: 0,
-    borderColor: "transparent",
-    padding: 10,
-    gap: 2,
-  },
-  innerCardDarkMode: {
-    backgroundColor: "rgba(244, 233, 212, 0.52)",
-    borderColor: "transparent",
-  },
-  rhythmLabel: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-  },
-  rhythmValue: {
-    color: theme.colors.text,
-    fontWeight: "800",
-    fontSize: 18,
-  },
-  barRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  barLabel: {
-    width: 34,
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    textTransform: "capitalize",
-  },
-  barTrack: {
-    flex: 1,
-    height: 10,
-    backgroundColor: theme.colors.bgSoft,
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  barFill: {
-    height: "100%",
-    backgroundColor: theme.colors.primary,
-    borderRadius: 999,
-  },
-  barFillReading: {
-    height: "100%",
-    backgroundColor: theme.colors.accent,
-    borderRadius: 999,
-  },
-  barValue: {
-    width: 16,
-    textAlign: "right",
-    color: theme.colors.text,
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  barAmount: {
-    width: 64,
-    textAlign: "right",
-    color: theme.colors.text,
-    fontWeight: "600",
-    fontSize: 11,
-  },
-  purchaseRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.bgSoft,
-  },
-  purchaseMonthPill: {
-    minWidth: 44,
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    backgroundColor: theme.colors.card,
-  },
-  purchaseMonthPillDarkMode: {
-    backgroundColor: "rgba(255, 252, 245, 0.66)",
-  },
-  purchaseMonthText: {
-    color: theme.colors.text,
-    textTransform: "capitalize",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  purchaseMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  purchaseCountWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  purchaseCount: {
-    color: theme.colors.text,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  purchaseAmount: {
-    color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-    minWidth: 64,
-    textAlign: "right",
-  },
-  heroTitleNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  heroSubtitleNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 14,
-  },
-  panelTitleNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  panelTextNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  panelSubtitleNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  genreHeaderTitleNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-  },
-  metricPillsRowNative: {
-    rowGap: 10,
-    columnGap: 10,
-  },
-  metricPillNative: {
-    borderBottomWidth: 0,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.bgSoft,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
-  },
-  metricPillLabelNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 13,
-  },
-  metricPillValueNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 26,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  rhythmCardNative: {
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-      default: {},
-    }),
-  },
-  rhythmLabelNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 13,
-  },
-  rhythmValueNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 24,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  genrePillsWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 4,
-  },
-  genrePillNative: {
-    flexDirection: "row",
-    alignItems: "center",
-    maxWidth: "100%",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: theme.colors.bgSoft,
-    borderWidth: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 2,
-      },
-      default: {},
-    }),
-  },
-  genrePillNameNative: {
-    flexShrink: 1,
-    color: theme.colors.text,
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 14,
-    textTransform: "capitalize",
-  },
-  genrePillPctBadge: {
-    borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    backgroundColor: theme.colors.card,
-  },
-  genrePillPctNative: {
-    color: theme.colors.primary,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rankCardNative: {
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    backgroundColor: theme.colors.bgSoft,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.07,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-      default: {},
-    }),
-  },
-  rankTitleNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontWeight: "400",
-  },
-  rankScoreNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 16,
-  },
-  barRowNative: {
-    marginBottom: 10,
-    paddingVertical: 4,
-  },
-  barLabelNative: {
-    fontFamily: "Fraunces_400Regular",
-    width: 38,
-    fontSize: 13,
-  },
-  barTrackNative: {
-    height: 12,
-  },
-  barValueNative: {
-    fontFamily: "Fraunces_700Bold",
-    width: 28,
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  barAmountNative: {
-    fontFamily: "Fraunces_700Bold",
-    width: 56,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  purchaseRowNative: {
-    borderRadius: 16,
-    marginBottom: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.07,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-      default: {},
-    }),
-  },
-  purchaseMonthPillNative: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  purchaseMonthTextNative: {
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 13,
-  },
-  purchaseCountNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 17,
-  },
-  purchaseAmountNative: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 15,
-  },
-});

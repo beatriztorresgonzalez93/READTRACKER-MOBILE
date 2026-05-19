@@ -1,47 +1,39 @@
-// Muestra el historial de lectura mensual y el calendario de sesiones.
+// Historial de lectura mensual y calendario de lectura (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
+import {
+  Box,
+  HStack,
+  Pressable,
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
 import { FlashList } from "@shopify/flash-list";
 import Constants from "expo-constants";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import type { TextProps as RNTextProps } from "react-native";
-import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text as RNText,
-    View,
-} from "react-native";
-import { Button, Card, Text as PaperText } from "react-native-paper";
+import { FlatList, Platform } from "react-native";
 
 import {
-    useDeleteReadingSession,
-    useMonthlyHistory,
-    useReadingSessionsList,
+  useDeleteReadingSession,
+  useMonthlyHistory,
+  useReadingSessionsList,
 } from "@/features/readingSessions/use-history";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { Screen } from "@/shared/ui/screen";
-import { theme } from "@/shared/ui/theme";
-import { useAppTheme } from "@/shared/ui/use-app-theme";
 
-function HistoryText({ children, ...rest }: RNTextProps) {
-  if (Platform.OS === "web") {
-    return <PaperText {...rest}>{children}</PaperText>;
-  }
-  return <RNText {...rest}>{children}</RNText>;
+const isWeb = Platform.OS === "web";
+
+function intensityColor(pages = 0) {
+  if (pages <= 0) return "#F3E9D7";
+  if (pages <= 10) return "#E3CFA8";
+  if (pages <= 25) return "#C9A36A";
+  if (pages <= 40) return "#A0713F";
+  return "#6B4528";
 }
 
 export default function HistoryScreen() {
-  const ListComponent: any =
-    Platform.OS === "web"
-      ? FlatList
-      : Constants.appOwnership === "expo"
-        ? FlatList
-        : FlashList;
-  const appTheme = useAppTheme();
+  const ListComponent: typeof FlatList | typeof FlashList =
+    Platform.OS === "web" || Constants.appOwnership === "expo" ? FlatList : FlashList;
   const history = useMonthlyHistory();
   const sessionsQuery = useReadingSessionsList();
   const deleteSession = useDeleteReadingSession();
@@ -59,11 +51,6 @@ export default function HistoryScreen() {
     minute: "2-digit",
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
 
   const sessionsByDay = useMemo(() => {
     const map = new Map<
@@ -79,8 +66,7 @@ export default function HistoryScreen() {
         recordedAt: string;
       }[]
     >();
-    const sessions = sessionsQuery.data ?? [];
-    for (const session of sessions) {
+    for (const session of sessionsQuery.data ?? []) {
       const at = new Date(session.recordedAt);
       if (Number.isNaN(at.getTime())) continue;
       const key = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
@@ -106,26 +92,19 @@ export default function HistoryScreen() {
 
   if (history.isError) {
     return (
-      <Screen>
-        <HistoryText style={styles.errorText}>
-          No se pudo cargar el historial. Comprueba tu conexion y vuelve a
-          intentarlo.
-        </HistoryText>
+      <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7">
+        <Box p="$4">
+          <Text size="sm" color="$textLight500" lineHeight={22}>
+            No se pudo cargar el historial. Comprueba tu conexion y vuelve a intentarlo.
+          </Text>
+        </Box>
       </Screen>
     );
   }
 
-  const firstDay = new Date(
-    history.selected.year,
-    history.selected.month - 1,
-    1,
-  );
+  const firstDay = new Date(history.selected.year, history.selected.month - 1, 1);
   const startWeekday = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(
-    history.selected.year,
-    history.selected.month,
-    0,
-  ).getDate();
+  const daysInMonth = new Date(history.selected.year, history.selected.month, 0).getDate();
   const pagesByDate = new Map(
     (history.data?.days ?? []).map((day) => [day.date, day.pagesRead]),
   );
@@ -153,107 +132,84 @@ export default function HistoryScreen() {
     calendarWeeks.push(calendarCells.slice(i, i + 7));
   }
 
-  const selectedSessions = selectedDay
-    ? (sessionsByDay.get(selectedDay) ?? [])
-    : [];
-
-  function intensityColor(pages = 0) {
-    if (pages <= 0) return "#F3E9D7";
-    if (pages <= 10) return "#E3CFA8";
-    if (pages <= 25) return "#C9A36A";
-    if (pages <= 40) return "#A0713F";
-    return "#6B4528";
-  }
+  const selectedSessions = selectedDay ? (sessionsByDay.get(selectedDay) ?? []) : [];
 
   function onDeleteSession(session: { id: string; title: string }) {
-    setSelectedSession(session);
-    setConfirmModalOpen(true);
+    router.push({
+      pathname: "/(app)/history/delete-session",
+      params: { sessionId: session.id, title: session.title },
+    } as never);
   }
 
-  function closeConfirmModal() {
-    if (deleteSession.isPending) return;
-    setConfirmModalOpen(false);
-    setSelectedSession(null);
-  }
-
-  async function onConfirmDeleteSession() {
-    if (!selectedSession) return;
-    try {
-      await deleteSession.mutateAsync(selectedSession.id);
-      closeConfirmModal();
-    } catch (error) {
-      Alert.alert("No se pudo eliminar", (error as Error).message);
-    }
-  }
+  const monthLabel = monthFormatter.format(
+    new Date(history.selected.year, history.selected.month - 1, 1),
+  );
 
   const calendarBody = (
-    <>
-      <HistoryText
-        style={[
-          styles.calendarTitle,
-          Platform.OS !== "web" ? styles.calendarTitleNative : null,
-        ]}
+    <VStack space="sm">
+      <Text
+        size={isWeb ? "md" : "lg"}
+        fontWeight="$bold"
+        color="$primary800"
+        textAlign="center"
+        mb="$1"
       >
-        Calendario de intensidad
-      </HistoryText>
-      <View
-        style={[
-          styles.weekRow,
-          Platform.OS !== "web" ? styles.weekRowNative : null,
-        ]}
-      >
+        Calendario de lectura
+      </Text>
+
+      <HStack justifyContent="space-between" mb="$1" gap={isWeb ? 6 : 8}>
         {["L", "M", "X", "J", "V", "S", "D"].map((weekDay) => (
-          <HistoryText key={weekDay} style={styles.weekDayLabel}>
-            {weekDay}
-          </HistoryText>
+          <Box key={weekDay} flex={1} alignItems="center">
+            <Text size="xs" fontWeight="$bold" color="$textLight500">
+              {weekDay}
+            </Text>
+          </Box>
         ))}
-      </View>
-      <View
-        style={[
-          styles.calendarGrid,
-          Platform.OS !== "web" ? styles.calendarGridNative : null,
-        ]}
-      >
+      </HStack>
+
+      <VStack space={isWeb ? "xs" : "sm"}>
         {calendarWeeks.map((week, weekIdx) => (
-          <View
-            key={`week-${weekIdx}`}
-            style={[
-              styles.calendarWeekRow,
-              Platform.OS !== "web" ? styles.calendarWeekRowNative : null,
-            ]}
-          >
-            {week.map((cell) => (
-              <Pressable
-                key={cell.key}
-                disabled={!cell.day || !cell.pages}
-                onPress={() => setSelectedDay(cell.key)}
-                style={[
-                  styles.dayCell,
-                  Platform.OS !== "web" ? styles.dayCellNative : null,
-                  { backgroundColor: intensityColor(cell.pages) },
-                  selectedDay === cell.key ? styles.dayCellSelected : null,
-                ]}
-              >
-                <HistoryText
-                  style={[
-                    styles.dayCellText,
-                    Platform.OS !== "web" ? styles.dayCellTextNative : null,
-                    (cell.pages ?? 0) >= 26 ? styles.dayCellTextOnDark : null,
-                  ]}
+          <HStack key={`week-${weekIdx}`} width="100%" gap={isWeb ? 6 : 8}>
+            {week.map((cell) => {
+              const pages = cell.pages ?? 0;
+              const onDark = pages >= 26;
+              return (
+                <Pressable
+                  key={cell.key}
+                  flex={1}
+                  disabled={!cell.day || !cell.pages}
+                  onPress={() => setSelectedDay(cell.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    cell.day ? `Día ${cell.day}, ${pages} páginas` : undefined
+                  }
                 >
-                  {cell.day ?? ""}
-                </HistoryText>
-              </Pressable>
-            ))}
-          </View>
+                  <Box
+                    aspectRatio={isWeb ? 1.35 : 1}
+                    minHeight={isWeb ? undefined : 40}
+                    borderRadius={isWeb ? "$sm" : "$md"}
+                    borderWidth={selectedDay === cell.key ? 2 : 1}
+                    borderColor={selectedDay === cell.key ? "$primary400" : "$primary200"}
+                    alignItems="center"
+                    justifyContent="center"
+                    bg={intensityColor(cell.pages)}
+                  >
+                    <Text
+                      size="xs"
+                      fontWeight="$bold"
+                      color={onDark ? "$white" : "$primary800"}
+                    >
+                      {cell.day ?? ""}
+                    </Text>
+                  </Box>
+                </Pressable>
+              );
+            })}
+          </HStack>
         ))}
-      </View>
-      <View
-        style={[
-          styles.legendRow,
-          Platform.OS !== "web" ? styles.legendRowNative : null,
-        ]}
-      >
+      </VStack>
+
+      <HStack flexWrap="wrap" gap={10} mt="$3">
         {[
           { label: "0", color: intensityColor(0) },
           { label: "1-10", color: intensityColor(10) },
@@ -261,740 +217,169 @@ export default function HistoryScreen() {
           { label: "26-40", color: intensityColor(40) },
           { label: "41+", color: intensityColor(50) },
         ].map((item) => (
-          <View key={item.label} style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendSwatch,
-                Platform.OS !== "web" ? styles.legendSwatchNative : null,
-                { backgroundColor: item.color },
-              ]}
+          <HStack key={item.label} alignItems="center" space="sm">
+            <Box
+              w={isWeb ? 14 : 18}
+              h={isWeb ? 14 : 18}
+              borderRadius="$sm"
+              borderWidth={isWeb ? 1 : 0}
+              borderColor="$primary200"
+              style={{ backgroundColor: item.color }}
             />
-            <HistoryText style={styles.legendText}>{item.label}</HistoryText>
-          </View>
+            <Text size="xs" color="$textLight500">
+              {item.label}
+            </Text>
+          </HStack>
         ))}
-      </View>
+      </HStack>
+
       {selectedDay ? (
-        <View
-          style={[
-            styles.sessionsBlock,
-            Platform.OS !== "web" ? styles.sessionsBlockNative : null,
-          ]}
-        >
-          <HistoryText
-            style={[
-              styles.sessionsTitle,
-              Platform.OS !== "web" ? styles.sessionsTitleNative : null,
-            ]}
-          >
+        <VStack space="sm" mt="$3">
+          <Text size={isWeb ? "sm" : "md"} fontWeight="$bold" color="$primary800">
             Sesiones del {dateFormatter.format(new Date(selectedDay))}
-          </HistoryText>
+          </Text>
           {selectedSessions.length > 0 ? (
             selectedSessions.map((session) => (
-              <View
+              <Box
                 key={session.id}
-                style={[
-                  styles.sessionMiniCard,
-                  Platform.OS !== "web" ? styles.sessionMiniCardNative : null,
-                ]}
+                borderRadius="$lg"
+                borderWidth={isWeb ? 1 : 0}
+                borderColor="$primary200"
+                bg="$white"
+                px="$3"
+                py="$2"
+                gap={4}
               >
-                <View style={styles.sessionMiniHeader}>
-                  <HistoryText
-                    style={[
-                      styles.sessionMiniTitle,
-                      Platform.OS !== "web"
-                        ? styles.sessionMiniTitleNative
-                        : null,
-                    ]}
-                    numberOfLines={1}
-                  >
+                <HStack alignItems="center" justifyContent="space-between" gap="$2">
+                  <Text flex={1} size="sm" fontWeight="$bold" color="$primary800" numberOfLines={1}>
                     {session.title}
-                  </HistoryText>
+                  </Text>
                   <Pressable
                     hitSlop={10}
                     onPress={() =>
-                      onDeleteSession({
-                        id: session.id,
-                        title: session.title,
-                      })
+                      onDeleteSession({ id: session.id, title: session.title })
                     }
                     disabled={deleteSession.isPending}
                     accessibilityLabel="Eliminar sesión"
                   >
                     <Ionicons
                       name="trash-outline"
-                      size={Platform.OS === "web" ? 16 : 18}
-                      color={theme.colors.textSoft}
+                      size={isWeb ? 16 : 18}
+                      color="#7A6555"
                     />
                   </Pressable>
-                </View>
-                <HistoryText
-                  style={[
-                    styles.sessionMiniMeta,
-                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
-                  ]}
-                  numberOfLines={1}
-                >
+                </HStack>
+                <Text size="xs" color="$textLight500" numberOfLines={1}>
                   {session.author || "Autor desconocido"}
-                </HistoryText>
-                <HistoryText
-                  style={[
-                    styles.sessionMiniMeta,
-                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
-                  ]}
-                >
+                </Text>
+                <Text size="xs" color="$textLight500">
                   Paginas:{" "}
                   {Math.max(
                     0,
-                    (session.previousPage ??
-                      session.currentPage - session.pagesRead) + 1,
+                    (session.previousPage ?? session.currentPage - session.pagesRead) + 1,
                   )}{" "}
                   - {session.currentPage}
-                </HistoryText>
-                <HistoryText
-                  style={[
-                    styles.sessionMiniMeta,
-                    Platform.OS !== "web" ? styles.sessionMiniMetaNative : null,
-                  ]}
-                >
-                  Hora:{" "}
-                  {timeFormatter.format(new Date(session.recordedAt))}
-                </HistoryText>
-              </View>
+                </Text>
+                <Text size="xs" color="$textLight500">
+                  Hora: {timeFormatter.format(new Date(session.recordedAt))}
+                </Text>
+              </Box>
             ))
           ) : (
-            <HistoryText style={styles.sessionEmptyText}>
+            <Text size="xs" color="$textLight500">
               No hay detalle de sesiones para ese día.
-            </HistoryText>
+            </Text>
           )}
-        </View>
+        </VStack>
       ) : null}
-    </>
+    </VStack>
   );
 
   return (
     <Screen
       edges={["bottom", "left", "right"]}
-      style={[
-        styles.screen,
-        Platform.OS !== "web" ? styles.screenNative : null,
-      ]}
+      backgroundColor="#F6F1E7"
+      webBackgroundColor="#F6F1E7"
+      style={{ paddingTop: isWeb ? 10 : 16 }}
     >
       <ListComponent
         data={[{ id: "history-header-only" }]}
         keyExtractor={(item: { id: string }) => item.id}
         ListHeaderComponent={
-          <View
-            style={[
-              styles.headerContainer,
-              Platform.OS !== "web" ? styles.headerContainerNative : null,
-            ]}
-          >
-            <View
-              style={[
-                styles.monthControls,
-                Platform.OS !== "web" ? styles.monthControlsNative : null,
-              ]}
+          <Box width="100%" maxWidth={980} alignSelf="center" mb="$3">
+            <HStack
+              alignItems="center"
+              justifyContent="space-between"
+              mb={isWeb ? "$2" : "$4"}
+              gap="$2"
             >
-              {Platform.OS === "web" ? (
-                <>
-                  <Button
-                    mode="outlined"
-                    style={styles.navBtn}
-                    labelStyle={styles.navBtnLabel}
-                    onPress={history.previousMonth}
-                  >
-                    Mes anterior
-                  </Button>
-                  <PaperText
-                    style={[
-                      styles.monthLabel,
-                      { color: appTheme.colors.textOnDark },
-                    ]}
-                  >
-                    {monthFormatter.format(
-                      new Date(
-                        history.selected.year,
-                        history.selected.month - 1,
-                        1,
-                      ),
-                    )}
-                  </PaperText>
-                  <Button
-                    mode="outlined"
-                    style={styles.navBtn}
-                    labelStyle={styles.navBtnLabel}
-                    onPress={history.nextMonth}
-                  >
-                    Mes siguiente
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.navBtnNative,
-                      pressed ? styles.navBtnNativePressed : null,
-                    ]}
-                    onPress={history.previousMonth}
-                  >
-                    <HistoryText style={styles.navBtnNativeLabel}>
-                      Mes anterior
-                    </HistoryText>
-                  </Pressable>
-                  <HistoryText
-                    style={[
-                      styles.monthLabel,
-                      styles.monthLabelNative,
-                      { color: appTheme.colors.textOnDark },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {monthFormatter.format(
-                      new Date(
-                        history.selected.year,
-                        history.selected.month - 1,
-                        1,
-                      ),
-                    )}
-                  </HistoryText>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.navBtnNative,
-                      pressed ? styles.navBtnNativePressed : null,
-                    ]}
-                    onPress={history.nextMonth}
-                  >
-                    <HistoryText style={styles.navBtnNativeLabel}>
-                      Mes siguiente
-                    </HistoryText>
-                  </Pressable>
-                </>
-              )}
-            </View>
+              <Pressable
+                onPress={history.previousMonth}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Mes anterior"
+                w={44}
+                h={44}
+                borderRadius="$full"
+                borderWidth={1}
+                borderColor="$primary200"
+                bg="$white"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Ionicons name="chevron-back" size={22} color="#A87D42" />
+              </Pressable>
+              <Text
+                flex={1}
+                size={isWeb ? "md" : "lg"}
+                fontWeight="$bold"
+                color="$primary800"
+                textAlign="center"
+                textTransform="capitalize"
+                numberOfLines={1}
+              >
+                {monthLabel}
+              </Text>
+              <Pressable
+                onPress={history.nextMonth}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Mes siguiente"
+                w={44}
+                h={44}
+                borderRadius="$full"
+                borderWidth={1}
+                borderColor="$primary200"
+                bg="$white"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Ionicons name="chevron-forward" size={22} color="#A87D42" />
+              </Pressable>
+            </HStack>
 
-            {Platform.OS === "web" ? (
-              <Card mode="outlined" style={styles.calendarCard}>
-                <Card.Content>{calendarBody}</Card.Content>
-              </Card>
-            ) : (
-              <View style={[styles.calendarCard, styles.calendarCardNative]}>
-                <View style={styles.calendarCardInner}>{calendarBody}</View>
-              </View>
-            )}
-          </View>
+            <Box
+              borderRadius="$xl"
+              bg="$white"
+              borderWidth={1}
+              borderColor="$primary200"
+              p="$4"
+              mb="$3"
+            >
+              {calendarBody}
+            </Box>
+          </Box>
         }
         ListEmptyComponent={null}
         renderItem={() => null}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: Platform.OS === "web" ? 8 : 12 }} />
-        )}
-        contentContainerStyle={[
-          styles.listContent,
-          Platform.OS !== "web" ? styles.listContentNative : null,
-        ]}
+        ItemSeparatorComponent={() => <Box h={isWeb ? 8 : 12} />}
+        contentContainerStyle={{
+          paddingBottom: isWeb ? 24 : 36,
+          flexGrow: 1,
+          paddingHorizontal: 16,
+        }}
         showsVerticalScrollIndicator={false}
       />
-
-      <Modal
-        visible={confirmModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={closeConfirmModal}
-      >
-        {Platform.OS === "web" ? (
-          <View style={styles.modalBackdrop}>
-            <View style={styles.confirmCard}>
-              <PaperText style={styles.confirmTitle}>Eliminar sesión</PaperText>
-              <PaperText style={styles.confirmBody}>
-                {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
-              </PaperText>
-              <View style={styles.confirmActionsRow}>
-                <Button
-                  mode="outlined"
-                  onPress={closeConfirmModal}
-                  style={styles.confirmCancelBtn}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  buttonColor={theme.colors.danger}
-                  onPress={onConfirmDeleteSession}
-                  loading={deleteSession.isPending}
-                  disabled={deleteSession.isPending}
-                  style={styles.confirmDeleteBtn}
-                >
-                  Eliminar
-                </Button>
-              </View>
-            </View>
-          </View>
-        ) : (
-          <Pressable
-            style={[styles.modalBackdrop, styles.modalBackdropMobile]}
-            onPress={closeConfirmModal}
-          >
-            <Pressable
-              style={[styles.confirmCard, styles.confirmCardMobile]}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <HistoryText style={styles.confirmTitle}>Eliminar sesión</HistoryText>
-              <HistoryText style={styles.confirmBody}>
-                {`¿Seguro que quieres eliminar la sesión de "${selectedSession?.title ?? ""}"?`}
-              </HistoryText>
-              <View style={styles.confirmActionsRow}>
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.confirmBtnNative,
-                    styles.confirmBtnNativeCancel,
-                    pressed ? styles.navBtnNativePressed : null,
-                  ]}
-                  onPress={closeConfirmModal}
-                  disabled={deleteSession.isPending}
-                >
-                  <HistoryText style={styles.confirmBtnNativeCancelLabel}>
-                    Cancelar
-                  </HistoryText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.confirmBtnNative,
-                    styles.confirmBtnNativeDelete,
-                    pressed ? styles.confirmBtnNativeDeletePressed : null,
-                  ]}
-                  onPress={onConfirmDeleteSession}
-                  disabled={deleteSession.isPending}
-                >
-                  {deleteSession.isPending ? (
-                    <ActivityIndicator
-                      color={theme.colors.textOnDark}
-                      size="small"
-                    />
-                  ) : (
-                    <HistoryText style={styles.confirmBtnNativeDeleteLabel}>
-                      Eliminar
-                    </HistoryText>
-                  )}
-                </Pressable>
-              </View>
-            </Pressable>
-          </Pressable>
-        )}
-      </Modal>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    paddingTop: 10,
-  },
-  screenNative: {
-    paddingTop: 16,
-  },
-  headerContainer: {
-    marginBottom: 12,
-    width: "100%",
-    maxWidth: 980,
-    alignSelf: "center",
-  },
-  listContent: {
-    paddingBottom: 24,
-    flexGrow: 1,
-  },
-  listContentNative: {
-    paddingBottom: 36,
-  },
-  monthControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 10,
-  },
-  navBtn: {
-    flex: 1,
-  },
-  navBtnLabel: {
-    fontSize: 12,
-    fontFamily: "Fraunces_400Regular",
-  },
-  monthLabel: {
-    fontFamily: "Fraunces_700Bold",
-    color: theme.colors.textOnDark,
-    minWidth: 72,
-    textAlign: "center",
-    textTransform: "capitalize",
-  },
-  calendarCard: {
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.card,
-    borderColor: theme.colors.border,
-    marginBottom: 12,
-  },
-  calendarTitle: {
-    fontFamily: "Fraunces_700Bold",
-    color: theme.colors.text,
-    fontSize: 17,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 4,
-    gap: 6,
-  },
-  weekDayLabel: {
-    flex: 1,
-    minWidth: 0,
-    textAlign: "center",
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontWeight: "600",
-    fontFamily: "Fraunces_700Bold",
-  },
-  calendarGrid: {
-    flexDirection: "column",
-    gap: 6,
-  },
-  calendarWeekRow: {
-    flexDirection: "row",
-    width: "100%",
-    gap: 6,
-  },
-  dayCell: {
-    flex: 1,
-    minWidth: 0,
-    aspectRatio: 1.35,
-    borderRadius: theme.radius.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dayCellSelected: {
-    borderColor: theme.colors.accent,
-    borderWidth: 2,
-  },
-  dayCellText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-  },
-  dayCellTextOnDark: {
-    color: theme.colors.textOnDark,
-  },
-  errorText: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_400Regular",
-  },
-  legendText: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontFamily: "Fraunces_400Regular",
-  },
-  legendRow: {
-    marginTop: 14,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendSwatch: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sessionsBlock: {
-    marginTop: 12,
-    gap: 8,
-  },
-  sessionsTitle: {
-    color: theme.colors.text,
-    fontWeight: "700",
-    fontFamily: "Fraunces_700Bold",
-  },
-  sessionMiniCard: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.borderOnCard,
-    backgroundColor: theme.colors.cardElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  sessionMiniHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  sessionMiniTitle: {
-    flex: 1,
-    color: theme.colors.text,
-    fontWeight: "700",
-    fontFamily: "Fraunces_700Bold",
-  },
-  sessionMiniMeta: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontFamily: "Fraunces_400Regular",
-  },
-  sessionEmptyText: {
-    color: theme.colors.textSoft,
-    fontSize: 12,
-    fontFamily: "Fraunces_400Regular",
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    paddingHorizontal: 14,
-  },
-  confirmCard: {
-    width: "100%",
-    maxWidth: 560,
-    alignSelf: "center",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.borderOnCard,
-    backgroundColor: theme.colors.card,
-    padding: 14,
-    gap: 8,
-  },
-  confirmTitle: {
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 22,
-  },
-  confirmBody: {
-    color: theme.colors.textSoft,
-    fontFamily: "Fraunces_400Regular",
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 6,
-  },
-  confirmActionsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  confirmCancelBtn: {
-    flex: 1,
-    borderRadius: 10,
-    borderColor: theme.colors.border,
-  },
-  confirmDeleteBtn: {
-    flex: 1,
-    borderRadius: 10,
-  },
-  headerContainerNative: {
-    marginBottom: 20,
-  },
-  monthControlsNative: {
-    marginBottom: 22,
-    gap: 12,
-    alignItems: "stretch",
-  },
-  navBtnNative: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navBtnNativePressed: {
-    backgroundColor: theme.colors.bgSoft,
-    opacity: 0.9,
-  },
-  navBtnNativeLabel: {
-    fontSize: 11,
-    fontFamily: "Fraunces_400Regular",
-    color: theme.colors.text,
-    textAlign: "center",
-  },
-  monthLabelNative: {
-    flexShrink: 1,
-    flexBasis: "36%",
-    fontSize: 23,
-    lineHeight: 27,
-    minWidth: 0,
-    paddingHorizontal: 4,
-  },
-  calendarCardNative: {
-    borderRadius: 16,
-    borderWidth: 0,
-    overflow: "visible",
-    marginBottom: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#3D2914",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.22,
-        shadowRadius: 14,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
-  },
-  calendarCardInner: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  calendarTitleNative: {
-    fontSize: 20,
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  calendarGridNative: {
-    gap: 8,
-  },
-  calendarWeekRowNative: {
-    gap: 8,
-  },
-  weekRowNative: {
-    marginBottom: 8,
-  },
-  dayCellNative: {
-    borderWidth: 0,
-    borderRadius: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#3D2914",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.18,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-      default: {},
-    }),
-  },
-  dayCellTextNative: {
-    fontSize: 13,
-  },
-  legendRowNative: {
-    marginTop: 18,
-    gap: 12,
-  },
-  legendSwatchNative: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    borderWidth: 0,
-  },
-  sessionsBlockNative: {
-    marginTop: 22,
-    gap: 10,
-  },
-  sessionsTitleNative: {
-    fontSize: 20,
-    color: theme.colors.text,
-    fontFamily: "Fraunces_700Bold",
-    marginBottom: 2,
-  },
-  sessionMiniCardNative: {
-    borderWidth: 0,
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    gap: 2,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#3D2914",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.14,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
-  },
-  sessionMiniTitleNative: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontFamily: "Fraunces_700Bold",
-  },
-  sessionMiniMetaNative: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: "Fraunces_400Regular",
-  },
-  modalBackdropMobile: {
-    justifyContent: "flex-end",
-    paddingHorizontal: 0,
-    paddingTop: 48,
-  },
-  confirmCardMobile: {
-    maxWidth: "100%",
-    width: "100%",
-    alignSelf: "stretch",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    borderWidth: 0,
-    paddingBottom: 28,
-    paddingTop: 22,
-    paddingHorizontal: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#1A0F08",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 24,
-      },
-      default: {},
-    }),
-  },
-  confirmBtnNative: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 48,
-  },
-  confirmBtnNativeCancel: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.cardElevated,
-  },
-  confirmBtnNativeCancelLabel: {
-    fontFamily: "Fraunces_400Regular",
-    color: theme.colors.text,
-    fontSize: 15,
-  },
-  confirmBtnNativeDelete: {
-    backgroundColor: theme.colors.danger,
-  },
-  confirmBtnNativeDeletePressed: {
-    opacity: 0.88,
-  },
-  confirmBtnNativeDeleteLabel: {
-    color: theme.colors.textOnDark,
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 15,
-  },
-});

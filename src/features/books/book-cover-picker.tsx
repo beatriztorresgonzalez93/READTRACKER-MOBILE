@@ -1,11 +1,12 @@
 // Bloque UI compartido: ayuda, botones buscar/subir y carrusel de portadas.
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Box, HStack, Pressable, ScrollView, Text, VStack } from "@gluestack-ui/themed";
+import { StyleSheet } from "react-native";
 
+import { AppButton } from "@/shared/ui/app-button";
 import { BookCover } from "@/shared/ui/book-cover";
-import { theme } from "@/shared/ui/theme";
+import { scriptoriumColors } from "@/shared/ui/app-colors";
 
 type BookCoverPickerProps = {
-  accentLabelColor: string;
   coverOptions: string[];
   selectedCoverUrl: string;
   onSelectCover: (uri: string) => void;
@@ -16,7 +17,6 @@ type BookCoverPickerProps = {
 };
 
 export function BookCoverPicker({
-  accentLabelColor,
   coverOptions,
   selectedCoverUrl,
   onSelectCover,
@@ -28,41 +28,33 @@ export function BookCoverPicker({
   const busy = isUploadingCover || isSearchingCover;
 
   return (
-    <>
-      <Text style={styles.coverHelp}>
+    <VStack space="sm">
+      <Text size="sm" color="$textLight600" lineHeight={20}>
         Busca una portada online o sube una imagen (el servidor genera acceso seguro a almacenamiento S3).
       </Text>
-      <View style={styles.coverActionsRow}>
-        <Pressable
-          onPress={onUploadCover}
-          disabled={busy}
-          style={({ pressed }) => [
-            styles.coverActionBtn,
-            pressed && styles.coverBtnPressed,
-            busy && styles.coverActionBtnDisabled,
-          ]}
-        >
-          <Text style={[styles.coverBtnLabel, { color: accentLabelColor }]}>
-            {isUploadingCover ? "Subiendo..." : "Subir imagen"}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={onSearchCover}
-          disabled={busy}
-          style={({ pressed }) => [
-            styles.coverActionBtn,
-            pressed && styles.coverBtnPressed,
-            busy && styles.coverActionBtnDisabled,
-          ]}
-        >
-          <Text style={[styles.coverBtnLabel, { color: accentLabelColor }]}>
-            {isSearchingCover ? "Buscando..." : "Buscar online"}
-          </Text>
-        </Pressable>
-      </View>
+      <HStack space="sm">
+        <Box flex={1}>
+          <AppButton
+            appearance="secondary"
+            label={isUploadingCover ? "Subiendo..." : "Subir imagen"}
+            onPress={onUploadCover}
+            isDisabled={busy}
+          />
+        </Box>
+        <Box flex={1}>
+          <AppButton
+            appearance="secondary"
+            label={isSearchingCover ? "Buscando..." : "Buscar online"}
+            onPress={onSearchCover}
+            isDisabled={busy}
+          />
+        </Box>
+      </HStack>
       {coverOptions.length > 0 ? (
-        <View style={styles.coverPickerBlock}>
-          <Text style={[styles.coverPickerLabel, { color: accentLabelColor }]}>Elige una portada</Text>
+        <VStack space="sm">
+          <Text size="sm" fontWeight="$bold" color="$textLight900">
+            Elige una portada
+          </Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -87,49 +79,13 @@ export function BookCoverPicker({
               );
             })}
           </ScrollView>
-        </View>
+        </VStack>
       ) : null}
-    </>
+    </VStack>
   );
 }
 
 const styles = StyleSheet.create({
-  coverActionsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  coverActionBtn: {
-    flex: 1,
-    minWidth: 0,
-    borderWidth: 1,
-    borderColor: theme.colors.accent,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  coverActionBtnDisabled: {
-    opacity: 0.55,
-  },
-  coverBtnPressed: {
-    opacity: 0.85,
-  },
-  coverBtnLabel: {
-    fontFamily: "Fraunces_700Bold",
-  },
-  coverHelp: {
-    color: theme.colors.textMutedOnDark,
-    fontSize: 13,
-    marginTop: -2,
-    fontFamily: "Fraunces_400Regular",
-  },
-  coverPickerBlock: {
-    gap: 8,
-  },
-  coverPickerLabel: {
-    fontFamily: "Fraunces_700Bold",
-    fontSize: 13,
-  },
   coverOptionsRow: {
     gap: 10,
     paddingRight: 4,
@@ -141,7 +97,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   coverOptionBtnActive: {
-    borderColor: theme.colors.accent,
+    borderColor: scriptoriumColors.accent,
     backgroundColor: "rgba(232, 204, 122, 0.12)",
   },
 });
