@@ -59,9 +59,11 @@ async function postMetadata<T>(token: string, path: string, body: unknown): Prom
   }
 
   if (response.status === 404 && parsed?.code === "BOOK_NOT_FOUND") {
+    const msg = parsed.message ?? "";
+    const technical = /JSON|json válido|Groq error/i.test(msg);
     throw new BookMetadataApiError(
       "BOOK_NOT_FOUND",
-      parsed.message ?? "La IA no identificó este ISBN.",
+      technical ? "No se identificó este ISBN." : msg || "No se identificó este ISBN.",
     );
   }
 

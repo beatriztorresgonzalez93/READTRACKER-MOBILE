@@ -8,6 +8,24 @@ import {
 } from "../services/bookMetadataEnrichmentService";
 import { sendApiError } from "../utils/apiResponse";
 
+function sendAiEnrichmentFailure(res: Response, error: AiEnrichmentError, notFound: boolean) {
+  const technical = /JSON|json válido|Groq error/i.test(error.message);
+  if (technical) {
+    sendApiError(
+      res,
+      502,
+      "AI_ENRICHMENT_FAILED",
+      "No se pudo interpretar la respuesta de la IA. Intenta de nuevo o rellena el formulario.",
+    );
+    return;
+  }
+  if (notFound) {
+    sendApiError(res, 404, "BOOK_NOT_FOUND", error.message);
+    return;
+  }
+  sendApiError(res, 502, "AI_ENRICHMENT_FAILED", error.message);
+}
+
 export class BookMetadataController {
   constructor(private readonly service: BookMetadataEnrichmentService) {}
 
@@ -32,7 +50,7 @@ export class BookMetadataController {
           return;
         }
         if (error instanceof AiEnrichmentError) {
-          sendApiError(res, 404, "BOOK_NOT_FOUND", error.message);
+          sendAiEnrichmentFailure(res, error, true);
           return;
         }
         logError("BookMetadataController.enrich.discover", error);
@@ -64,7 +82,7 @@ export class BookMetadataController {
         return;
       }
       if (error instanceof AiEnrichmentError) {
-        sendApiError(res, 502, "AI_ENRICHMENT_FAILED", error.message);
+        sendAiEnrichmentFailure(res, error, false);
         return;
       }
       logError("BookMetadataController.enrich", error);
@@ -89,7 +107,7 @@ export class BookMetadataController {
         return;
       }
       if (error instanceof AiEnrichmentError) {
-        sendApiError(res, 404, "BOOK_NOT_FOUND", error.message);
+        sendAiEnrichmentFailure(res, error, true);
         return;
       }
       logError("BookMetadataController.discoverFromIsbn", error);

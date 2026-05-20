@@ -10,6 +10,7 @@ import {
   sanitizeBookDescription,
 } from "@/shared/lib/enrich-book-metadata-local";
 import { guessTextLanguage, IsbnLookupError, lookupBookByIsbn, type BookMetadataFromIsbn } from "@/shared/lib/lookup-book-by-isbn";
+import { getKnownBookByIsbn } from "@/shared/lib/known-book-by-isbn";
 import { isbnCoverUrl, normalizeIsbn } from "@/shared/lib/isbn-utils";
 
 export type ResolveBookFromIsbnOptions = {
@@ -123,7 +124,7 @@ async function lookupWithAiFallback(
     }
 
     throw new IsbnLookupError(
-      "No encontramos este ISBN en bases públicas y la IA no pudo identificarlo. Puedes rellenar el formulario a mano.",
+      `No encontramos el ISBN ${isbn} en bases públicas ni con IA. Comprueba que escaneaste el código del libro (no un precio) o escríbelo a mano.`,
     );
   }
 }
@@ -134,7 +135,14 @@ export async function resolveBookFromIsbn(
 ): Promise<BookMetadataFromIsbn> {
   const isbn = normalizeIsbn(rawIsbn);
   if (!isbn) {
-    throw new IsbnLookupError("ISBN no válido. Escanea el código de barras del libro (978… o 979…).");
+    throw new IsbnLookupError(
+      "ISBN no válido. Escanea el código de barras del libro (978… o 979…). Si el lomo tiene 10 dígitos, acércalo de nuevo.",
+    );
+  }
+
+  const known = getKnownBookByIsbn(isbn);
+  if (known) {
+    return known;
   }
 
   options.onStage?.("lookup");

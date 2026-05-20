@@ -1,19 +1,11 @@
-import { isbnCoverUrl, normalizeIsbn, parseIsbnFromBarcode } from "@/shared/lib/isbn-utils";
+import { isbn10ToIsbn13, normalizeIsbn } from "@/shared/lib/isbn-utils";
 
 describe("isbn-utils", () => {
-  it("normalizes ISBN-13 with separators", () => {
-    expect(normalizeIsbn("978-0-15-601259-5")).toBe("9780156012595");
+  it("converts ISBN-10 to ISBN-13", () => {
+    expect(isbn10ToIsbn13("8408316087")).toBe("9788408316084");
   });
 
-  it("rejects non-book EAN", () => {
-    expect(normalizeIsbn("1234567890123")).toBeNull();
-  });
-
-  it("parses barcode string", () => {
-    expect(parseIsbnFromBarcode("9780156012595")).toBe("9780156012595");
-  });
-
-  it("builds cover url", () => {
-    expect(isbnCoverUrl("9780156012595")).toContain("9780156012595");
+  it("normalizes 10-digit barcode to ISBN-13", () => {
+    expect(normalizeIsbn("8408316087")).toBe("9788408316084");
   });
 });

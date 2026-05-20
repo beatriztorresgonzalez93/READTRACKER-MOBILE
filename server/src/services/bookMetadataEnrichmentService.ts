@@ -1,5 +1,6 @@
 // Normaliza metadatos de libro a español (género único, sinopsis) vía IA.
 import { z } from "zod";
+import { getKnownBookByIsbn } from "../data/knownBookByIsbn";
 import { env, isAiBookMetadataConfigured } from "../config/env";
 import { logError, logInfo } from "../logger";
 
@@ -74,12 +75,24 @@ function normalizeDescription(value: unknown): string {
 }
 
 /** Acepta respuestas Groq/Gemini con tipos sueltos (números, claves en español, etc.). */
+function unwrapAiRow(data: unknown): Record<string, unknown> {
+  if (!data || typeof data !== "object") return {};
+  const row = data as Record<string, unknown>;
+  for (const key of ["book", "data", "result", "metadata", "libro"]) {
+    const nested = row[key];
+    if (nested && typeof nested === "object") {
+      return nested as Record<string, unknown>;
+    }
+  }
+  return row;
+}
+
 export function normalizeAiBookPayload(
   data: unknown,
   input?: BookMetadataInput,
 ): z.infer<typeof enrichedSchema> | null {
-  if (!data || typeof data !== "object") return null;
-  const row = data as Record<string, unknown>;
+  const row = unwrapAiRow(data);
+  if (Object.keys(row).length === 0) return null;
 
   const title =
     pickString(row.title) ||
@@ -116,6 +129,16 @@ export function normalizeAiBookPayload(
   const parsed = enrichedSchema.safeParse(candidate);
   if (!parsed.success) {
     logError("bookMetadataEnrichment.normalize", parsed.error.flatten());
+    if (title.length >= 2) {
+      const relaxed = enrichedSchema.safeParse({
+        ...candidate,
+        author: candidate.author || "Autor desconocido",
+        publisher: candidate.publisher || "",
+        genre: candidate.genre || "Novela",
+        description: candidate.description || "",
+      });
+      if (relaxed.success) return relaxed.data;
+    }
     return null;
   }
   return parsed.data;
@@ -411,7 +434,28 @@ export class BookMetadataEnrichmentService {
       throw new AiEnrichmentNotConfiguredError();
     }
 
-    const parsed = await runAiJsonPromptWithRetry(buildDiscoverFromIsbnPrompt(isbn));
+    const known = getKnownBookByIsbn(isbn.replace(/\D/g, ""));
+    if (known) {
+      return {
+        title: known.title,
+        author: known.author,
+        publisher: known.publisher,
+        pages: known.pages,
+        publishedYear: known.publishedYear,
+        genre: known.genre,
+        description: known.description,
+      };
+    }
+
+    let parsed: z.infer<typeof enrichedSchema>;
+    try {
+      parsed = await runAiJsonPromptWithRetry(buildDiscoverFromIsbnPrompt(isbn));
+    } catch (error) {
+      if (error instanceof AiEnrichmentError && /JSON|json válido/i.test(error.message)) {
+        throw new AiEnrichmentError("No se identificó ningún libro para este ISBN");
+      }
+      throw error;
+    }
     const title = parsed.title.trim();
     if (!title) {
       throw new AiEnrichmentError("No se identificó ningún libro para este ISBN");

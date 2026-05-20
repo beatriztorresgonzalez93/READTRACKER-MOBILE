@@ -71,7 +71,9 @@ export function IsbnBarcodeScannerModal({
         onBookFound(metadata);
         onClose();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "No se pudo buscar el libro.");
+        const isbnHint = parseIsbnFromBarcode(rawIsbn);
+        const base = err instanceof Error ? err.message : "No se pudo buscar el libro.";
+        setError(isbnHint && !base.includes(isbnHint) ? `${base} (ISBN leído: ${isbnHint})` : base);
         setScanned(false);
         lookupLock.current = false;
       } finally {
