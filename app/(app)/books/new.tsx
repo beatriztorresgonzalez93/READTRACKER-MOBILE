@@ -7,8 +7,10 @@ import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { BookCoverPicker } from "@/features/books/book-cover-picker";
+import { IsbnBarcodeScannerModal } from "@/features/books/isbn-barcode-scanner-modal";
 import { useBookCoverField } from "@/features/books/use-book-cover-field";
 import { useCreateBook } from "@/features/books/use-books";
+import { useFillBookFromIsbn } from "@/features/books/use-fill-book-from-isbn";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
 import { BookFormFooter } from "@/shared/ui/book-form-footer";
@@ -55,7 +57,9 @@ export default function NewBookScreen() {
   const setSelectedCoverUrl = useNewBookDraftStore((state) => state.setSelectedCoverUrl);
   const resetDraft = useNewBookDraftStore((state) => state.resetDraft);
   const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
+  const [isbnScannerVisible, setIsbnScannerVisible] = useState(false);
   const formScrollRef = useRef<ScrollView>(null);
+  const fillFromIsbn = useFillBookFromIsbn();
 
   const coverField = useBookCoverField({
     token,
@@ -123,6 +127,12 @@ export default function NewBookScreen() {
           </Text>
         </VStack>
       ) : null}
+
+      <AppButton
+        appearance="secondary"
+        label="Escanear código de barras (ISBN)"
+        onPress={() => setIsbnScannerVisible(true)}
+      />
 
       <AppInput
               label="Título *"
@@ -212,6 +222,12 @@ export default function NewBookScreen() {
       compactTop
       style={{ flex: 1 }}
     >
+      <IsbnBarcodeScannerModal
+        visible={isbnScannerVisible}
+        onClose={() => setIsbnScannerVisible(false)}
+        onBookFound={fillFromIsbn}
+        authToken={token}
+      />
       <BookFormLayout
         scrollRef={formScrollRef}
         footer={

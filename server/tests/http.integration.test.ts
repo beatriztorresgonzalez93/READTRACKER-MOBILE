@@ -5,7 +5,9 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthController } from "../src/controllers/authController";
 import { BillingController } from "../src/controllers/billingController";
+import { BookMetadataController } from "../src/controllers/bookMetadataController";
 import { BooksController } from "../src/controllers/booksController";
+import { BookMetadataEnrichmentService } from "../src/services/bookMetadataEnrichmentService";
 import { ReadingSessionsController } from "../src/controllers/readingSessionsController";
 import { WishlistController } from "../src/controllers/wishlistController";
 import { errorHandler } from "../src/middlewares/errorHandler";
@@ -65,7 +67,15 @@ describe("HTTP integration: contract + auth + errors", () => {
   const app = express();
   app.use(express.json());
   app.use("/api/v1/auth", createAuthRouter(new AuthController(authServiceMock as never), stubRequireAuth));
-  app.use("/api/v1/books", createBooksRouter(new BooksController(booksServiceMock as never), stubRequireAuth));
+  const bookMetadataController = new BookMetadataController(new BookMetadataEnrichmentService());
+  app.use(
+    "/api/v1/books",
+    createBooksRouter(
+      new BooksController(booksServiceMock as never),
+      bookMetadataController,
+      stubRequireAuth,
+    ),
+  );
   app.use(
     "/api/v1/wishlist",
     createWishlistRouter(new WishlistController(wishlistServiceMock as never), stubRequireAuth)

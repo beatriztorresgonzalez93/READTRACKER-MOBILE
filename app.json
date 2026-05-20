@@ -56,6 +56,13 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "ReadTracker necesita la cámara para escanear el código de barras (ISBN) del libro.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "",

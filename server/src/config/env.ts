@@ -93,8 +93,21 @@ export const env = {
   awsRegion: (process.env.AWS_REGION ?? "").trim(),
   s3Bucket: (process.env.S3_BUCKET ?? process.env.AWS_S3_BUCKET ?? "").trim(),
   awsAccessKeyId: (process.env.AWS_ACCESS_KEY_ID ?? "").trim(),
-  awsSecretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY ?? "").trim()
+  awsSecretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY ?? "").trim(),
+  /** Groq (gratis con límites): https://console.groq.com — API compatible con OpenAI. */
+  groqApiKey: (process.env.GROQ_API_KEY ?? "").trim(),
+  groqModel: (process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile").trim(),
+  /** OpenAI: enriquecer metadatos ISBN (sinopsis ES, género único). */
+  openaiApiKey: (process.env.OPENAI_API_KEY ?? "").trim(),
+  openaiModel: (process.env.OPENAI_MODEL ?? "gpt-4o-mini").trim(),
+  /** Google AI Studio: alternativa si no hay otras claves. */
+  geminiApiKey: (process.env.GEMINI_API_KEY ?? "").trim(),
+  geminiModel: (process.env.GEMINI_MODEL ?? "gemini-2.0-flash").trim(),
 };
+
+export function isAiBookMetadataConfigured(): boolean {
+  return Boolean(env.groqApiKey || env.openaiApiKey || env.geminiApiKey);
+}
 
 export function isS3UploadsConfigured(): boolean {
   return Boolean(
