@@ -33,6 +33,7 @@ yarn-error.*
 # local env files (secrets — usar .env.example)
 .env
 server/.env
+server/seed/books-seed.json
 .env*.local
 
 # typescript

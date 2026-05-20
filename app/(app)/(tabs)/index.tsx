@@ -81,9 +81,10 @@ function BookGridCard({ book }: { book: Book }) {
       href={`/(app)/books/${book.id}` as never}
       style={isWeb ? styles.gridCard : styles.gridCardMobile}
     >
-      <BookCover
-        uri={book.coverUrl}
-        width={GRID_COVER_WIDTH}
+        <BookCover
+          uri={book.coverUrl}
+          title={book.title}
+          width={GRID_COVER_WIDTH}
         aspectRatio={1.45}
         borderRadius={isWeb ? 6 : 14}
         accessibilityLabel={`Portada: ${book.title}`}

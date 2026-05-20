@@ -11,7 +11,9 @@
     "test:e2e:db": "vitest run tests/http.e2e.db.test.ts",
     "test:watch": "vitest",
     "smoke:predeploy": "npm run build && npm run test",
-    "cleanup:reading-sessions": "node scripts/cleanup-reading-session-duplicates.js"
+    "cleanup:reading-sessions": "node scripts/cleanup-reading-session-duplicates.js",
+    "seed:books": "node scripts/seed-books.js",
+    "seed:clear-covers": "node scripts/clear-fake-seed-covers.js"
   },
   "keywords": [
     "readtracker",
@@ -31,8 +33,7 @@
     "firebase-admin": "^13.6.0",
     "helmet": "^8.1.0",
     "pg": "^8.20.0",
-    "stripe": "^22.1.0",
-    "zod": "^4.4.3"
+    "stripe": "^22.1.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

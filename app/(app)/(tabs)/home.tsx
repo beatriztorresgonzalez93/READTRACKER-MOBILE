@@ -162,9 +162,10 @@ export default function HomeScreen() {
                   </Text>
                 </HStack>
                 <HStack space="md" alignItems="flex-start">
-                  <BookCover
-                    uri={primaryBook.coverUrl}
-                    width={isWeb ? 100 : 92}
+                <BookCover
+                  uri={primaryBook.coverUrl}
+                  title={primaryBook.title}
+                  width={isWeb ? 100 : 92}
                     aspectRatio={1.45}
                     borderRadius={12}
                     accessibilityLabel={`Portada: ${primaryBook.title}`}
@@ -308,9 +309,10 @@ export default function HomeScreen() {
                         borderColor="$primary200"
                         gap={6}
                       >
-                        <BookCover
-                          uri={book.coverUrl}
-                          width={72}
+                    <BookCover
+                      uri={book.coverUrl}
+                      title={book.title}
+                      width={72}
                           aspectRatio={1.45}
                           borderRadius={10}
                           accessibilityLabel={`Portada: ${book.title}`}
