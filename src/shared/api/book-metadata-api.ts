@@ -20,33 +20,40 @@ async function postMetadata<T>(token: string, path: string, body: unknown): Prom
     body: JSON.stringify(body),
   });
 
-  if (response.status === 503) {
-    let parsed: ApiErrorBody | null = null;
+  let parsed: ApiErrorBody | null = null;
+  const raw = await response.text();
+  if (raw.trim()) {
     try {
-      parsed = (await response.json()) as ApiErrorBody;
+      parsed = JSON.parse(raw) as ApiErrorBody;
     } catch {
       /* ignore */
     }
-    if (parsed?.code === "AI_NOT_CONFIGURED") {
-      return null;
-    }
+  }
+
+  if (response.status === 503 && parsed?.code === "AI_NOT_CONFIGURED") {
+    return null;
+  }
+
+  // Servidor en Render aún sin desplegar /books/metadata/* → no romper el escaneo.
+  if (response.status === 404 && parsed?.code === "NOT_FOUND") {
+    return null;
+  }
+
+  if (response.status === 404 && parsed?.code === "BOOK_NOT_FOUND") {
+    return null;
   }
 
   if (!response.ok) {
-    const raw = await response.text();
-    let message = raw.slice(0, 300);
-    try {
-      const parsed = JSON.parse(raw) as ApiErrorBody;
-      message = parsed.message ?? parsed.error ?? message;
-    } catch {
-      /* ignore */
-    }
-    const err = new Error(message || `Error ${response.status}`);
-    (err as Error & { status?: number }).status = response.status;
-    throw err;
+    const message =
+      (parsed?.message ?? parsed?.error ?? raw.slice(0, 300)) || `Error ${response.status}`;
+    throw new Error(message);
   }
 
-  const json = (await response.json()) as ApiResponse<T>;
+  if (!raw.trim()) {
+    return null;
+  }
+
+  const json = JSON.parse(raw) as ApiResponse<T>;
   return json.data ?? null;
 }
 

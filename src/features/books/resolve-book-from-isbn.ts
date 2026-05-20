@@ -1,15 +1,14 @@
-// ISBN → APIs públicas → IA (Groq) → traducción local si hace falta.
+// ISBN → APIs públicas → corrección local → IA (Groq) en servidor.
 import {
   discoverBookFromIsbnWithAi,
   enrichBookMetadataWithAi,
 } from "@/shared/api/book-metadata-api";
-import { enrichBookMetadataLocally } from "@/shared/lib/enrich-book-metadata-local";
 import {
-  IsbnLookupError,
-  guessTextLanguage,
-  lookupBookByIsbn,
-  type BookMetadataFromIsbn,
-} from "@/shared/lib/lookup-book-by-isbn";
+  enrichBookMetadataLocally,
+  isTranslationApiNoise,
+  sanitizeBookDescription,
+} from "@/shared/lib/enrich-book-metadata-local";
+import { guessTextLanguage, IsbnLookupError, lookupBookByIsbn, type BookMetadataFromIsbn } from "@/shared/lib/lookup-book-by-isbn";
 import { isbnCoverUrl, normalizeIsbn } from "@/shared/lib/isbn-utils";
 
 export type ResolveBookFromIsbnOptions = {
@@ -17,26 +16,32 @@ export type ResolveBookFromIsbnOptions = {
   onStage?: (stage: "lookup" | "prepare" | "ai") => void;
 };
 
+function metadataFromAi(
+  isbn: string,
+  enriched: NonNullable<Awaited<ReturnType<typeof enrichBookMetadataWithAi>>>,
+): BookMetadataFromIsbn {
+  return {
+    isbn,
+    title: enriched.title?.trim() ?? "",
+    author: enriched.author?.trim() ?? "",
+    publisher: enriched.publisher?.trim() ?? "",
+    pages: enriched.pages?.trim() ?? "",
+    publishedYear: enriched.publishedYear?.trim() ?? "",
+    genre: enriched.genre?.trim() ?? "",
+    description: sanitizeBookDescription(enriched.description ?? ""),
+    coverUrls: [isbnCoverUrl(isbn)],
+  };
+}
+
 function applyEnrichedFields(
   base: BookMetadataFromIsbn,
   enriched: Partial<BookMetadataFromIsbn>,
-  options?: { preferAiDescription?: boolean },
 ): BookMetadataFromIsbn {
-  const aiDescription = enriched.description?.trim() ?? "";
-  const baseDescription = base.description?.trim() ?? "";
-  let description = baseDescription;
-
-  if (aiDescription) {
-    if (options?.preferAiDescription) {
-      description = aiDescription;
-    } else if (aiDescription.length >= 20) {
-      description = aiDescription;
-    } else if (baseDescription && guessTextLanguage(baseDescription) !== "es") {
-      description = aiDescription;
-    } else if (guessTextLanguage(aiDescription) === "es") {
-      description = aiDescription;
-    }
-  }
+  const aiDescription = sanitizeBookDescription(enriched.description ?? "");
+  const useAiDescription =
+    aiDescription.length >= 15 &&
+    !isTranslationApiNoise(aiDescription) &&
+    guessTextLanguage(aiDescription) === "es";
 
   return {
     ...base,
@@ -46,13 +51,34 @@ function applyEnrichedFields(
     pages: enriched.pages?.trim() || base.pages,
     publishedYear: enriched.publishedYear?.trim() || base.publishedYear,
     genre: enriched.genre?.trim() || base.genre,
-    description,
+    description: useAiDescription ? aiDescription : base.description,
     coverUrls: base.coverUrls?.length ? base.coverUrls : enriched.coverUrls ?? base.coverUrls,
   };
 }
 
-async function lookupFromPublicApis(isbn: string): Promise<BookMetadataFromIsbn> {
-  return lookupBookByIsbn(isbn);
+async function tryFillFromAiByIsbn(
+  isbn: string,
+  token: string,
+): Promise<BookMetadataFromIsbn | null> {
+  const emptyPayload: BookMetadataFromIsbn = {
+    isbn,
+    title: "",
+    author: "",
+    publisher: "",
+    pages: "",
+    publishedYear: "",
+    genre: "",
+    description: "",
+    coverUrls: [isbnCoverUrl(isbn)],
+  };
+
+  let enriched = await discoverBookFromIsbnWithAi(token, isbn);
+  if (!enriched?.title?.trim()) {
+    enriched = await enrichBookMetadataWithAi(token, emptyPayload);
+  }
+
+  if (!enriched?.title?.trim()) return null;
+  return metadataFromAi(isbn, enriched);
 }
 
 async function lookupWithAiFallback(
@@ -60,28 +86,18 @@ async function lookupWithAiFallback(
   token: string | null | undefined,
 ): Promise<BookMetadataFromIsbn> {
   try {
-    return await lookupFromPublicApis(isbn);
+    return await lookupBookByIsbn(isbn);
   } catch (error) {
     if (!(error instanceof IsbnLookupError) || !token?.trim()) {
       throw error;
     }
 
-    const discovered = await discoverBookFromIsbnWithAi(token, isbn);
-    if (!discovered?.title?.trim()) {
-      throw error;
-    }
+    const fromAi = await tryFillFromAiByIsbn(isbn, token);
+    if (fromAi) return fromAi;
 
-    return {
-      isbn,
-      title: discovered.title.trim(),
-      author: discovered.author?.trim() ?? "",
-      publisher: discovered.publisher?.trim() ?? "",
-      pages: discovered.pages?.trim() ?? "",
-      publishedYear: discovered.publishedYear?.trim() ?? "",
-      genre: discovered.genre?.trim() ?? "",
-      description: discovered.description?.trim() ?? "",
-      coverUrls: [isbnCoverUrl(isbn)],
-    };
+    throw new IsbnLookupError(
+      "No encontramos este ISBN en bases públicas y la IA no pudo identificarlo. Comprueba que el servidor en Render está actualizado y tiene GROQ_API_KEY.",
+    );
   }
 }
 
@@ -97,24 +113,32 @@ export async function resolveBookFromIsbn(
   options.onStage?.("lookup");
   let metadata = await lookupWithAiFallback(isbn, options.token);
 
+  metadata = {
+    ...metadata,
+    description: sanitizeBookDescription(metadata.description),
+  };
+
   if (options.token?.trim()) {
     options.onStage?.("ai");
     try {
       const enriched = await enrichBookMetadataWithAi(options.token, metadata);
       if (enriched) {
-        metadata = applyEnrichedFields(metadata, enriched, { preferAiDescription: true });
+        metadata = applyEnrichedFields(metadata, enriched);
       }
     } catch {
-      /* sigue con local */
-    }
-
-    const descriptionOk =
-      !metadata.description?.trim() || guessTextLanguage(metadata.description) === "es";
-    if (metadata.genre?.trim() && descriptionOk) {
-      return metadata;
+      /* sin IA en servidor */
     }
   }
 
-  options.onStage?.("prepare");
-  return enrichBookMetadataLocally(metadata);
+  const needsLocal =
+    !metadata.genre?.trim() ||
+    !metadata.description?.trim() ||
+    (metadata.description && guessTextLanguage(metadata.description) !== "es");
+
+  if (needsLocal) {
+    options.onStage?.("prepare");
+    metadata = await enrichBookMetadataLocally(metadata);
+  }
+
+  return metadata;
 }

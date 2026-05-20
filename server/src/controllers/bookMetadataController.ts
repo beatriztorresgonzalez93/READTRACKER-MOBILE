@@ -15,14 +15,35 @@ export class BookMetadataController {
     const body = req.body as Record<string, unknown>;
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const author = typeof body.author === "string" ? body.author.trim() : "";
+    const isbn = typeof body.isbn === "string" ? body.isbn.trim() : "";
+
     if (!title) {
-      sendApiError(res, 400, "VALIDATION_ERROR", "El título es obligatorio");
-      return;
+      if (!isbn) {
+        sendApiError(res, 400, "VALIDATION_ERROR", "El título o el ISBN es obligatorio");
+        return;
+      }
+      try {
+        const data = await this.service.discoverFromIsbn(isbn);
+        res.status(200).json({ data });
+        return;
+      } catch (error) {
+        if (error instanceof AiEnrichmentNotConfiguredError) {
+          sendApiError(res, 503, "AI_NOT_CONFIGURED", error.message);
+          return;
+        }
+        if (error instanceof AiEnrichmentError) {
+          sendApiError(res, 404, "BOOK_NOT_FOUND", error.message);
+          return;
+        }
+        logError("BookMetadataController.enrich.discover", error);
+        sendApiError(res, 500, "INTERNAL_ERROR", "No se pudo buscar el libro con IA");
+        return;
+      }
     }
 
     try {
       const data = await this.service.enrich({
-        isbn: typeof body.isbn === "string" ? body.isbn.trim() : undefined,
+        isbn: isbn || undefined,
         title,
         author,
         publisher: typeof body.publisher === "string" ? body.publisher : "",
