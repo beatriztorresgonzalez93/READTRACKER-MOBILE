@@ -34,6 +34,93 @@ const enrichedSchema = z.object({
   description: z.string().max(900),
 });
 
+function pickString(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function pickGenre(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => pickString(v)).filter(Boolean).slice(0, 1).join("");
+  }
+  const raw = pickString(value);
+  if (!raw) return "";
+  return raw.split(/[,;/|]/)[0]?.trim() ?? "";
+}
+
+function normalizePages(value: unknown): string {
+  const digits = pickString(value).replace(/\D/g, "");
+  if (digits) return digits.slice(0, 10);
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return String(Math.round(value)).slice(0, 10);
+  }
+  return "";
+}
+
+function normalizeYear(value: unknown): string {
+  const fromString = pickString(value).replace(/\D/g, "");
+  const match = fromString.match(/\b(19|20)\d{2}\b/);
+  if (match) return match[0];
+  if (typeof value === "number" && value >= 1000 && value <= 2100) {
+    return String(Math.round(value));
+  }
+  return "";
+}
+
+function normalizeDescription(value: unknown): string {
+  const text = pickString(value);
+  return text.length > 900 ? text.slice(0, 900) : text;
+}
+
+/** Acepta respuestas Groq/Gemini con tipos sueltos (números, claves en español, etc.). */
+export function normalizeAiBookPayload(
+  data: unknown,
+  input?: BookMetadataInput,
+): z.infer<typeof enrichedSchema> | null {
+  if (!data || typeof data !== "object") return null;
+  const row = data as Record<string, unknown>;
+
+  const title =
+    pickString(row.title) ||
+    pickString(row.titulo) ||
+    pickString(row.Título) ||
+    input?.title?.trim() ||
+    "";
+  const author =
+    pickString(row.author) ||
+    pickString(row.autor) ||
+    pickString(row.Authors) ||
+    input?.author?.trim() ||
+    "";
+
+  const candidate = {
+    title,
+    author,
+    publisher:
+      pickString(row.publisher) ||
+      pickString(row.editorial) ||
+      pickString(row.publisher_name) ||
+      input?.publisher?.trim() ||
+      "",
+    pages: normalizePages(row.pages ?? row.pageCount ?? row.paginas),
+    publishedYear: normalizeYear(
+      row.publishedYear ?? row.published_year ?? row.year ?? row.publication_year,
+    ),
+    genre: pickGenre(row.genre ?? row.genero ?? row.categories) || input?.genre?.trim() || "",
+    description: normalizeDescription(
+      row.description ?? row.descripcion ?? row.synopsis ?? row.sinopsis,
+    ),
+  };
+
+  const parsed = enrichedSchema.safeParse(candidate);
+  if (!parsed.success) {
+    logError("bookMetadataEnrichment.normalize", parsed.error.flatten());
+    return null;
+  }
+  return parsed.data;
+}
+
 export class AiEnrichmentNotConfiguredError extends Error {
   constructor() {
     super("Enriquecimiento con IA no configurado en el servidor");
@@ -264,12 +351,46 @@ async function runAiJsonPrompt(prompt: string): Promise<string> {
   return rawText;
 }
 
-function parseEnrichedJson(rawText: string): z.infer<typeof enrichedSchema> {
-  const parsed = enrichedSchema.safeParse(extractJsonObject(rawText));
-  if (!parsed.success) {
-    throw new AiEnrichmentError("JSON de IA con formato inválido");
+function parseEnrichedJson(
+  rawText: string,
+  input?: BookMetadataInput,
+): z.infer<typeof enrichedSchema> {
+  let extracted: unknown;
+  try {
+    extracted = extractJsonObject(rawText);
+  } catch (error) {
+    throw error instanceof AiEnrichmentError
+      ? error
+      : new AiEnrichmentError("La IA no devolvió JSON válido");
   }
-  return parsed.data;
+
+  const normalized = normalizeAiBookPayload(extracted, input);
+  if (normalized) return normalized;
+
+  throw new AiEnrichmentError("JSON de IA con formato inválido");
+}
+
+async function runAiJsonPromptWithRetry(
+  prompt: string,
+  input?: BookMetadataInput,
+): Promise<z.infer<typeof enrichedSchema>> {
+  const strictSuffix =
+    "\n\nIMPORTANTE: Responde ÚNICAMENTE un objeto JSON (sin markdown). " +
+    'Todas las claves en inglés: title, author, publisher, pages, publishedYear, genre, description. ' +
+    'pages y publishedYear como strings (ej. "432", "2024"). genre: un solo género en español.';
+
+  try {
+    return parseEnrichedJson(await runAiJsonPrompt(prompt + strictSuffix), input);
+  } catch (firstError) {
+    if (!(firstError instanceof AiEnrichmentError)) throw firstError;
+    logInfo("bookMetadataEnrichment.retry", { reason: firstError.message });
+    return parseEnrichedJson(
+      await runAiJsonPrompt(
+        `${prompt}\n\nTu respuesta anterior no era JSON válido. Repite solo el objeto JSON con las claves indicadas.`,
+      ),
+      input,
+    );
+  }
 }
 
 export class BookMetadataEnrichmentService {
@@ -281,7 +402,7 @@ export class BookMetadataEnrichmentService {
       throw new AiEnrichmentError("El título es obligatorio para enriquecer metadatos");
     }
 
-    const parsed = parseEnrichedJson(await runAiJsonPrompt(buildPrompt(input)));
+    const parsed = await runAiJsonPromptWithRetry(buildPrompt(input), input);
     return mergeWithInput(input, parsed);
   }
 
@@ -290,7 +411,7 @@ export class BookMetadataEnrichmentService {
       throw new AiEnrichmentNotConfiguredError();
     }
 
-    const parsed = parseEnrichedJson(await runAiJsonPrompt(buildDiscoverFromIsbnPrompt(isbn)));
+    const parsed = await runAiJsonPromptWithRetry(buildDiscoverFromIsbnPrompt(isbn));
     const title = parsed.title.trim();
     if (!title) {
       throw new AiEnrichmentError("No se identificó ningún libro para este ISBN");

@@ -65,6 +65,11 @@ async function postMetadata<T>(token: string, path: string, body: unknown): Prom
     );
   }
 
+  // IA respondió pero el JSON no era usable: no bloquear escaneo (se usa API pública o relleno manual).
+  if (response.status === 502 && parsed?.code === "AI_ENRICHMENT_FAILED") {
+    return null;
+  }
+
   if (!response.ok) {
     const message =
       (parsed?.message ?? parsed?.error ?? raw.slice(0, 300)) || `Error ${response.status}`;

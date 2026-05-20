@@ -76,13 +76,20 @@ async function tryFillFromAiByIsbn(
     coverUrls: [isbnCoverUrl(isbn)],
   };
 
-  let enriched = await discoverBookFromIsbnWithAi(token, isbn);
-  if (!enriched?.title?.trim()) {
-    enriched = await enrichBookMetadataWithAi(token, emptyPayload);
-  }
+  try {
+    let enriched = await discoverBookFromIsbnWithAi(token, isbn);
+    if (!enriched?.title?.trim()) {
+      enriched = await enrichBookMetadataWithAi(token, emptyPayload);
+    }
 
-  if (!enriched?.title?.trim()) return null;
-  return metadataFromAi(isbn, enriched);
+    if (!enriched?.title?.trim()) return null;
+    return metadataFromAi(isbn, enriched);
+  } catch (error) {
+    if (error instanceof BookMetadataApiError) {
+      throw error;
+    }
+    return null;
+  }
 }
 
 async function lookupWithAiFallback(
