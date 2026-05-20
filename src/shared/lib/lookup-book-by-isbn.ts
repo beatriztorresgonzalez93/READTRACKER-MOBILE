@@ -162,6 +162,11 @@ type OpenLibrarySearchResponse = {
   docs?: OpenLibrarySearchDoc[];
 };
 
+type GoogleIndustryIdentifier = {
+  type?: string;
+  identifier?: string;
+};
+
 type GoogleVolumeInfo = {
   title?: string;
   authors?: string[];
@@ -171,6 +176,7 @@ type GoogleVolumeInfo = {
   categories?: string[];
   description?: string;
   language?: string;
+  industryIdentifiers?: GoogleIndustryIdentifier[];
   imageLinks?: {
     thumbnail?: string;
     smallThumbnail?: string;
@@ -186,7 +192,23 @@ type GoogleBooksResponse = {
 /** Metadatos internos al fusionar (no se devuelven al formulario). */
 type PartialWithDescLang = Partial<BookMetadataFromIsbn> & {
   descriptionLang?: string;
+  /** true si Google Books declaró este ISBN en industryIdentifiers */
+  isbnMatch?: boolean;
 };
+
+function googleVolumeMatchesIsbn(info: GoogleVolumeInfo, isbn: string): boolean {
+  const target = normalizeIsbn(isbn);
+  if (!target) return false;
+  return (info.industryIdentifiers ?? []).some(
+    (id) => normalizeIsbn(id.identifier ?? "") === target,
+  );
+}
+
+function openLibraryDocMatchesIsbn(doc: OpenLibrarySearchDoc, isbn: string): boolean {
+  const target = normalizeIsbn(isbn);
+  if (!target) return false;
+  return (doc.isbn ?? []).some((listed) => normalizeIsbn(listed) === target);
+}
 
 function coverUrlsFromOpenLibrary(isbn: string, coverId?: number): string[] {
   const urls: string[] = [isbnCoverUrl(isbn)];
@@ -287,7 +309,10 @@ async function lookupOpenLibrarySearch(isbn: string): Promise<Partial<BookMetada
   const data = await fetchJson<OpenLibrarySearchResponse>(
     `https://openlibrary.org/search.json?${params.toString()}`,
   );
-  const doc = data?.docs?.find((d) => d.title?.trim()) ?? data?.docs?.[0];
+  const doc =
+    data?.docs?.find((d) => d.title?.trim() && openLibraryDocMatchesIsbn(d, isbn)) ??
+    data?.docs?.find((d) => d.title?.trim()) ??
+    data?.docs?.[0];
   if (!doc?.title?.trim()) return {};
 
   return {
@@ -306,7 +331,11 @@ async function lookupOpenLibrarySearch(isbn: string): Promise<Partial<BookMetada
   };
 }
 
-function partialFromGoogleVolume(isbn: string, info: GoogleVolumeInfo): PartialWithDescLang {
+function partialFromGoogleVolume(
+  isbn: string,
+  info: GoogleVolumeInfo,
+  options?: { isbnMatch?: boolean },
+): PartialWithDescLang {
   const covers = googleCoverUrls(info);
   const lang = info.language?.trim().toLowerCase().slice(0, 2);
   return {
@@ -320,6 +349,7 @@ function partialFromGoogleVolume(isbn: string, info: GoogleVolumeInfo): PartialW
     description: info.description ? stripHtml(info.description) : "",
     descriptionLang: lang,
     coverUrls: covers.length > 0 ? covers : [isbnCoverUrl(isbn)],
+    isbnMatch: options?.isbnMatch ?? googleVolumeMatchesIsbn(info, isbn),
   };
 }
 
@@ -337,10 +367,16 @@ async function lookupGoogleBooksByIsbn(isbn: string, langRestrict?: string): Pro
   const items = data?.items ?? [];
   if (items.length === 0) return {};
 
-  const partials = items
+  const infos = items
     .map((item) => item.volumeInfo)
-    .filter((info): info is GoogleVolumeInfo => Boolean(info?.title?.trim()))
-    .map((info) => partialFromGoogleVolume(isbn, info));
+    .filter((info): info is GoogleVolumeInfo => Boolean(info?.title?.trim()));
+
+  const matched = infos.filter((info) => googleVolumeMatchesIsbn(info, isbn));
+  const pool = matched.length > 0 ? matched : infos;
+
+  const partials = pool.map((info) =>
+    partialFromGoogleVolume(isbn, info, { isbnMatch: matched.length > 0 }),
+  );
 
   return mergeManyPartials(isbn, partials);
 }
@@ -381,19 +417,22 @@ export function mergeManyPartials(isbn: string, partials: PartialWithDescLang[])
   const valid = partials.filter((p) => p.title?.trim() || p.author?.trim() || p.description?.trim());
   if (valid.length === 0) return {};
 
-  const title = valid.map((p) => p.title?.trim() ?? "").find(Boolean) ?? "";
-  const author = valid.map((p) => p.author?.trim() ?? "").find(Boolean) ?? "";
+  const trusted = valid.filter((p) => p.isbnMatch);
+  const pool = trusted.length > 0 ? trusted : valid;
+
+  const title = pool.map((p) => p.title?.trim() ?? "").find(Boolean) ?? "";
+  const author = pool.map((p) => p.author?.trim() ?? "").find(Boolean) ?? "";
 
   return {
     isbn,
-    title: valid.map((p) => p.title?.trim() ?? "").sort((a, b) => b.length - a.length)[0] ?? title,
-    author: valid.map((p) => p.author?.trim() ?? "").sort((a, b) => b.length - a.length)[0] ?? author,
-    publisher: valid.map((p) => p.publisher?.trim() ?? "").find(Boolean) ?? "",
-    pages: valid.map((p) => p.pages?.trim() ?? "").find(Boolean) ?? "",
-    publishedYear: valid.map((p) => p.publishedYear?.trim() ?? "").find(Boolean) ?? "",
-    genre: valid.map((p) => p.genre?.trim() ?? "").find(Boolean) ?? "",
-    description: pickBestDescription(descriptionCandidatesFromPartials(valid)),
-    coverUrls: [...new Set(valid.flatMap((p) => p.coverUrls ?? []))],
+    title,
+    author,
+    publisher: pool.map((p) => p.publisher?.trim() ?? "").find(Boolean) ?? "",
+    pages: pool.map((p) => p.pages?.trim() ?? "").find(Boolean) ?? "",
+    publishedYear: pool.map((p) => p.publishedYear?.trim() ?? "").find(Boolean) ?? "",
+    genre: pool.map((p) => p.genre?.trim() ?? "").find(Boolean) ?? "",
+    description: pickBestDescription(descriptionCandidatesFromPartials(pool)),
+    coverUrls: [...new Set(pool.flatMap((p) => p.coverUrls ?? []))],
   };
 }
 

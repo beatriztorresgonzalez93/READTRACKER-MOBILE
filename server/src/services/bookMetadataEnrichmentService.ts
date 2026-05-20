@@ -61,6 +61,8 @@ function buildPrompt(input: BookMetadataInput): string {
   return `Eres un bibliotecario español. Recibes metadatos de un libro obtenidos de APIs (a veces en inglés o francés).
 
 REGLAS CRÍTICAS:
+- Si "title" y "author" de entrada ya tienen valor, CÓPIALOS TAL CUAL en la salida (mismo libro, mismo ISBN).
+- La sinopsis y el género deben ser del MISMO libro que el título de entrada; nunca sustituyas por otro título famoso.
 - "description" DEBE estar 100% en español (España). Nunca devuelvas francés ni inglés.
 - Si la descripción de entrada está en otro idioma, REESCRÍBELA en español (no copies el texto original).
 - "genre": exactamente UN género en español, sin listas ni comas.
@@ -200,14 +202,20 @@ function mergeWithInput(
 }
 
 function buildDiscoverFromIsbnPrompt(isbn: string): string {
-  return `Eres un bibliotecario español. El usuario escaneó el ISBN ${isbn} pero no hay datos en bases públicas.
+  return `Eres un bibliotecario español. El usuario escaneó el ISBN-13 ${isbn}; no hay datos en bases públicas.
 
-Con tu conocimiento del libro asociado a ese ISBN (edición en español si existe), devuelve ÚNICAMENTE JSON con:
+IMPORTANTE:
+- Responde SOLO con la edición cuyo ISBN-13 es exactamente ${isbn}.
+- NO sustituyas otro libro aunque lo conozcas bien (ej. "El laberinto del fauno", "Harry Potter", etc.).
+- Si no reconoces este ISBN concreto, devuelve "title": "" y el resto vacío.
+
+Ejemplos de ISBN → libro (solo si coincide tu ISBN):
+- 9788408316084 → "Alas de sangre", Rebecca Yarros, Booket (Empíreo 1)
+
+Devuelve ÚNICAMENTE JSON con:
 - "title", "author", "publisher", "pages" (solo dígitos o ""), "publishedYear" (4 dígitos o "")
 - "genre": UN solo género en español
-- "description": sinopsis en español, 2-4 frases, máximo 550 caracteres
-
-Si no identificas el libro con certeza razonable, devuelve "title": "" y el resto vacío.`;
+- "description": sinopsis en español, 2-4 frases, máximo 550 caracteres`;
 }
 
 async function runAiJsonPrompt(prompt: string): Promise<string> {

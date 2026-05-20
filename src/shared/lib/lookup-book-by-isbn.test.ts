@@ -43,4 +43,23 @@ describe("lookup-book-by-isbn", () => {
     ]);
     expect(merged.description).toContain("español");
   });
+
+  it("prefers ISBN-matched Google title over a longer unrelated title", () => {
+    const merged = mergeManyPartials("9788408316084", [
+      {
+        isbn: "9788408316084",
+        title: "El laberinto del fauno / Pan's Labyrinth: The Labyrinth of the Faun",
+        author: "Guillermo del Toro",
+        isbnMatch: false,
+      },
+      {
+        isbn: "9788408316084",
+        title: "Alas de sangre",
+        author: "Rebecca Yarros",
+        isbnMatch: true,
+      },
+    ]);
+    expect(merged.title).toBe("Alas de sangre");
+    expect(merged.author).toContain("Yarros");
+  });
 });

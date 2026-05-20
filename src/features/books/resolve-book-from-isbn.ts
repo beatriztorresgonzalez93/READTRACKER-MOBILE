@@ -44,11 +44,14 @@ function applyEnrichedFields(
     !isTranslationApiNoise(aiDescription) &&
     guessTextLanguage(aiDescription) === "es";
 
+  // Título/autor ya vienen de APIs o ISBN: la IA solo corrige sinopsis y género.
+  const lockIdentity = Boolean(base.title?.trim() && base.author?.trim());
+
   return {
     ...base,
-    title: enriched.title?.trim() || base.title,
-    author: enriched.author?.trim() || base.author,
-    publisher: enriched.publisher?.trim() || base.publisher,
+    title: lockIdentity ? base.title : enriched.title?.trim() || base.title,
+    author: lockIdentity ? base.author : enriched.author?.trim() || base.author,
+    publisher: lockIdentity ? base.publisher : enriched.publisher?.trim() || base.publisher,
     pages: enriched.pages?.trim() || base.pages,
     publishedYear: enriched.publishedYear?.trim() || base.publishedYear,
     genre: enriched.genre?.trim() || base.genre,
