@@ -6,7 +6,7 @@ import rateLimit from "express-rate-limit";
 import { Server } from "http";
 import { initDb } from "./config/db";
 import { pool } from "./config/db";
-import { env } from "./config/env";
+import { env, isAiBookMetadataConfigured } from "./config/env";
 import { BooksController } from "./controllers/booksController";
 import { CoversController } from "./controllers/coversController";
 import { AuthController } from "./controllers/authController";
@@ -115,6 +115,8 @@ export const createApp = () => {
   const booksRepository = new BooksRepository();
   const booksService = new BooksService(booksRepository);
   const booksController = new BooksController(booksService);
+  const bookMetadataEnrichmentService = new BookMetadataEnrichmentService();
+  const bookMetadataController = new BookMetadataController(bookMetadataEnrichmentService);
   const usersRepository = new UsersRepository();
   const authService = new AuthService(usersRepository);
   const requireAuthMw = createRequireAuth(authService);
@@ -140,7 +142,8 @@ export const createApp = () => {
         data: {
           status: "ok",
           timestamp: new Date().toISOString(),
-          uptimeSeconds: Math.floor(process.uptime())
+          uptimeSeconds: Math.floor(process.uptime()),
+          aiBookMetadataConfigured: isAiBookMetadataConfigured(),
         }
       });
     } catch (error) {

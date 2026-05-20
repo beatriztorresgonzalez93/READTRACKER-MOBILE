@@ -210,6 +210,60 @@ Con tu conocimiento del libro asociado a ese ISBN (edición en español si exist
 Si no identificas el libro con certeza razonable, devuelve "title": "" y el resto vacío.`;
 }
 
+async function runAiJsonPrompt(prompt: string): Promise<string> {
+  let rawText: string | null = null;
+  const fallbacksConfigured = Boolean(env.openaiApiKey || env.geminiApiKey);
+
+  if (env.groqApiKey) {
+    try {
+      rawText = await callOpenAiCompatible(prompt, {
+        apiKey: env.groqApiKey,
+        model: env.groqModel,
+        baseUrl: "https://api.groq.com/openai/v1",
+        providerName: "Groq",
+      });
+      logInfo("bookMetadataEnrichment.provider", { provider: "groq" });
+    } catch (error) {
+      logError("bookMetadataEnrichment.groq", error);
+      if (!fallbacksConfigured) throw error;
+    }
+  }
+
+  if (!rawText && env.openaiApiKey) {
+    try {
+      rawText = await callOpenAiCompatible(prompt, {
+        apiKey: env.openaiApiKey,
+        model: env.openaiModel,
+        baseUrl: "https://api.openai.com/v1",
+        providerName: "OpenAI",
+      });
+      logInfo("bookMetadataEnrichment.provider", { provider: "openai" });
+    } catch (error) {
+      logError("bookMetadataEnrichment.openai", error);
+      if (!env.geminiApiKey) throw error;
+    }
+  }
+
+  if (!rawText && env.geminiApiKey) {
+    rawText = await callGemini(prompt);
+    logInfo("bookMetadataEnrichment.provider", { provider: "gemini" });
+  }
+
+  if (!rawText) {
+    throw new AiEnrichmentError("No se pudo obtener respuesta de la IA");
+  }
+
+  return rawText;
+}
+
+function parseEnrichedJson(rawText: string): z.infer<typeof enrichedSchema> {
+  const parsed = enrichedSchema.safeParse(extractJsonObject(rawText));
+  if (!parsed.success) {
+    throw new AiEnrichmentError("JSON de IA con formato inválido");
+  }
+  return parsed.data;
+}
+
 export class BookMetadataEnrichmentService {
   async enrich(input: BookMetadataInput): Promise<BookMetadataEnriched> {
     if (!isAiBookMetadataConfigured()) {
@@ -219,7 +273,29 @@ export class BookMetadataEnrichmentService {
       throw new AiEnrichmentError("El título es obligatorio para enriquecer metadatos");
     }
 
-    const parsed = await this.completeJsonPrompt(buildPrompt(input));
+    const parsed = parseEnrichedJson(await runAiJsonPrompt(buildPrompt(input)));
     return mergeWithInput(input, parsed);
+  }
+
+  async discoverFromIsbn(isbn: string): Promise<BookMetadataEnriched> {
+    if (!isAiBookMetadataConfigured()) {
+      throw new AiEnrichmentNotConfiguredError();
+    }
+
+    const parsed = parseEnrichedJson(await runAiJsonPrompt(buildDiscoverFromIsbnPrompt(isbn)));
+    const title = parsed.title.trim();
+    if (!title) {
+      throw new AiEnrichmentError("No se identificó ningún libro para este ISBN");
+    }
+
+    return {
+      title,
+      author: parsed.author.trim(),
+      publisher: parsed.publisher.trim(),
+      pages: parsed.pages.trim(),
+      publishedYear: parsed.publishedYear.trim(),
+      genre: parsed.genre.trim(),
+      description: parsed.description.trim(),
+    };
   }
 }

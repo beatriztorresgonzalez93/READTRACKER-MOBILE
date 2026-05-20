@@ -1,5 +1,6 @@
 // ISBN → APIs públicas → corrección local → IA (Groq) en servidor.
 import {
+  BookMetadataApiError,
   discoverBookFromIsbnWithAi,
   enrichBookMetadataWithAi,
 } from "@/shared/api/book-metadata-api";
@@ -92,11 +93,27 @@ async function lookupWithAiFallback(
       throw error;
     }
 
-    const fromAi = await tryFillFromAiByIsbn(isbn, token);
-    if (fromAi) return fromAi;
+    try {
+      const fromAi = await tryFillFromAiByIsbn(isbn, token);
+      if (fromAi) return fromAi;
+    } catch (error) {
+      if (error instanceof BookMetadataApiError) {
+        if (error.code === "AI_NOT_CONFIGURED") {
+          throw new IsbnLookupError(
+            "El servidor no tiene la clave de IA activa. En Render: Environment → GROQ_API_KEY (gsk_…) y GROQ_MODEL → Save, Clear build cache & Deploy.",
+          );
+        }
+        if (error.code === "ROUTE_NOT_FOUND") {
+          throw new IsbnLookupError(
+            "El servidor en Render no tiene el código nuevo. Cambia la rama de deploy a version-pro (o fusiona con main) y redespliega.",
+          );
+        }
+      }
+      throw error;
+    }
 
     throw new IsbnLookupError(
-      "No encontramos este ISBN en bases públicas y la IA no pudo identificarlo. Comprueba que el servidor en Render está actualizado y tiene GROQ_API_KEY.",
+      "No encontramos este ISBN en bases públicas y la IA no pudo identificarlo. Puedes rellenar el formulario a mano.",
     );
   }
 }

@@ -10,6 +10,18 @@ export type EnrichedBookMetadata = Pick<
 type ApiResponse<T> = { data?: T };
 type ApiErrorBody = { code?: string; message?: string; error?: string };
 
+export type BookMetadataApiErrorCode = "AI_NOT_CONFIGURED" | "BOOK_NOT_FOUND" | "ROUTE_NOT_FOUND";
+
+export class BookMetadataApiError extends Error {
+  readonly code: BookMetadataApiErrorCode;
+
+  constructor(code: BookMetadataApiErrorCode, message: string) {
+    super(message);
+    this.name = "BookMetadataApiError";
+    this.code = code;
+  }
+}
+
 async function postMetadata<T>(token: string, path: string, body: unknown): Promise<T | null> {
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
     method: "POST",
@@ -31,16 +43,26 @@ async function postMetadata<T>(token: string, path: string, body: unknown): Prom
   }
 
   if (response.status === 503 && parsed?.code === "AI_NOT_CONFIGURED") {
-    return null;
+    throw new BookMetadataApiError(
+      "AI_NOT_CONFIGURED",
+      parsed.message ??
+        "El servidor no tiene IA configurada (añade GROQ_API_KEY en Render y vuelve a desplegar).",
+    );
   }
 
   // Servidor en Render aún sin desplegar /books/metadata/* → no romper el escaneo.
   if (response.status === 404 && parsed?.code === "NOT_FOUND") {
-    return null;
+    throw new BookMetadataApiError(
+      "ROUTE_NOT_FOUND",
+      "El servidor no tiene las rutas de metadatos. Despliega la rama version-pro en Render.",
+    );
   }
 
   if (response.status === 404 && parsed?.code === "BOOK_NOT_FOUND") {
-    return null;
+    throw new BookMetadataApiError(
+      "BOOK_NOT_FOUND",
+      parsed.message ?? "La IA no identificó este ISBN.",
+    );
   }
 
   if (!response.ok) {
