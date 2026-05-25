@@ -1,20 +1,10 @@
-// Pantalla de registro (gluestack-ui).
+// Pantalla de registro de usuario con validacion y feedback.
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Box,
-  Center,
-  Heading,
-  HStack,
-  Pressable,
-  Text,
-  VStack,
-} from "@gluestack-ui/themed";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { Link, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { router } from "expo-router";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useCallback, useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { useAuthFormScroll } from "@/features/auth/use-auth-form-scroll";
@@ -24,19 +14,19 @@ import { formatFirebaseAuthError } from "@/shared/lib/firebase-auth-errors";
 import { showAppAlert } from "@/shared/lib/show-app-alert";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
-import { AppLink } from "@/shared/ui/app-link";
 import { Screen } from "@/shared/ui/screen";
+import { useAppTheme } from "@/shared/ui/use-app-theme";
 
 export default function RegisterScreen() {
   const { scrollRef, scrollPasswordFieldIntoView } = useAuthFormScroll();
   const headerHeight = useHeaderHeight();
-  const insets = useSafeAreaInsets();
 
   const registerSchema = z.object({
     name: z.string().trim().min(1, "El nombre es obligatorio."),
     email: z.string().trim().email("Introduce un correo valido."),
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   });
+  const theme = useAppTheme();
   const { register, isAuthenticated, syncError, clearSyncError } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,7 +41,7 @@ export default function RegisterScreen() {
           (document.activeElement as HTMLElement | null)?.blur?.();
         });
       }
-    }, []),
+    }, [])
   );
 
   useEffect(() => {
@@ -84,8 +74,74 @@ export default function RegisterScreen() {
     }
   }
 
+  const styles = StyleSheet.create({
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "flex-start",
+      gap: 12,
+      paddingTop: 0,
+      paddingBottom: 160,
+    },
+    lead: {
+      color: theme.colors.textMutedOnDark,
+      fontSize: 16,
+      lineHeight: 22,
+      marginBottom: 4,
+    },
+    registerRow: {
+      flexDirection: "row",
+      gap: 6,
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    registerHint: {
+      color: theme.colors.textMutedOnDark,
+    },
+    link: {
+      color: theme.colors.primary,
+      fontWeight: "700",
+    },
+    trialBanner: {
+      flexDirection: "row",
+      gap: 10,
+      alignItems: "flex-start",
+      padding: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.bgSoft,
+      marginBottom: 4,
+    },
+    trialBannerText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 21,
+      color: theme.colors.text,
+    },
+    legalNotice: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: theme.colors.textMutedOnDark,
+      textAlign: "center",
+      marginTop: -2,
+    },
+    syncErrorBox: {
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.accent,
+      backgroundColor: theme.colors.bgSoft,
+      marginBottom: 4,
+    },
+    syncErrorText: {
+      color: theme.colors.textOnDark,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+  });
+
   return (
-    <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7">
+    <Screen edges={["bottom", "left", "right"]} style={{ paddingTop: 4 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -93,106 +149,72 @@ export default function RegisterScreen() {
       >
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={{
-            flexGrow: 1,
-            paddingTop: insets.top + 16,
-            paddingBottom: insets.bottom + 24,
-            paddingHorizontal: 20,
-          }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled
         >
-          <VStack space="lg">
-            <VStack space="xs">
-              <Heading size="xl" color="$primary800">
-                Crear cuenta
-              </Heading>
-              <Text size="sm" color="$textLight700">
-                Comienza a registrar tus lecturas
-              </Text>
-            </VStack>
-
-            <HStack
-              space="sm"
-              alignItems="flex-start"
-              p="$3"
-              borderRadius="$md"
-              borderWidth={1}
-              borderColor="$primary200"
-              bg="$backgroundLight50"
-            >
-              <Ionicons name="gift-outline" size={22} color="#A87D42" />
-              <Text flex={1} size="sm" color="$textLight900" lineHeight={21}>
-                {subscriptionCopy.trialLead}
-              </Text>
-            </HStack>
-
-            {syncError ? (
-              <Box bg="$error100" p="$3" borderRadius="$md" borderWidth={1} borderColor="$error300">
-                <Text size="sm" color="$error700">
-                  {syncError}
-                </Text>
-              </Box>
-            ) : null}
-
-            <AppInput
-              label="Nombre"
-              value={name}
-              onChangeText={(value) => {
-                setName(value);
-                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-              }}
-              placeholder="Tu nombre"
-              error={errors.name}
-            />
-            <AppInput
-              label="Correo electrónico"
-              value={email}
-              onChangeText={(value) => {
-                setEmail(value);
-                if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholder="tu@email.com"
-              error={errors.email}
-            />
-            <AppInput
-              label="Contraseña"
-              value={password}
-              onChangeText={(value) => {
-                setPassword(value);
-                if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-              }}
-              secureTextEntry
-              autoCapitalize="none"
-              placeholder="Mínimo 6 caracteres"
-              error={errors.password}
-              onFocus={scrollPasswordFieldIntoView}
-            />
-
-            <AppButton
-              label={isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
-              onPress={onSubmit}
-              isDisabled={isSubmitting}
-              isLoading={isSubmitting}
-            />
-
-            <Text size="xs" color="$textLight500" textAlign="center">
-              Al registrarte, aceptas los Términos de servicio y la Política de privacidad (próximamente).
-            </Text>
-
-            <Center>
-              <Text size="sm" color="$textLight700">
-                ¿Ya tienes cuenta?
-              </Text>
-              <AppLink href={"/(auth)/login" as never}>
-                <Text size="sm" fontWeight="$bold" color="$primary600" mt="$1">
-                  Inicia sesión
-                </Text>
-              </AppLink>
-            </Center>
-          </VStack>
+          <Text style={styles.lead}>Comienza a registrar tus lecturas</Text>
+          <View style={styles.trialBanner} accessibilityRole="text">
+            <Ionicons name="gift-outline" size={22} color={theme.colors.primary} />
+            <Text style={styles.trialBannerText}>{subscriptionCopy.trialLead}</Text>
+          </View>
+          {syncError ? (
+            <View style={styles.syncErrorBox} accessibilityRole="alert">
+              <Text style={styles.syncErrorText}>{syncError}</Text>
+            </View>
+          ) : null}
+          <AppInput
+            label="Nombre"
+            value={name}
+            onChangeText={(value) => {
+              setName(value);
+              if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+            }}
+            placeholder="Tu nombre"
+            error={errors.name}
+          />
+          <AppInput
+            label="Correo"
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="tu@email.com"
+            error={errors.email}
+          />
+          <AppInput
+            label="Contraseña"
+            value={password}
+            onChangeText={(value) => {
+              setPassword(value);
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+            }}
+            secureTextEntry
+            autoCapitalize="none"
+            placeholder="********"
+            error={errors.password}
+            onFocus={scrollPasswordFieldIntoView}
+          />
+          <AppButton
+            label={isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
+            onPress={onSubmit}
+            disabled={isSubmitting}
+          />
+          <Text style={styles.legalNotice}>
+            Al registrarte, aceptas los Términos de servicio y la Política de privacidad, incluida la política de Uso
+            de Cookies. (próximamente)
+          </Text>
+          <View style={styles.registerRow}>
+            <Text style={styles.registerHint}>Ya tienes cuenta?</Text>
+            <Link href={"/(auth)/login" as never} style={styles.link}>
+              Inicia sesión
+            </Link>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>

@@ -8,6 +8,7 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: true,
         headerTitleAlign: "center",
+        headerLargeTitle: false,
         ...(Platform.OS === "web"
           ? {
               // Evita pantallas inactivas con aria-hidden que roban foco y bloquean clics en web.
@@ -16,7 +17,7 @@ export default function AuthLayout() {
           : {}),
       }}
     >
-      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
       <Stack.Screen name="register" options={{ title: "Crear cuenta" }} />
     </Stack>
   );

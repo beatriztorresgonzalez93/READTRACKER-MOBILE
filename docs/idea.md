@@ -20,6 +20,7 @@ Uso diario esperado:
 - Autenticacion con **Firebase Auth** (email/contrasena); la API valida **ID tokens** con Firebase Admin.
 - Biblioteca personal: listado (paginado), busqueda, filtros y vista de detalle; alta y edicion de libro.
 - Portadas: **busqueda online** via API (`GET /covers/search`, Open Library + Google Books en servidor); **subida opcional** a **AWS S3** con URL firmada tras autenticacion Firebase.
+- **ISBN:** escaneo o entrada manual al dar de alta un libro; metadatos desde APIs publicas + enriquecimiento opcional con IA en servidor (Groq) y traduccion en cliente.
 - Registro de sesiones de lectura y actualizacion de progreso.
 - Historial de lectura por fechas/sesiones.
 - Wishlist con creacion, edicion, eliminacion y marcado como comprado.
@@ -33,4 +34,4 @@ Uso diario esperado:
 - Recomendaciones de libros basadas en historial.
 - Sincronizacion multi-dispositivo con modo offline-first.
 - Exportacion de reportes de lectura (PDF/CSV).
-- Catalogos externos mas profundos (metadatos al escanear ISBN, mas fuentes). La busqueda basica de portadas va por la API actual (`GET /covers/search`).
+- Mas fuentes de catalogo y recomendaciones automaticas mas alla del flujo ISBN actual.
