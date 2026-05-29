@@ -275,6 +275,34 @@ El servidor necesita `zod` en `server/package.json`. Asegúrate de desplegar un 
 | `react-native-teoria.md` | Notas RN / Expo |
 | `compra-pro-licencia-perpetua-borrador-es.md` | Borrador comercial Pro (no legal) |
 
+## Notificaciones
+
+| Tipo | Dónde | Uso |
+|------|--------|-----|
+| **Locales** | Al añadir libro | El usuario programa fecha/hora (alarma de lectura). |
+| **Push (re-engagement)** | Servidor + Expo Push | Si llevas varios días sin abrir la app, el backend envía un aviso (como en juegos). |
+
+**Configuración push**
+
+1. Crea un proyecto en [expo.dev](https://expo.dev) y copia el **Project ID** en `.env` → `EXPO_PUBLIC_EAS_PROJECT_ID`.
+2. En el servidor (Render): `CRON_SECRET`, opcional `ENGAGEMENT_INACTIVE_DAYS=3`, `ENGAGEMENT_PUSH_COOLDOWN_DAYS=7`.
+3. Programa un cron diario (Render Cron o similar) desde `server/`:
+
+```bash
+CRON_SECRET=xxx API_BASE_URL=https://readtracker-api.onrender.com/api/v1 npm run push:engagement
+```
+
+La app registra el token al iniciar sesión y actualiza `last_active_at` al abrir la app o marcar páginas. El usuario puede desactivar los avisos en **Ajustes**.
+
+**Expo Go:** desde SDK 53, las **push remotas no funcionan en Expo Go** (solo alarmas locales). Para probar re-engagement compila un development build:
+
+```bash
+npx expo run:android
+# o: npx expo run:ios
+```
+
+Documentación: [development builds](https://docs.expo.dev/develop/development-builds/introduction/).
+
 ## Puntos a destacar
 
 - Producto real de seguimiento lector (no solo demo): biblioteca, progreso, historial, estadísticas, wishlist.

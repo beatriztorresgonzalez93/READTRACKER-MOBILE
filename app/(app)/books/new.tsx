@@ -3,6 +3,12 @@ import { Heading, Text, VStack } from "@gluestack-ui/themed";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Alert, Platform, ScrollView } from "react-native";
+
+import {
+  defaultReminderDate,
+  ReadingReminderField,
+} from "@/shared/notifications/reading-reminder-field";
+import { scheduleReminder } from "@/shared/notifications/schedule-reminder";
 import { z } from "zod";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -12,9 +18,8 @@ import { useBookCoverField } from "@/features/books/use-book-cover-field";
 import { useCreateBook } from "@/features/books/use-books";
 import { useFillBookFromIsbn } from "@/features/books/use-fill-book-from-isbn";
 import { AppButton } from "@/shared/ui/app-button";
-import { AppInput } from "@/shared/ui/app-input";
 import { BookFormFooter } from "@/shared/ui/book-form-footer";
-import { BookFormLayout, BookFormMultilineInput } from "@/shared/ui/book-form-layout";
+import { BookFormInput, BookFormLayout, BookFormMultilineInput } from "@/shared/ui/book-form-layout";
 import { Screen } from "@/shared/ui/screen";
 import { useNewBookDraftStore } from "@store/new-book-draft";
 
@@ -58,6 +63,8 @@ export default function NewBookScreen() {
   const resetDraft = useNewBookDraftStore((state) => state.resetDraft);
   const [errors, setErrors] = useState<{ title?: string; author?: string; pages?: string; publishedYear?: string }>({});
   const [isbnScannerVisible, setIsbnScannerVisible] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDate, setReminderDate] = useState(defaultReminderDate);
   const formScrollRef = useRef<ScrollView>(null);
   const fillFromIsbn = useFillBookFromIsbn();
 
@@ -107,7 +114,20 @@ export default function NewBookScreen() {
         description: parsed.data.description?.trim() || undefined,
         coverUrl: selectedCoverUrl.trim() || undefined,
       });
-      Alert.alert("Libro creado", "El libro se ha anadido correctamente.");
+
+      let reminderMessage = "";
+      if (reminderEnabled && Platform.OS !== "web") {
+        const bookTitle = parsed.data.title.trim();
+        const notificationId = await scheduleReminder(bookTitle, reminderDate);
+        if (notificationId) {
+          reminderMessage = "\n\nRecordatorio de lectura programado.";
+        } else {
+          reminderMessage =
+            "\n\nNo se pudo programar el recordatorio (permiso denegado o fecha no válida).";
+        }
+      }
+
+      Alert.alert("Libro creado", `El libro se ha anadido correctamente.${reminderMessage}`);
       resetDraft();
       router.back();
     } catch (error) {
@@ -134,7 +154,7 @@ export default function NewBookScreen() {
         onPress={() => setIsbnScannerVisible(true)}
       />
 
-      <AppInput
+      <BookFormInput
               label="Título *"
               value={title}
               onChangeText={(value) => {
@@ -145,7 +165,7 @@ export default function NewBookScreen() {
               placeholder="Ej: Alas de hierro"
               error={errors.title}
             />
-            <AppInput
+            <BookFormInput
               label="Autor *"
               value={author}
               onChangeText={(value) => {
@@ -156,7 +176,7 @@ export default function NewBookScreen() {
               placeholder="Ej: Rebecca Yarros"
               error={errors.author}
             />
-            <AppInput
+            <BookFormInput
               label="Paginas"
               value={pages}
               onChangeText={(value) => {
@@ -168,7 +188,7 @@ export default function NewBookScreen() {
               placeholder="Ej: 520"
               error={errors.pages}
             />
-            <AppInput
+            <BookFormInput
               label="Año de publicacion"
               value={publishedYear}
               onChangeText={(value) => {
@@ -180,14 +200,14 @@ export default function NewBookScreen() {
               placeholder="Ej: 2025"
               error={errors.publishedYear}
             />
-            <AppInput
+            <BookFormInput
               label="Género"
               value={genre}
               onChangeText={setGenre}
               autoCapitalize="sentences"
               placeholder="Ej: Fantasia"
             />
-            <AppInput
+            <BookFormInput
               label="Editorial"
               value={publisher}
               onChangeText={setPublisher}
@@ -210,6 +230,12 @@ export default function NewBookScreen() {
               autoCapitalize="sentences"
               placeholder="Resumen breve del libro"
               numberOfLines={6}
+            />
+            <ReadingReminderField
+              enabled={reminderEnabled}
+              onEnabledChange={setReminderEnabled}
+              date={reminderDate}
+              onDateChange={setReminderDate}
             />
     </VStack>
   );

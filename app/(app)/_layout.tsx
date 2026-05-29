@@ -3,6 +3,7 @@ import { Redirect, Stack, useSegments } from "expo-router";
 import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { PushNotificationsBootstrap } from "@/features/notifications/push-notifications-bootstrap";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import { scriptoriumNativeHeader } from "@/shared/ui/app-colors";
 import { AppLoader } from "@/shared/ui/app-loader";
@@ -41,7 +42,9 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <Stack screenOptions={scriptoriumNativeHeader}>
+    <>
+      <PushNotificationsBootstrap />
+      <Stack screenOptions={scriptoriumNativeHeader}>
       <Stack.Screen
         name="(tabs)"
         options={{ headerShown: false, title: "" }}
@@ -214,7 +217,8 @@ export default function ProtectedLayout() {
         name="upgrade/checkout"
         options={{ ...scriptoriumNativeHeader, title: "Pago Pro", headerShown: true }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 }
 

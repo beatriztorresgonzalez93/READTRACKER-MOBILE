@@ -7,6 +7,9 @@ import { Platform, StyleSheet, Text, TextInput } from "react-native";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/providers/app-providers";
+import { setupNotifications } from "@/shared/notifications/setup-notifications";
+
+setupNotifications();
 
 const defaultTextStyle = { fontFamily: "Fraunces_400Regular" as const };
 

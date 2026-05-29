@@ -16,6 +16,23 @@ const LEIDOS_HOME_CAROUSEL_QUERY: LibraryBooksQuery = {
   sort: "recientes",
 };
 
+/** Tamaño de página de la biblioteca (grid infinito). */
+export const LIBRARY_FEED_PAGE_SIZE = 20;
+
+/** Al ver ~este número de libros desde el final cargado, pedir la página siguiente. */
+export const LIBRARY_FEED_PREFETCH_AT = 10;
+
+/** Índice visible a partir del cual disparar prefetch de la siguiente página. */
+export function getLibraryPrefetchThresholdIndex(loadedCount: number): number {
+  if (loadedCount <= 0) {
+    return 0;
+  }
+  if (loadedCount <= LIBRARY_FEED_PREFETCH_AT) {
+    return Math.max(0, loadedCount - 1);
+  }
+  return loadedCount - LIBRARY_FEED_PREFETCH_AT - 1;
+}
+
 export function useLeyendoPreview() {
   const { token } = useAuth();
 
@@ -56,7 +73,8 @@ export function useBooksFeed(listQuery: LibraryBooksQuery) {
       listQuery.genre,
       listQuery.sort,
     ],
-    queryFn: ({ pageParam = 0 }) => getBooksPage(token ?? "", pageParam, 10, listQuery),
+    queryFn: ({ pageParam = 0 }) =>
+      getBooksPage(token ?? "", pageParam, LIBRARY_FEED_PAGE_SIZE, listQuery),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.offset + lastPage.limit : undefined),
     enabled: Boolean(token),
     initialPageParam: 0,

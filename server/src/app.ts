@@ -14,6 +14,7 @@ import { WishlistController } from "./controllers/wishlistController";
 import { ReadingSessionsController } from "./controllers/readingSessionsController";
 import { BillingController } from "./controllers/billingController";
 import { UploadsController } from "./controllers/uploadsController";
+import { NotificationsController } from "./controllers/notificationsController";
 import { errorHandler } from "./middlewares/errorHandler";
 import { createRequireAuth } from "./middlewares/requireAuth";
 import { BooksRepository } from "./repositories/booksRepository";
@@ -27,6 +28,10 @@ import { createWishlistRouter } from "./routes/wishlistRoutes";
 import { createReadingSessionsRouter } from "./routes/readingSessionsRoutes";
 import { createBillingRouter } from "./routes/billingRoutes";
 import { createUploadsRouter } from "./routes/uploadsRoutes";
+import { createNotificationsRouter } from "./routes/notificationsRoutes";
+import { PushTokensRepository } from "./repositories/pushTokensRepository";
+import { EngagementPushRepository } from "./repositories/engagementPushRepository";
+import { NotificationsService } from "./services/notificationsService";
 import { AuthService } from "./services/authService";
 import { BookMetadataEnrichmentService } from "./services/bookMetadataEnrichmentService";
 import { BooksService } from "./services/booksService";
@@ -128,11 +133,18 @@ export const createApp = () => {
   const wishlistRepository = new WishlistRepository();
   const wishlistService = new WishlistService(wishlistRepository);
   const wishlistController = new WishlistController(wishlistService);
+  const pushTokensRepository = new PushTokensRepository();
+  const engagementPushRepository = new EngagementPushRepository();
   const readingSessionsRepository = new ReadingSessionsRepository();
-  const readingSessionsService = new ReadingSessionsService(readingSessionsRepository);
+  const readingSessionsService = new ReadingSessionsService(
+    readingSessionsRepository,
+    engagementPushRepository,
+  );
   const readingSessionsController = new ReadingSessionsController(readingSessionsService);
   const billingService = new BillingService(usersRepository);
   const billingController = new BillingController(billingService);
+  const notificationsService = new NotificationsService(pushTokensRepository, engagementPushRepository);
+  const notificationsController = new NotificationsController(notificationsService);
 
   app.post("/api/v1/billing/webhook", billingController.webhook);
   app.get("/api/v1/health", async (_req, res) => {
@@ -159,6 +171,10 @@ export const createApp = () => {
   app.use("/api/v1/wishlist", createWishlistRouter(wishlistController, requireAuthMw));
   app.use("/api/v1/reading-sessions", createReadingSessionsRouter(readingSessionsController, requireAuthMw));
   app.use("/api/v1/billing", createBillingRouter(billingController, requireAuthMw));
+  app.use(
+    "/api/v1/notifications",
+    createNotificationsRouter(notificationsController, requireAuthMw),
+  );
   app.get("/api/v1/acquisitions", requireAuthMw, wishlistController.listAcquisitions);
 
   app.use((_req, res) => {

@@ -13,10 +13,9 @@ import {
   useUpdateBook,
 } from "@/features/books/use-books";
 import { AppButton } from "@/shared/ui/app-button";
-import { AppInput } from "@/shared/ui/app-input";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { BookFormFooter } from "@/shared/ui/book-form-footer";
-import { BookFormLayout, BookFormMultilineInput } from "@/shared/ui/book-form-layout";
+import { BookFormInput, BookFormLayout, BookFormMultilineInput } from "@/shared/ui/book-form-layout";
 import { Screen } from "@/shared/ui/screen";
 
 const editBookSchema = z.object({
@@ -149,7 +148,7 @@ export default function EditBookScreen() {
         </VStack>
       ) : null}
 
-      <AppInput
+      <BookFormInput
         label="Título *"
         value={title}
         onChangeText={(value) => {
@@ -160,7 +159,7 @@ export default function EditBookScreen() {
         placeholder="Ej: Alas de hierro"
         error={errors.title}
       />
-      <AppInput
+      <BookFormInput
         label="Autor *"
         value={author}
         onChangeText={(value) => {
@@ -171,7 +170,7 @@ export default function EditBookScreen() {
         placeholder="Ej: Rebecca Yarros"
         error={errors.author}
       />
-      <AppInput
+      <BookFormInput
         label="Paginas"
         value={pages}
         onChangeText={(value) => {
@@ -183,7 +182,7 @@ export default function EditBookScreen() {
         placeholder="Ej: 520"
         error={errors.pages}
       />
-      <AppInput
+      <BookFormInput
         label="Año de publicacion"
         value={publishedYear}
         onChangeText={(value) => {
@@ -195,14 +194,14 @@ export default function EditBookScreen() {
         placeholder="Ej: 2025"
         error={errors.publishedYear}
       />
-      <AppInput
+      <BookFormInput
         label="Género"
         value={genre}
         onChangeText={setGenre}
         autoCapitalize="sentences"
         placeholder="Ej: Fantasia"
       />
-      <AppInput
+      <BookFormInput
         label="Editorial"
         value={publisher}
         onChangeText={setPublisher}

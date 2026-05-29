@@ -1,5 +1,7 @@
 import {
   useBookDetail,
+  getLibraryPrefetchThresholdIndex,
+  LIBRARY_FEED_PAGE_SIZE,
   useBooksFeed,
   useBooksSummary,
   useCreateBook,
@@ -138,8 +140,31 @@ describe("books hooks query/mutation wiring", () => {
       getNextPageParam: (lastPage: { hasMore: boolean; offset: number; limit: number }) => number | undefined;
     };
 
-    expect(feedConfig.getNextPageParam({ hasMore: true, offset: 10, limit: 10 })).toBe(20);
-    expect(feedConfig.getNextPageParam({ hasMore: false, offset: 10, limit: 10 })).toBeUndefined();
+    expect(feedConfig.getNextPageParam({ hasMore: true, offset: 20, limit: 20 })).toBe(40);
+    expect(feedConfig.getNextPageParam({ hasMore: false, offset: 20, limit: 20 })).toBeUndefined();
+  });
+
+  it("uses library page size of 20 in feed queryFn", () => {
+    const query = {
+      search: "",
+      status: "all",
+      shelf: "all",
+      genre: "",
+      sort: "updated_desc",
+    } as unknown as LibraryBooksQuery;
+
+    const feedConfig = useBooksFeed(query) as unknown as {
+      queryFn: (ctx: { pageParam: number }) => Promise<unknown>;
+    };
+
+    void feedConfig.queryFn({ pageParam: 0 });
+    expect(getBooksPage).toHaveBeenCalledWith("token-test", 0, LIBRARY_FEED_PAGE_SIZE, query);
+  });
+
+  it("computes prefetch threshold from loaded count", () => {
+    expect(getLibraryPrefetchThresholdIndex(20)).toBe(9);
+    expect(getLibraryPrefetchThresholdIndex(40)).toBe(29);
+    expect(getLibraryPrefetchThresholdIndex(8)).toBe(7);
   });
 
   it("configures summary, detail and preview queries", () => {

@@ -103,6 +103,12 @@ export const env = {
   /** Google AI Studio: alternativa si no hay otras claves. */
   geminiApiKey: (process.env.GEMINI_API_KEY ?? "").trim(),
   geminiModel: (process.env.GEMINI_MODEL ?? "gemini-2.0-flash").trim(),
+  /** Campañas push de re-engagement (Expo Push API). */
+  pushEngagementEnabled: parseBoolean(process.env.PUSH_ENGAGEMENT_ENABLED, true),
+  engagementInactiveDays: parseNumber(process.env.ENGAGEMENT_INACTIVE_DAYS, 3),
+  engagementPushCooldownDays: parseNumber(process.env.ENGAGEMENT_PUSH_COOLDOWN_DAYS, 7),
+  /** Secreto para POST /api/v1/notifications/cron/engagement (Render Cron, GitHub Actions, etc.). */
+  cronSecret: (process.env.CRON_SECRET ?? "").trim(),
 };
 
 export function isAiBookMetadataConfigured(): boolean {

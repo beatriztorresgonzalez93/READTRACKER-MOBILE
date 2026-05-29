@@ -13,7 +13,8 @@
     "smoke:predeploy": "npm run build && npm run test",
     "cleanup:reading-sessions": "node scripts/cleanup-reading-session-duplicates.js",
     "seed:books": "node scripts/seed-books.js",
-    "seed:clear-covers": "node scripts/clear-fake-seed-covers.js"
+    "seed:clear-covers": "node scripts/clear-fake-seed-covers.js",
+    "push:engagement": "node scripts/send-engagement-push.js"
   },
   "keywords": [
     "readtracker",

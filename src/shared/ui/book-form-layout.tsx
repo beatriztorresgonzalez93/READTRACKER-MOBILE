@@ -3,7 +3,6 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import {
   createContext,
   useContext,
-  useEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -11,7 +10,6 @@ import {
   type RefObject,
 } from "react";
 import {
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -41,10 +39,28 @@ export function useBookFormScroll() {
   return ctx;
 }
 
-type BookFormMultilineInputProps = ComponentProps<typeof AppInput>;
+type BookFormInputProps = ComponentProps<typeof AppInput>;
+
+/** Campo de texto con scroll al enfocar para que no quede bajo el teclado. */
+export function BookFormInput({ onFocus, ...props }: BookFormInputProps) {
+  const fieldRef = useRef<View>(null);
+  const scrollOnFocus = useScrollBookFieldOnFocus(fieldRef);
+
+  return (
+    <View ref={fieldRef} collapsable={false}>
+      <AppInput
+        {...props}
+        onFocus={(event) => {
+          scrollOnFocus();
+          onFocus?.(event);
+        }}
+      />
+    </View>
+  );
+}
 
 /** Campo multilínea con scroll al enfocar (sinopsis, reseña, etc.). */
-export function BookFormMultilineInput({ onFocus, ...props }: BookFormMultilineInputProps) {
+export function BookFormMultilineInput({ onFocus, ...props }: BookFormInputProps) {
   const fieldRef = useRef<View>(null);
   const scrollOnFocus = useScrollBookFieldOnFocus(fieldRef);
 
@@ -93,27 +109,10 @@ export function BookFormLayout({ scrollRef, children, footer, scrollProps }: Boo
   const scrollViewportRef = useRef<View>(null);
   const scrollOffsetYRef = useRef(0);
   const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { contentContainerStyle, onScroll, ...restScrollProps } = scrollProps ?? {};
 
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const scrollBottomPad = keyboardHeight > 0 ? Math.max(keyboardHeight, 24) + 16 : 24;
+  /** Solo un poco de aire bajo el último campo; no duplicar la altura del teclado (eso vacía el scroll). */
+  const scrollBottomPad = 24;
 
   const contextValue: BookFormScrollContextValue = {
     scrollRef,
@@ -132,6 +131,7 @@ export function BookFormLayout({ scrollRef, children, footer, scrollProps }: Boo
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
+        enabled={Platform.OS === "ios"}
         keyboardVerticalOffset={headerHeight}
       >
         <View ref={scrollViewportRef} style={{ flex: 1 }} collapsable={false}>
@@ -140,18 +140,21 @@ export function BookFormLayout({ scrollRef, children, footer, scrollProps }: Boo
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+            automaticallyAdjustKeyboardInsets={false}
             scrollEventThrottle={16}
             onScroll={handleScroll}
             onLayout={(event) => {
               setScrollViewportHeight(event.nativeEvent.layout.height);
             }}
-            contentContainerStyle={[{ paddingBottom: scrollBottomPad }, contentContainerStyle]}
+            contentContainerStyle={[
+              { paddingBottom: scrollBottomPad, flexGrow: 0 },
+              contentContainerStyle,
+            ]}
             {...restScrollProps}
           >
             <View collapsable={false}>{children}</View>
           </ScrollView>
-          {keyboardHeight === 0 ? footer : null}
+          {footer}
         </View>
       </KeyboardAvoidingView>
     </BookFormScrollContext.Provider>

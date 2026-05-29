@@ -12,7 +12,7 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import { router } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -21,6 +21,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  type ViewToken,
 } from "react-native";
 import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,7 +31,10 @@ import {
   LIBRARY_SORT_LABELS,
   LIBRARY_STATUS_LABELS,
 } from "@/features/books/library-filter-labels";
-import { useBooksFeed } from "@/features/books/use-books";
+import {
+  getLibraryPrefetchThresholdIndex,
+  useBooksFeed,
+} from "@/features/books/use-books";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import type { Book, LibraryBooksQuery } from "@/shared/types/books";
 import { AppButton } from "@/shared/ui/app-button";
@@ -207,11 +211,37 @@ export default function LibraryScreen() {
     }
   }, [booksFeed.hasNextPage, booksFeed.isFetchingNextPage, booksFeed.fetchNextPage]);
 
+  const books = booksFeed.data?.pages.flatMap((page) => page.items) ?? [];
+  const prefetchThresholdRef = useRef(-1);
+
+  useEffect(() => {
+    prefetchThresholdRef.current = -1;
+  }, [listQuery]);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (books.length === 0) {
+        return;
+      }
+      const maxVisibleIndex = viewableItems.reduce(
+        (max, entry) => (entry.index != null && entry.index > max ? entry.index : max),
+        -1,
+      );
+      const threshold = getLibraryPrefetchThresholdIndex(books.length);
+      if (maxVisibleIndex < threshold || threshold === prefetchThresholdRef.current) {
+        return;
+      }
+      prefetchThresholdRef.current = threshold;
+      loadMoreBooks();
+    },
+    [books.length, loadMoreBooks],
+  );
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 }).current;
+
   if (booksFeed.isPending && !booksFeed.data) {
     return <AppLoader />;
   }
-
-  const books = booksFeed.data?.pages.flatMap((page) => page.items) ?? [];
 
   const emptyTitle = filtered ? "Nada coincide con estos filtros" : "Sin libros por ahora";
   const emptyDescription = filtered
@@ -336,7 +366,9 @@ export default function LibraryScreen() {
           </Box>
         }
         onEndReached={loadMoreBooks}
-        onEndReachedThreshold={0.4}
+        onEndReachedThreshold={0.35}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         ListFooterComponent={
           booksFeed.isFetchingNextPage ? (
             <Box py="$5" alignItems="center">

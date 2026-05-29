@@ -9,19 +9,50 @@ import {
 } from "@gluestack-ui/themed";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { Platform, StyleSheet } from "react-native";
+import * as Notifications from "expo-notifications";
+import { Alert, Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import { AppLink } from "@/shared/ui/app-link";
 import { APP_CREAM_BG } from "@/shared/ui/app-colors";
-import { showNotificationsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
+import { showPlaceholderAlert } from "@/shared/ui/placeholder-alerts";
 
 export type ScriptoriumHeaderProps = {
   /** Mismo chrome con control para volver (stack: detalle / anadir libro). */
   showBackButton?: boolean;
 };
+
+async function onNotificationsPress() {
+  if (Platform.OS === "web") {
+    showPlaceholderAlert(
+      "Solo en móvil",
+      "Los recordatorios locales están disponibles en la app para iOS y Android. Al añadir un libro puedes programar uno.",
+    );
+    return;
+  }
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  if (scheduled.length === 0) {
+    Alert.alert(
+      "Recordatorios",
+      "No tienes recordatorios programados. Al añadir un libro, activa «Programar recordatorio de lectura».",
+    );
+    return;
+  }
+
+  const lines = scheduled.slice(0, 5).map((item) => {
+    const title = item.content.title ?? "ReadTracker";
+    const body = item.content.body ?? "";
+    return body ? `${title}: ${body}` : title;
+  });
+  const more = scheduled.length > 5 ? `\n… y ${scheduled.length - 5} más` : "";
+  Alert.alert(
+    "Recordatorios programados",
+    `${scheduled.length} pendiente(s):\n\n${lines.join("\n")}${more}`,
+  );
+}
 
 export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -139,8 +170,10 @@ export function ScriptoriumHeader({ showBackButton = false }: ScriptoriumHeaderP
             <Pressable
               hitSlop={12}
               p="$1"
-              accessibilityLabel="Notificaciones (próximamente)"
-              onPress={showNotificationsComingSoonAlert}
+              accessibilityLabel="Recordatorios programados"
+              onPress={() => {
+                void onNotificationsPress();
+              }}
             >
               <Ionicons name="notifications-outline" size={24} color="#2D1F15" />
             </Pressable>

@@ -176,6 +176,7 @@ export default function BookDetailScreen() {
         <HStack space="md" alignItems="flex-start">
           <BookCover
             uri={book?.coverUrl}
+            title={book?.title}
             width={82}
             aspectRatio={1.45}
             borderRadius={4}
@@ -377,6 +378,7 @@ export default function BookDetailScreen() {
                   <Pressable style={styles.similarCard}>
                     <BookCover
                       uri={item.coverUrl}
+                      title={item.title}
                       width={102}
                       aspectRatio={1.45}
                       borderRadius={6}
