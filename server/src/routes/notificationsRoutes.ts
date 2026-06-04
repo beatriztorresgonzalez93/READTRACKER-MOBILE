@@ -14,6 +14,8 @@ export const createNotificationsRouter = (
   router.get("/preferences", requireAuth, controller.getPreferences);
   router.patch("/preferences", requireAuth, controller.patchPreferences);
   router.post("/cron/engagement", controller.runEngagementCron);
+  router.post("/dev/simulate-inactivity/me", requireAuth, controller.simulateInactivityMe);
+  router.post("/dev/simulate-inactivity", controller.simulateInactivityByEmail);
 
   return router;
 };

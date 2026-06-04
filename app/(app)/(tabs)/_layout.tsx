@@ -18,7 +18,7 @@ function NativeHeaderRight() {
       <Pressable
         onPress={() => router.push("/(app)/app-menu" as never)}
         hitSlop={10}
-        accessibilityLabel="Más opciones y ajustes"
+        accessibilityLabel="Ajustes"
       >
         <View style={nativeStyles.headerGearWrap}>
           <Ionicons name="settings-outline" size={22} color={scriptoriumColors.primary} />

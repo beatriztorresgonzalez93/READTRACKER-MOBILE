@@ -3,11 +3,18 @@ import { env } from "../config/env";
 import { logError } from "../logger";
 import { NotificationsService } from "../services/notificationsService";
 import { sendApiError } from "../utils/apiResponse";
+import { isDevPushToolsEnabled } from "../utils/devPushTools";
 
 const EXPO_PUSH_TOKEN_PREFIX = "ExponentPushToken[";
 
 function isValidExpoPushToken(value: string): boolean {
   return value.startsWith(EXPO_PUSH_TOKEN_PREFIX) && value.endsWith("]");
+}
+
+function parseSimulateDays(value: unknown): number {
+  const n = Number(value);
+  if (Number.isFinite(n) && n >= 1) return Math.floor(n);
+  return 5;
 }
 
 export class NotificationsController {
@@ -110,6 +117,84 @@ export class NotificationsController {
     } catch (err) {
       logError("NotificationsController.patchPreferences", err);
       sendApiError(res, 500, "PREFERENCES_UPDATE_FAILED", "No se pudieron guardar las preferencias");
+    }
+  };
+
+  simulateInactivityMe = async (req: Request, res: Response) => {
+    if (!isDevPushToolsEnabled()) {
+      sendApiError(res, 404, "NOT_FOUND", "Ruta no encontrada");
+      return;
+    }
+
+    const userId = res.locals.userId as string | undefined;
+    if (!userId) {
+      sendApiError(res, 401, "AUTH_REQUIRED", "No autorizado");
+      return;
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const inactiveDays = parseSimulateDays(body.inactiveDays);
+    const clearCooldown = body.clearCooldown !== false;
+
+    try {
+      const data = await this.service.simulateInactivityForUser(userId, { inactiveDays, clearCooldown });
+      res.status(200).json({
+        data: {
+          ...data,
+          hint:
+            data.pushTokenCount === 0
+              ? "Abre la app en un development build para registrar token push."
+              : "Ejecuta npm run push:engagement para enviar la notificación.",
+        },
+      });
+    } catch (err) {
+      logError("NotificationsController.simulateInactivityMe", err);
+      sendApiError(res, 500, "SIMULATE_INACTIVITY_FAILED", "No se pudo simular inactividad");
+    }
+  };
+
+  simulateInactivityByEmail = async (req: Request, res: Response) => {
+    if (!isDevPushToolsEnabled()) {
+      sendApiError(res, 404, "NOT_FOUND", "Ruta no encontrada");
+      return;
+    }
+
+    const secret = (req.headers["x-cron-secret"] as string | undefined)?.trim();
+    if (!env.cronSecret || secret !== env.cronSecret) {
+      sendApiError(res, 401, "CRON_UNAUTHORIZED", "No autorizado");
+      return;
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    if (!email) {
+      sendApiError(res, 400, "INVALID_EMAIL", "Indica email en el body");
+      return;
+    }
+
+    const inactiveDays = parseSimulateDays(body.inactiveDays);
+    const clearCooldown = body.clearCooldown !== false;
+
+    try {
+      const data = await this.service.simulateInactivityByEmail(email, { inactiveDays, clearCooldown });
+      res.status(200).json({
+        data: {
+          ...data,
+          email,
+          hint:
+            data.pushTokenCount === 0
+              ? "Abre la app en un development build para registrar token push."
+              : "Ejecuta npm run push:engagement para enviar la notificación.",
+        },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      if (message.includes("No hay usuario")) {
+        sendApiError(res, 404, "USER_NOT_FOUND", message);
+        return;
+      }
+      logError("NotificationsController.simulateInactivityByEmail", err);
+      sendApiError(res, 500, "SIMULATE_INACTIVITY_FAILED", "No se pudo simular inactividad");
     }
   };
 

@@ -280,6 +280,7 @@ El servidor necesita `zod` en `server/package.json`. Asegúrate de desplegar un 
 | Tipo | Dónde | Uso |
 |------|--------|-----|
 | **Locales** | Al añadir libro | El usuario programa fecha/hora (alarma de lectura). |
+| **Locales diarias** | Automático al aceptar permisos (login) | Todos los días a las **20:00**; desactivable en Ajustes. |
 | **Push (re-engagement)** | Servidor + Expo Push | Si llevas varios días sin abrir la app, el backend envía un aviso (como en juegos). |
 
 **Configuración push**
@@ -302,6 +303,22 @@ npx expo run:android
 ```
 
 Documentación: [development builds](https://docs.expo.dev/develop/development-builds/introduction/).
+
+**Probar push de re-engagement (desarrollo)**
+
+1. Abre la app en development build e inicia sesión (registra token push).
+2. Simula inactividad (desde `server/`, con `DATABASE_URL` en `.env`):
+
+```bash
+node scripts/simulate-inactivity.js --email tu@correo.com --days 5
+npm run push:engagement
+```
+
+Contra Render sin PostgreSQL local: `PUSH_DEV_TOOLS=true` en el API y:
+
+```bash
+CRON_SECRET=xxx API_BASE_URL=https://readtracker-api.onrender.com/api/v1 npm run push:simulate-inactivity:http -- --email tu@correo.com
+```
 
 ## Puntos a destacar
 

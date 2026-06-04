@@ -3,9 +3,10 @@ import { Redirect, Stack, useSegments } from "expo-router";
 import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
+import { DailyReminderBootstrap } from "@/features/notifications/daily-reminder-bootstrap";
 import { PushNotificationsBootstrap } from "@/features/notifications/push-notifications-bootstrap";
 import { useBillingStatus } from "@/features/billing/use-billing";
-import { scriptoriumNativeHeader } from "@/shared/ui/app-colors";
+import { APP_CREAM_BG, scriptoriumNativeHeader } from "@/shared/ui/app-colors";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { ScriptoriumHeader } from "@/shared/ui/scriptorium-header";
 
@@ -44,6 +45,7 @@ export default function ProtectedLayout() {
   return (
     <>
       <PushNotificationsBootstrap />
+      <DailyReminderBootstrap />
       <Stack screenOptions={scriptoriumNativeHeader}>
       <Stack.Screen
         name="(tabs)"
@@ -80,6 +82,7 @@ export default function ProtectedLayout() {
                 title: "Perfil",
                 headerShown: true,
                 presentation: "card",
+                contentStyle: { backgroundColor: APP_CREAM_BG },
               }
         }
       />
@@ -95,8 +98,9 @@ export default function ProtectedLayout() {
         name="settings"
         options={{
           ...scriptoriumNativeHeader,
-          title: "Ajustes",
+          title: "Notificaciones",
           headerShown: true,
+          contentStyle: { backgroundColor: APP_CREAM_BG },
         }}
       />
       <Stack.Screen

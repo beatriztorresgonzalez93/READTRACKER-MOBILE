@@ -11,10 +11,9 @@ import {
 } from "@gluestack-ui/themed";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
-import { useLayoutEffect, useMemo, useState } from "react";
-import { Alert, Platform } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/features/auth/use-auth";
@@ -26,21 +25,12 @@ import {
 } from "@/shared/lib/upload-profile-avatar";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
-import { APP_CREAM_BG, scriptoriumNativeHeader } from "@/shared/ui/app-colors";
+import { APP_CREAM_BG } from "@/shared/ui/app-colors";
 import { Screen } from "@/shared/ui/screen";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
   const { user, token, logout, updateUserProfile } = useAuth();
-
-  useLayoutEffect(() => {
-    if (Platform.OS === "web") return;
-    navigation.setOptions({
-      title: "Perfil",
-      ...scriptoriumNativeHeader,
-    });
-  }, [navigation]);
 
   const fullName = useMemo(() => {
     const fromParts = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
@@ -157,56 +147,9 @@ export default function ProfileScreen() {
 
   const isWeb = Platform.OS === "web";
 
-  return (
-    <Screen
-      backgroundColor="#F6F1E7"
-      webBackgroundColor="#F6F1E7"
-      style={{
-        paddingTop: isWeb ? insets.top + 8 : 12,
-        paddingBottom: insets.bottom + 12,
-        paddingHorizontal: isWeb ? 16 : 10,
-      }}
-    >
-      <Box
-        flex={1}
-        width="100%"
-        maxWidth={1120}
-        alignSelf="center"
-        bg={isWeb ? "$white" : "transparent"}
-        borderRadius={isWeb ? "$2xl" : "$none"}
-        borderWidth={isWeb ? 1 : 0}
-        borderColor="$primary200"
-        px="$4"
-        pt="$3"
-        maxHeight={isWeb ? "96%" : undefined}
-      >
-        {isWeb ? (
-          <HStack justifyContent="space-between" alignItems="center">
-            <Heading size="2xl" color="$primary800">
-              Tu ficha
-            </Heading>
-            <Pressable onPress={closeProfile} hitSlop={12} accessibilityLabel="Cerrar ficha">
-              <Ionicons name="close" size={26} color="#2D1F15" />
-            </Pressable>
-          </HStack>
-        ) : (
-          <Heading size="lg" color="$primary800" mb="$1">
-            Tu ficha
-          </Heading>
-        )}
-
-        <Text size="sm" color="$textLight500" lineHeight={22} mt="$2" pr="$5">
-          Datos de tu cuenta en Scriptorium. El correo no se puede cambiar aqui.
-        </Text>
-
-        <Box h={1} bg="$primary200" mt="$3" />
-
-        <ScrollView
-          contentContainerStyle={{ paddingTop: 14, paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <VStack space="lg">
-            <HStack space="lg" alignItems="center">
+  const profileForm = (
+    <VStack space="lg">
+      <HStack space="lg" alignItems="center">
               <Box
                 w={96}
                 h={96}
@@ -270,15 +213,89 @@ export default function ProfileScreen() {
             </Box>
 
             <AppButton label="Cerrar sesión" appearance="secondary" onPress={onLogout} />
-            <AppButton
-              label={saving ? "Guardando..." : "Guardar cambios"}
-              onPress={onSave}
-              isDisabled={saving}
-              isLoading={saving}
-            />
-          </VStack>
-        </ScrollView>
-      </Box>
+      <AppButton
+        label={saving ? "Guardando..." : "Guardar cambios"}
+        onPress={onSave}
+        isDisabled={saving}
+        isLoading={saving}
+      />
+    </VStack>
+  );
+
+  if (isWeb) {
+    return (
+      <Screen
+        backgroundColor={APP_CREAM_BG}
+        webBackgroundColor={APP_CREAM_BG}
+        style={{
+          paddingTop: insets.top + 8,
+          paddingBottom: insets.bottom + 12,
+          paddingHorizontal: 16,
+        }}
+      >
+        <Box
+          flex={1}
+          width="100%"
+          maxWidth={1120}
+          alignSelf="center"
+          bg="$white"
+          borderRadius="$2xl"
+          borderWidth={1}
+          borderColor="$primary200"
+          px="$4"
+          pt="$3"
+          maxHeight="96%"
+        >
+          <HStack justifyContent="space-between" alignItems="center">
+            <Heading size="2xl" color="$primary800">
+              Tu ficha
+            </Heading>
+            <Pressable onPress={closeProfile} hitSlop={12} accessibilityLabel="Cerrar ficha">
+              <Ionicons name="close" size={26} color="#2D1F15" />
+            </Pressable>
+          </HStack>
+          <Text size="sm" color="$textLight500" lineHeight={20} mt="$2" mb="$3">
+            Datos de tu cuenta en Scriptorium. El correo no se puede cambiar aqui.
+          </Text>
+          <Box h={1} bg="$primary200" mb="$3" />
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {profileForm}
+          </ScrollView>
+        </Box>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen
+      edges={["bottom", "left", "right"]}
+      backgroundColor={APP_CREAM_BG}
+      webBackgroundColor={APP_CREAM_BG}
+      style={[styles.screen, { paddingBottom: insets.bottom + 12 }]}
+    >
+      <Text size="sm" color="$textLight500" lineHeight={20} mb="$4">
+        Datos de tu cuenta en Scriptorium. El correo no se puede cambiar aqui.
+      </Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {profileForm}
+      </ScrollView>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+});

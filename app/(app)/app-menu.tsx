@@ -86,9 +86,9 @@ export default function AppMenuScreen() {
       },
       {
         key: "settings",
-        label: "Ajustes",
-        subtitle: "Preferencias de la app",
-        icon: "settings-outline",
+        label: "Notificaciones",
+        subtitle: "Recordatorio diario y permisos",
+        icon: "notifications-outline",
         onPress: () => router.push("/(app)/settings" as never),
       },
       {
@@ -136,7 +136,7 @@ export default function AppMenuScreen() {
         pb="$3"
       >
         <Heading size="xl" color="$primary800">
-          Más
+          Ajustes
         </Heading>
         <Pressable
           accessibilityLabel="Cerrar menú"

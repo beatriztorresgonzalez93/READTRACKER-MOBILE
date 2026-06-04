@@ -65,4 +65,33 @@ export class EngagementPushRepository {
       [userIds],
     );
   }
+
+  async findUserIdByEmail(email: string): Promise<string | null> {
+    const result = await pool.query<{ id: string }>(
+      `SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) LIMIT 1`,
+      [email],
+    );
+    return result.rows[0]?.id ?? null;
+  }
+
+  async countPushTokensForUser(userId: string): Promise<number> {
+    const result = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM push_tokens WHERE user_id = $1`,
+      [userId],
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  }
+
+  /** Para pruebas: usuario aparece inactivo N días. */
+  async setLastActiveDaysAgo(userId: string, daysAgo: number): Promise<void> {
+    const days = Math.max(1, Math.floor(daysAgo));
+    await pool.query(
+      `UPDATE users SET last_active_at = NOW() - ($2::int * INTERVAL '1 day') WHERE id = $1`,
+      [userId, days],
+    );
+  }
+
+  async clearLastEngagementPush(userId: string): Promise<void> {
+    await pool.query(`UPDATE users SET last_engagement_push_at = NULL WHERE id = $1`, [userId]);
+  }
 }

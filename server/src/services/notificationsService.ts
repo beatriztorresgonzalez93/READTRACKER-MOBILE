@@ -7,7 +7,7 @@ export class NotificationsService {
 
   constructor(
     private readonly pushTokensRepo: PushTokensRepository,
-    engagementRepo: EngagementPushRepository,
+    private readonly engagementRepo: EngagementPushRepository,
   ) {
     this.engagement = new EngagementPushService(engagementRepo, pushTokensRepo);
   }
@@ -35,5 +35,28 @@ export class NotificationsService {
 
   runEngagementCampaign() {
     return this.engagement.runEngagementCampaign();
+  }
+
+  async simulateInactivityForUser(
+    userId: string,
+    options: { inactiveDays: number; clearCooldown: boolean },
+  ): Promise<{ userId: string; pushTokenCount: number; inactiveDays: number }> {
+    await this.engagementRepo.setLastActiveDaysAgo(userId, options.inactiveDays);
+    if (options.clearCooldown) {
+      await this.engagementRepo.clearLastEngagementPush(userId);
+    }
+    const pushTokenCount = await this.engagementRepo.countPushTokensForUser(userId);
+    return { userId, pushTokenCount, inactiveDays: options.inactiveDays };
+  }
+
+  async simulateInactivityByEmail(
+    email: string,
+    options: { inactiveDays: number; clearCooldown: boolean },
+  ): Promise<{ userId: string; pushTokenCount: number; inactiveDays: number }> {
+    const userId = await this.engagementRepo.findUserIdByEmail(email);
+    if (!userId) {
+      throw new Error(`No hay usuario con email: ${email}`);
+    }
+    return this.simulateInactivityForUser(userId, options);
   }
 }

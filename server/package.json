@@ -14,7 +14,9 @@
     "cleanup:reading-sessions": "node scripts/cleanup-reading-session-duplicates.js",
     "seed:books": "node scripts/seed-books.js",
     "seed:clear-covers": "node scripts/clear-fake-seed-covers.js",
-    "push:engagement": "node scripts/send-engagement-push.js"
+    "push:engagement": "node scripts/send-engagement-push.js",
+    "push:simulate-inactivity": "node scripts/simulate-inactivity.js",
+    "push:simulate-inactivity:http": "node scripts/simulate-inactivity-http.js"
   },
   "keywords": [
     "readtracker",
