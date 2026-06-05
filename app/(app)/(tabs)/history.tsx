@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlatList, Platform } from "react-native";
 
+import { ReadingSessionCard } from "@/features/readingSessions/reading-session-card";
 import {
   useDeleteReadingSession,
   useMonthlyHistory,
@@ -239,52 +240,22 @@ export default function HistoryScreen() {
             Sesiones del {dateFormatter.format(new Date(selectedDay))}
           </Text>
           {selectedSessions.length > 0 ? (
-            selectedSessions.map((session) => (
-              <Box
-                key={session.id}
-                borderRadius="$lg"
-                borderWidth={isWeb ? 1 : 0}
-                borderColor="$primary200"
-                bg="$white"
-                px="$3"
-                py="$2"
-                gap={4}
-              >
-                <HStack alignItems="center" justifyContent="space-between" gap="$2">
-                  <Text flex={1} size="sm" fontWeight="$bold" color="$primary800" numberOfLines={1}>
-                    {session.title}
-                  </Text>
-                  <Pressable
-                    hitSlop={10}
-                    onPress={() =>
-                      onDeleteSession({ id: session.id, title: session.title })
-                    }
-                    disabled={deleteSession.isPending}
-                    accessibilityLabel="Eliminar sesión"
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={isWeb ? 16 : 18}
-                      color="#7A6555"
-                    />
-                  </Pressable>
-                </HStack>
-                <Text size="xs" color="$textLight500" numberOfLines={1}>
-                  {session.author || "Autor desconocido"}
+            <>
+              {!isWeb ? (
+                <Text size="xs" color="$textLight500" mb="$1">
+                  Desliza una sesión hacia la izquierda para eliminarla.
                 </Text>
-                <Text size="xs" color="$textLight500">
-                  Paginas:{" "}
-                  {Math.max(
-                    0,
-                    (session.previousPage ?? session.currentPage - session.pagesRead) + 1,
-                  )}{" "}
-                  - {session.currentPage}
-                </Text>
-                <Text size="xs" color="$textLight500">
-                  Hora: {timeFormatter.format(new Date(session.recordedAt))}
-                </Text>
-              </Box>
-            ))
+              ) : null}
+              {selectedSessions.map((session) => (
+                <ReadingSessionCard
+                  key={session.id}
+                  session={session}
+                  disabled={deleteSession.isPending}
+                  timeLabel={timeFormatter.format(new Date(session.recordedAt))}
+                  onDelete={() => onDeleteSession({ id: session.id, title: session.title })}
+                />
+              ))}
+            </>
           ) : (
             <Text size="xs" color="$textLight500">
               No hay detalle de sesiones para ese día.

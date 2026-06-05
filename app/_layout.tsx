@@ -1,9 +1,11 @@
 // Define providers globales de la app, fuentes y navegacion raiz.
+import "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Fraunces_400Regular, Fraunces_700Bold } from "@expo-google-fonts/fraunces";
 import { Platform, StyleSheet, Text, TextInput } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { AppProviders } from "@/providers/app-providers";
@@ -38,13 +40,15 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProviders>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(app)" />
-      </Stack>
-      <StatusBar style="auto" />
-    </AppProviders>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProviders>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(app)" />
+        </Stack>
+        <StatusBar style="auto" />
+      </AppProviders>
+    </GestureHandlerRootView>
   );
 }

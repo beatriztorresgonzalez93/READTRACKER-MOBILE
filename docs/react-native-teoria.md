@@ -75,3 +75,23 @@ import { AnimatedListItem } from "@/shared/ui/animated-list-item";
 ```
 
 `entering` / `exiting` se resuelven en nativo; el `delay` por `index` crea el efecto "cascada" sin saturar (se limita a los primeros 12 items).
+
+## Gestos con Gesture Handler + Reanimated
+
+`react-native-gesture-handler` detecta el dedo en el **hilo nativo**. Combinado con Reanimated (`useSharedValue`, `useAnimatedStyle`, `withSpring`), el elemento se mueve a **60 FPS** sin bloquear el JS Thread.
+
+### Configuracion
+
+- Dependencia: `react-native-gesture-handler` (Expo).
+- Raiz: `GestureHandlerRootView` en `app/_layout.tsx` + `import "react-native-gesture-handler"` al inicio.
+- Componente: `src/shared/ui/swipeable-card.tsx`.
+
+### Uso en ReadTracker: Historial
+
+En **Historial → calendario → día con sesiones**, cada sesión usa **swipe-to-delete**:
+
+- Deslizar **a la izquierda** muestra la franja roja «Eliminar».
+- Si el deslizamiento supera ~80 px, se abre la misma pantalla de confirmación que antes (papelera).
+- En **web** no hay gesto: botón «Eliminar» bajo la tarjeta (misma lógica).
+
+La logica de borrado no cambia (`history/delete-session`); solo la interaccion en movil.
