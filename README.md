@@ -272,7 +272,7 @@ El servidor necesita `zod` en `server/package.json`. Asegúrate de desplegar un 
 | `project-management.md` | Trello y Kanban |
 | `test-plan-production.md` | Tests funcionales |
 | `performance-test-plan.md` | Listas grandes y rendimiento |
-| `react-native-teoria.md` | Notas RN / Expo |
+| `react-native-teoria.md` | Notas RN / Expo (incl. Reanimated) |
 | `compra-pro-licencia-perpetua-borrador-es.md` | Borrador comercial Pro (no legal) |
 
 ## Notificaciones

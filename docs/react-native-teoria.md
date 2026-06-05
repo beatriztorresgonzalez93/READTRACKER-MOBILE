@@ -40,3 +40,38 @@ Justificacion:
 - Reduce costo de mantenimiento visual frente a crear un sistema UI desde cero.
 
 En el proyecto, `PaperProvider` se integra a nivel raiz para que todos los componentes consuman un tema unificado y escalable.
+
+## Animaciones con Reanimated
+
+La API `Animated` de React Native ejecuta las animaciones en el **hilo de JavaScript**. Si ese hilo se bloquea (red, logica pesada), la animacion "tartamudea".
+
+**React Native Reanimated** mueve el trabajo al **UI Thread nativo**: las transiciones de lista siguen fluidas aunque JS este ocupado.
+
+### Configuracion en ReadTracker
+
+- Dependencia: `react-native-reanimated` (instalada con Expo).
+- Import en raiz: `app/_layout.tsx` (`import "react-native-reanimated"`).
+- Plugin de Babel (obligatorio, debe ir **el ultimo**): `babel.config.js` → `react-native-reanimated/plugin`.
+
+### Donde tiene sentido en Scriptorium
+
+| Pantalla | Efecto | Por que |
+|----------|--------|---------|
+| **Biblioteca** (`index.tsx`) | Cada libro entra con `FadeInDown` escalonado | Muchas portadas al cargar o paginar |
+| **Wishlist / Compras** | Igual al mostrar deseos o compras | Listas que cambian al filtrar |
+| **Actividad de compras** | Entrada suave de cada compra | Historial largo |
+| **Menu Ajustes** (engranaje) | Filas del menu aparecen en cascada | Feedback al abrir opciones |
+
+Componente reutilizable: `src/shared/ui/animated-list-item.tsx` (`AnimatedListItem`).
+
+Ejemplo (como en la practica):
+
+```tsx
+import { AnimatedListItem } from "@/shared/ui/animated-list-item";
+
+<AnimatedListItem index={index}>
+  <BookGridCard book={item} />
+</AnimatedListItem>
+```
+
+`entering` / `exiting` se resuelven en nativo; el `delay` por `index` crea el efecto "cascada" sin saturar (se limita a los primeros 12 items).

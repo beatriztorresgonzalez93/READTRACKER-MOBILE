@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BOOK_SHEET_BG } from "@/features/books/book-sheet-ui";
 import { env } from "@/shared/config/env";
+import { AnimatedListItem } from "@/shared/ui/animated-list-item";
 
 type MenuRow = {
   key: string;
@@ -157,8 +158,10 @@ export default function AppMenuScreen() {
         showsVerticalScrollIndicator={false}
       >
         <VStack space="sm">
-          {rows.map((row) => (
-            <MenuRowCard key={row.key} row={row} />
+          {rows.map((row, index) => (
+            <AnimatedListItem key={row.key} index={index} enteringDelayMs={30}>
+              <MenuRowCard row={row} />
+            </AnimatedListItem>
           ))}
         </VStack>
         <Text size="xs" color="$textLight500" textAlign="center" mt="$6">
