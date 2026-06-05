@@ -18,6 +18,29 @@ jest.mock("expo-router", () => ({
   },
 }));
 
+jest.mock("@/shared/ui/swipeable-card", () => {
+  const React = require("react");
+  const { Pressable, View } = require("react-native");
+  return {
+    SwipeableCard: ({
+      children,
+      onDelete,
+    }: {
+      children: React.ReactNode;
+      onDelete: () => void;
+    }) =>
+      React.createElement(
+        View,
+        null,
+        children,
+        React.createElement(Pressable, {
+          onPress: onDelete,
+          accessibilityLabel: "Eliminar sesión",
+        }),
+      ),
+  };
+});
+
 const mockDeleteMutateAsync = jest.fn(async () => undefined);
 
 jest.mock("@/features/readingSessions/use-history", () => ({
