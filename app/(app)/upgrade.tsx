@@ -9,7 +9,6 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import { router } from "expo-router";
-import { Platform } from "react-native";
 
 import { useAuth } from "@/features/auth/use-auth";
 import { BOOK_SHEET_BG } from "@/features/books/book-sheet-ui";
@@ -55,7 +54,7 @@ export default function UpgradeScreen() {
     );
   }
 
-  const { isPro, trialActive, needsPayment, trialEndsAt, proActivatedAt } = billing.data;
+  const { isPro, trialActive, trialEndsAt, proActivatedAt } = billing.data;
 
   const trialEndLabel = trialEndsAt
     ? new Date(trialEndsAt).toLocaleDateString("es-ES", {
@@ -120,7 +119,7 @@ export default function UpgradeScreen() {
 
           {!isPro ? (
             <AppButton
-              label={needsPayment ? "Activar Pro con tarjeta" : "Ver opción de pago Pro"}
+              label="Ver opciones de pago"
               onPress={() => router.push("/(app)/upgrade/checkout" as never)}
             />
           ) : (
@@ -131,13 +130,6 @@ export default function UpgradeScreen() {
               </Text>
             </HStack>
           )}
-
-          {Platform.OS !== "web" && !isPro ? (
-            <Text size="xs" color="$textLight500" textAlign="center" lineHeight={18}>
-              En Android/iOS el pago usa Stripe Payment Sheet dentro de la app. Con claves de test
-              puedes usar la tarjeta 4242 4242 4242 4242.
-            </Text>
-          ) : null}
 
           <Pressable
             alignSelf="center"

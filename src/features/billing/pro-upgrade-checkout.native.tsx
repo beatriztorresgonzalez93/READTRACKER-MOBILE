@@ -61,7 +61,7 @@ export function ProUpgradeCheckout({ onSuccess, onCancel }: ProUpgradeCheckoutPr
       ) : null}
 
       <AppButton
-        label="Pagar con tarjeta (Payment Sheet)"
+        label="Pagar con tarjeta"
         onPress={() => void handleNativePay()}
         isDisabled={createIntent.isPending || !env.stripePublishableKey.trim()}
         isLoading={createIntent.isPending}

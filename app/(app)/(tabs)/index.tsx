@@ -12,7 +12,7 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -23,7 +23,7 @@ import {
   View,
   type ViewToken,
 } from "react-native";
-import Animated, { FadeInDown, FadeOutLeft } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutLeft } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -48,6 +48,7 @@ import { useLibraryPreferencesStore } from "@store/library-preferences";
 
 const isWeb = Platform.OS === "web";
 const GRID_COVER_WIDTH = 168;
+const SCROLL_TO_TOP_THRESHOLD = 520;
 
 function isFilteredQuery(q: LibraryBooksQuery): boolean {
   return (
@@ -212,7 +213,21 @@ export default function LibraryScreen() {
   }, [booksFeed.hasNextPage, booksFeed.isFetchingNextPage, booksFeed.fetchNextPage]);
 
   const books = booksFeed.data?.pages.flatMap((page) => page.items) ?? [];
+  const listRef = useRef<FlatList<Book>>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const prefetchThresholdRef = useRef(-1);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
+  const onListScroll = useCallback(
+    (offsetY: number) => {
+      const next = offsetY > SCROLL_TO_TOP_THRESHOLD;
+      setShowScrollTop((prev) => (prev === next ? prev : next));
+    },
+    [],
+  );
 
   useEffect(() => {
     prefetchThresholdRef.current = -1;
@@ -256,10 +271,13 @@ export default function LibraryScreen() {
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
       <ListComponent
+        ref={listRef}
         data={books}
         keyExtractor={(item: Book) => item.id}
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => onListScroll(event.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
         contentInsetAdjustmentBehavior={isWeb ? "never" : "automatic"}
         refreshControl={
           <RefreshControl
@@ -384,6 +402,23 @@ export default function LibraryScreen() {
           { paddingBottom: 24 + insets.bottom },
         ]}
       />
+
+      {!isWeb && showScrollTop ? (
+        <Animated.View
+          entering={FadeIn.duration(180)}
+          exiting={FadeOut.duration(140)}
+          style={[styles.scrollTopFab, { bottom: 20 + insets.bottom }]}
+        >
+          <Pressable
+            onPress={scrollToTop}
+            accessibilityRole="button"
+            accessibilityLabel="Volver arriba"
+            style={styles.scrollTopPressable}
+          >
+            <Ionicons name="chevron-up" size={20} color="#7A6555" />
+          </Pressable>
+        </Animated.View>
+      ) : null}
     </Screen>
   );
 }
@@ -416,5 +451,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     alignItems: "center",
     justifyContent: "flex-start",
+  },
+  scrollTopFab: {
+    position: "absolute",
+    right: 16,
+    zIndex: 20,
+  },
+  scrollTopPressable: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 252, 245, 0.94)",
+    borderWidth: 1,
+    borderColor: "#E5D9C2",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#2D1F15",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });

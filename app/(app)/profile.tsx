@@ -31,6 +31,7 @@ import { Screen } from "@/shared/ui/screen";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, token, logout, updateUserProfile } = useAuth();
+  const isWeb = Platform.OS === "web";
 
   const fullName = useMemo(() => {
     const fromParts = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
@@ -145,8 +146,6 @@ export default function ProfileScreen() {
     }
   }
 
-  const isWeb = Platform.OS === "web";
-
   const profileForm = (
     <VStack space="lg">
       <HStack space="lg" alignItems="center">
@@ -212,7 +211,9 @@ export default function ProfileScreen() {
               </Text>
             </Box>
 
-            <AppButton label="Cerrar sesión" appearance="secondary" onPress={onLogout} />
+            {isWeb ? (
+              <AppButton label="Cerrar sesión" appearance="secondary" onPress={onLogout} />
+            ) : null}
       <AppButton
         label={saving ? "Guardando..." : "Guardar cambios"}
         onPress={onSave}

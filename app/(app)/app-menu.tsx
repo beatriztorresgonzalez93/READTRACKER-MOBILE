@@ -11,10 +11,11 @@ import {
 } from "@gluestack-ui/themed";
 import Constants from "expo-constants";
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Platform, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "@/features/auth/use-auth";
 import { BOOK_SHEET_BG } from "@/features/books/book-sheet-ui";
 import { env } from "@/shared/config/env";
 import { AnimatedListItem } from "@/shared/ui/animated-list-item";
@@ -68,6 +69,12 @@ function MenuRowCard({ row }: { row: MenuRow }) {
 
 export default function AppMenuScreen() {
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
+
+  const onLogout = useCallback(async () => {
+    await logout();
+    router.replace("/(auth)/login" as never);
+  }, [logout]);
 
   const rows = useMemo<MenuRow[]>(
     () => [
@@ -118,8 +125,19 @@ export default function AppMenuScreen() {
           }
         },
       },
+      ...(Platform.OS !== "web"
+        ? [
+            {
+              key: "logout",
+              label: "Cerrar sesión",
+              subtitle: "Salir de tu cuenta en este dispositivo",
+              icon: "log-out-outline" as const,
+              onPress: () => void onLogout(),
+            },
+          ]
+        : []),
     ],
-    [],
+    [onLogout],
   );
 
   const version =
