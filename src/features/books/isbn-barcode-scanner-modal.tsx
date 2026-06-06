@@ -4,9 +4,11 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
@@ -16,6 +18,7 @@ import type { BookMetadataFromIsbn } from "@/shared/lib/lookup-book-by-isbn";
 import { parseIsbnFromBarcode } from "@/shared/lib/isbn-utils";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
+import { scrollFieldIntoView } from "@/shared/ui/scroll-field-into-view";
 import { theme } from "@/shared/ui/theme";
 
 type IsbnBarcodeScannerModalProps = {
@@ -38,6 +41,11 @@ export function IsbnBarcodeScannerModal({
   const [error, setError] = useState<string | undefined>();
   const [scanned, setScanned] = useState(false);
   const lookupLock = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollViewportRef = useRef<View>(null);
+  const isbnFieldRef = useRef<View>(null);
+  const scrollOffsetYRef = useRef(0);
+  const [scrollViewportHeight, setScrollViewportHeight] = useState(0);
 
   useEffect(() => {
     if (!visible) {
@@ -101,99 +109,140 @@ export function IsbnBarcodeScannerModal({
     await runLookup(manualIsbn.trim());
   }
 
+  function scrollIsbnFieldIntoView() {
+    scrollFieldIntoView(
+      scrollRef,
+      scrollViewportRef,
+      isbnFieldRef,
+      scrollViewportHeight,
+      scrollOffsetYRef.current,
+      {
+        bottomInset: 120,
+        delayMs: Platform.OS === "android" ? 260 : 180,
+      },
+    );
+  }
+
   const showCamera = Platform.OS !== "web";
+
+  const isbnInput = (
+    <View ref={isbnFieldRef} collapsable={false}>
+      <AppInput
+        label="ISBN"
+        value={manualIsbn}
+        onChangeText={setManualIsbn}
+        keyboardType="number-pad"
+        placeholder="9780156012595"
+        autoCapitalize="none"
+        onFocus={scrollIsbnFieldIntoView}
+      />
+    </View>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
-        <VStack space="md" style={styles.header}>
-          <Text size="lg" fontWeight="$bold" color="$primary800">
-            {showCamera ? "Escanear ISBN" : "Buscar por ISBN"}
-          </Text>
-          <Text size="sm" color="$textLight700">
-            {showCamera
-              ? "Apunta al código de barras del lomo o la contraportada (EAN-13)."
-              : "Introduce el ISBN de 10 o 13 dígitos (suele empezar por 978 o 979)."}
-          </Text>
-        </VStack>
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+      >
+        <View
+          ref={scrollViewportRef}
+          style={styles.scrollViewport}
+          collapsable={false}
+          onLayout={(event) => {
+            setScrollViewportHeight(event.nativeEvent.layout.height);
+          }}
+        >
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onScroll={(event) => {
+              scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
+          >
+            <VStack space="md" style={styles.header}>
+              <Text size="lg" fontWeight="$bold" color="$primary800">
+                {showCamera ? "Escanear ISBN" : "Buscar por ISBN"}
+              </Text>
+              <Text size="sm" color="$textLight700">
+                {showCamera
+                  ? "Apunta al código de barras o escribe el ISBN debajo."
+                  : "Introduce el ISBN de 10 o 13 dígitos (suele empezar por 978 o 979)."}
+              </Text>
+            </VStack>
 
-        {showCamera ? (
-          <Box flex={1} borderRadius="$lg" overflow="hidden" mx="$4">
-            {!permission?.granted ? (
-              <VStack flex={1} justifyContent="center" alignItems="center" space="md" px="$4">
-                <Text textAlign="center" color="$textLight700">
-                  Necesitamos permiso de cámara para leer el código de barras.
-                </Text>
-                <AppButton label="Permitir cámara" onPress={() => void requestPermission()} />
+            {showCamera ? (
+              <VStack space="md" px="$4">
+                {isbnInput}
+                {manualIsbn.trim() ? (
+                  <AppButton
+                    appearance="secondary"
+                    label={isLookingUp ? lookupStatusLabel : "Buscar por ISBN"}
+                    onPress={() => void onManualLookup()}
+                    isLoading={isLookingUp}
+                    isDisabled={isLookingUp}
+                  />
+                ) : null}
               </VStack>
             ) : (
-              <CameraView
-                style={StyleSheet.absoluteFill}
-                facing="back"
-                barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8"] }}
-                onBarcodeScanned={scanned || isLookingUp ? undefined : handleBarcode}
-              />
+              <VStack space="md" px="$4">
+                {isbnInput}
+                <AppButton
+                  label={isLookingUp ? lookupStatusLabel : "Buscar libro"}
+                  onPress={() => void onManualLookup()}
+                  isLoading={isLookingUp}
+                  isDisabled={!manualIsbn.trim()}
+                />
+              </VStack>
             )}
-            {isLookingUp ? (
-              <View style={styles.overlay}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text mt="$3" color="$white">
-                  {lookupStatusLabel}
-                </Text>
-              </View>
+
+            {showCamera ? (
+              <Box style={styles.cameraBox} borderRadius="$lg" overflow="hidden" mx="$4" mt="$3">
+                {!permission?.granted ? (
+                  <VStack flex={1} justifyContent="center" alignItems="center" space="md" px="$4">
+                    <Text textAlign="center" color="$textLight700">
+                      Necesitamos permiso de cámara para leer el código de barras.
+                    </Text>
+                    <AppButton label="Permitir cámara" onPress={() => void requestPermission()} />
+                  </VStack>
+                ) : (
+                  <CameraView
+                    style={StyleSheet.absoluteFill}
+                    facing="back"
+                    barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8"] }}
+                    onBarcodeScanned={scanned || isLookingUp ? undefined : handleBarcode}
+                  />
+                )}
+                {isLookingUp ? (
+                  <View style={styles.overlay}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <Text mt="$3" color="$white">
+                      {lookupStatusLabel}
+                    </Text>
+                  </View>
+                ) : null}
+              </Box>
             ) : null}
-          </Box>
-        ) : (
-          <VStack space="md" px="$4">
-            <AppInput
-              label="ISBN"
-              value={manualIsbn}
-              onChangeText={setManualIsbn}
-              keyboardType="number-pad"
-              placeholder="9780156012595"
-              autoCapitalize="none"
-            />
-            <AppButton
-              label={isLookingUp ? lookupStatusLabel : "Buscar libro"}
-              onPress={() => void onManualLookup()}
-              isLoading={isLookingUp}
-              isDisabled={!manualIsbn.trim()}
-            />
-          </VStack>
-        )}
 
-        {error ? (
-          <Text px="$4" size="sm" color="$error600">
-            {error}
-          </Text>
-        ) : null}
+            {error ? (
+              <Text px="$4" mt="$3" size="sm" color="$error600">
+                {error}
+              </Text>
+            ) : null}
 
-        <VStack px="$4" pb="$6" space="sm">
-          {showCamera ? (
-            <AppInput
-              label="O escribe el ISBN"
-              value={manualIsbn}
-              onChangeText={setManualIsbn}
-              keyboardType="number-pad"
-              placeholder="9780156012595"
-              autoCapitalize="none"
-            />
-          ) : null}
-          {showCamera && manualIsbn.trim() ? (
-            <AppButton
-              appearance="secondary"
-              label="Buscar ISBN escrito"
-              onPress={() => void onManualLookup()}
-              isDisabled={isLookingUp}
-            />
-          ) : null}
-          <Pressable onPress={onClose} style={styles.cancelBtn}>
-            <Text textAlign="center" color="$primary700" fontWeight="$semibold">
-              Cancelar
-            </Text>
-          </Pressable>
-        </VStack>
-      </View>
+            <Pressable onPress={onClose} style={styles.cancelBtn}>
+              <Text textAlign="center" color="$primary700" fontWeight="$semibold">
+                Cancelar
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -204,9 +253,21 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bg,
     paddingTop: 56,
   },
+  scrollViewport: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 32,
+  },
   header: {
     paddingHorizontal: 16,
     paddingBottom: 8,
+  },
+  cameraBox: {
+    height: 280,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
