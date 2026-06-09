@@ -1,29 +1,6 @@
 // Biblioteca: búsqueda, filtros y grid de libros (gluestack-ui).
-import { Ionicons } from "@expo/vector-icons";
-import {
-  Box,
-  Heading,
-  HStack,
-  Input,
-  InputField,
-  InputSlot,
-  Pressable,
-  Text,
-  VStack,
-} from "@gluestack-ui/themed";
-import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  type ViewToken,
-} from "react-native";
-import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutLeft } from "react-native-reanimated";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useWindowDimensions, type ViewToken } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -32,23 +9,22 @@ import {
   LIBRARY_STATUS_LABELS,
 } from "@/features/books/library-filter-labels";
 import {
+  BookGrid,
+  getLibraryGridColumns,
+  LibraryScrollToTopFab,
+} from "@/features/books/library-book-grid";
+import { LibraryHeader } from "@/features/books/library-header";
+import {
   getLibraryPrefetchThresholdIndex,
   useBooksFeed,
 } from "@/features/books/use-books";
+import { useLibraryScroll } from "@/features/books/use-library-scroll";
 import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
-import type { Book, LibraryBooksQuery } from "@/shared/types/books";
-import { AppButton } from "@/shared/ui/app-button";
-import { AppLink } from "@/shared/ui/app-link";
+import type { LibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
-import { BookCover } from "@/shared/ui/book-cover";
-import { ActiveFilterChips, type ActiveFilterChip } from "@/shared/ui/active-filter-chips";
-import { EmptyState } from "@/shared/ui/empty-state";
+import { type ActiveFilterChip } from "@/shared/ui/active-filter-chips";
 import { Screen } from "@/shared/ui/screen";
 import { useLibraryPreferencesStore } from "@store/library-preferences";
-
-const isWeb = Platform.OS === "web";
-const GRID_COVER_WIDTH = 168;
-const SCROLL_TO_TOP_THRESHOLD = 520;
 
 function isFilteredQuery(q: LibraryBooksQuery): boolean {
   return (
@@ -60,91 +36,10 @@ function isFilteredQuery(q: LibraryBooksQuery): boolean {
   );
 }
 
-function StarRow({ rating }: { rating?: number | null }) {
-  const raw = rating != null && Number.isFinite(rating) ? rating : 0;
-  const normalized = raw > 5 ? raw / 2 : raw;
-  const full = Math.min(5, Math.max(0, Math.round(normalized)));
-  return (
-    <HStack space="xs" mt="$0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Ionicons
-          key={i}
-          name={i <= full ? "star" : "star-outline"}
-          size={14}
-          color="#A87D42"
-        />
-      ))}
-    </HStack>
-  );
-}
-
-function BookGridCard({ book }: { book: Book }) {
-  const year = book.updatedAt ? new Date(book.updatedAt).getFullYear() : null;
-
-  return (
-    <AppLink
-      href={`/(app)/books/${book.id}` as never}
-      style={isWeb ? styles.gridCard : styles.gridCardMobile}
-    >
-        <BookCover
-          uri={book.coverUrl}
-          title={book.title}
-          width={GRID_COVER_WIDTH}
-        aspectRatio={1.45}
-        borderRadius={isWeb ? 6 : 14}
-        accessibilityLabel={`Portada: ${book.title}`}
-      />
-      <Box
-        width={GRID_COVER_WIDTH}
-        bg="$white"
-        borderBottomLeftRadius={isWeb ? "$sm" : "$lg"}
-        borderBottomRightRadius={isWeb ? "$sm" : "$lg"}
-        px="$2"
-        pt="$2"
-        pb="$2"
-        gap={4}
-        borderWidth={isWeb ? 1 : 0}
-        borderTopWidth={0}
-        borderColor="$primary200"
-      >
-        <Text size="sm" fontWeight="$bold" color="$primary800" numberOfLines={1}>
-          {book.title}
-        </Text>
-        <Text size="xs" color="$textLight500" numberOfLines={1}>
-          {book.author ?? "Autor desconocido"}
-        </Text>
-        {isWeb ? (
-          <>
-            <HStack justifyContent="space-between" alignItems="center" gap="$2">
-              <Text size="2xs" color="$textLight500" textTransform="uppercase" flex={1} numberOfLines={1}>
-                {book.genre ?? "Sin género"}
-              </Text>
-              <Text size="2xs" fontWeight="$bold" color="$textLight500" letterSpacing={1}>
-                {year ? String(year) : "----"}
-              </Text>
-            </HStack>
-            <Box h={1} bg="$primary200" my="$0.5" />
-          </>
-        ) : null}
-        <StarRow rating={book.rating} />
-      </Box>
-    </AppLink>
-  );
-}
-
 export default function LibraryScreen() {
-  const ListComponent: typeof FlatList = FlatList;
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const gridColumns = isWeb
-    ? width >= 1500
-      ? 5
-      : width >= 1220
-        ? 4
-        : width >= 980
-          ? 3
-          : 2
-    : 2;
+  const gridColumns = getLibraryGridColumns(width);
 
   const searchDraft = useLibraryPreferencesStore((state) => state.searchDraft);
   const setSearchDraft = useLibraryPreferencesStore((state) => state.setSearchDraft);
@@ -213,21 +108,8 @@ export default function LibraryScreen() {
   }, [booksFeed.hasNextPage, booksFeed.isFetchingNextPage, booksFeed.fetchNextPage]);
 
   const books = booksFeed.data?.pages.flatMap((page) => page.items) ?? [];
-  const listRef = useRef<FlatList<Book>>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { listRef, showScrollTop, scrollToTop, onListScroll } = useLibraryScroll();
   const prefetchThresholdRef = useRef(-1);
-
-  const scrollToTop = useCallback(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, []);
-
-  const onListScroll = useCallback(
-    (offsetY: number) => {
-      const next = offsetY > SCROLL_TO_TOP_THRESHOLD;
-      setShowScrollTop((prev) => (prev === next ? prev : next));
-    },
-    [],
-  );
 
   useEffect(() => {
     prefetchThresholdRef.current = -1;
@@ -270,206 +152,36 @@ export default function LibraryScreen() {
       webBackgroundColor="#F6F1E7"
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
-      <ListComponent
+      <BookGrid
         ref={listRef}
-        data={books}
-        keyExtractor={(item: Book) => item.id}
-        nestedScrollEnabled
-        showsVerticalScrollIndicator={false}
-        onScroll={(event) => onListScroll(event.nativeEvent.contentOffset.y)}
-        scrollEventThrottle={16}
-        contentInsetAdjustmentBehavior={isWeb ? "never" : "automatic"}
-        refreshControl={
-          <RefreshControl
-            refreshing={booksFeed.isRefetching}
-            onRefresh={booksFeed.refetch}
-            tintColor="#A87D42"
-            colors={["#A87D42"]}
-          />
-        }
-        ListHeaderComponent={
-          <Box width="100%" alignSelf="stretch">
-            <Box h={isWeb ? insets.top + 72 : 0} />
-            <VStack
-              px={isWeb ? "$4" : "$3"}
-              pt="$1"
-              pb="$2"
-              space="md"
-              width="100%"
-              maxWidth={1220}
-              alignSelf="center"
-            >
-              <HStack alignItems="center" space="sm">
-                <Input
-                  flex={1}
-                  size="lg"
-                  variant="outline"
-                  borderRadius={isWeb ? "$md" : "$lg"}
-                  bg="$white"
-                  borderColor="$primary200"
-                >
-                  <InputSlot pl="$3">
-                    <Ionicons name="search-outline" size={18} color="#7A6555" />
-                  </InputSlot>
-                  <InputField
-                    testID="library-searchbar"
-                    accessibilityLabel="Buscar en biblioteca"
-                    placeholder="Título, autor, género o año..."
-                    value={searchDraft}
-                    onChangeText={setSearchDraft}
-                    color="$primary800"
-                    placeholderTextColor="$textLight500"
-                  />
-                </Input>
-
-                <Pressable
-                  onPress={() => router.push("/(app)/library-filters" as never)}
-                  accessibilityLabel="Abrir filtros de biblioteca"
-                  accessibilityRole="button"
-                >
-                  <Box
-                    w={isWeb ? 44 : 38}
-                    h={isWeb ? 44 : 38}
-                    borderRadius="$full"
-                    borderWidth={1}
-                    borderColor={filtered ? "$primary500" : "$primary400"}
-                    bg={filtered ? "$primary500" : "transparent"}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Ionicons
-                      name="options-outline"
-                      size={isWeb ? 22 : 18}
-                      color={filtered ? "#FFFCF5" : "#A87D42"}
-                    />
-                  </Box>
-                </Pressable>
-              </HStack>
-
-              <ActiveFilterChips chips={activeFilterChips} />
-
-              <AppButton
-                label="Añadir libro"
-                onPress={() => router.push("/(app)/books/new" as never)}
-                alignSelf={isWeb ? "flex-start" : "stretch"}
-              />
-
-              <Heading size="lg" color="$primary800">
-                Tus libros
-              </Heading>
-            </VStack>
-          </Box>
-        }
-        numColumns={gridColumns}
-        key={`library-grid-${gridColumns}`}
-        columnWrapperStyle={styles.gridColumn}
-        renderItem={({ item, index }: { item: Book; index: number }) =>
-          isWeb ? (
-            <View style={styles.gridItemWrap}>
-              <BookGridCard book={item} />
-            </View>
-          ) : (
-            <Animated.View
-              entering={FadeInDown.delay(index * 20).duration(220)}
-              exiting={FadeOutLeft.duration(180)}
-              style={styles.gridItemWrap}
-            >
-              <BookGridCard book={item} />
-            </Animated.View>
-          )
-        }
-        ListEmptyComponent={
-          <Box px="$4">
-            <EmptyState title={emptyTitle} description={emptyDescription} />
-          </Box>
-        }
+        books={books}
+        gridColumns={gridColumns}
+        bottomInset={insets.bottom}
+        refreshing={booksFeed.isRefetching}
+        onRefresh={booksFeed.refetch}
+        isFetchingNextPage={booksFeed.isFetchingNextPage}
         onEndReached={loadMoreBooks}
-        onEndReachedThreshold={0.35}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        ListFooterComponent={
-          booksFeed.isFetchingNextPage ? (
-            <Box py="$5" alignItems="center">
-              <ActivityIndicator color="#A87D42" />
-            </Box>
-          ) : (
-            <Box h={8} />
-          )
+        onScroll={onListScroll}
+        ListHeaderComponent={
+          <LibraryHeader
+            topInset={insets.top}
+            searchDraft={searchDraft}
+            onSearchChange={setSearchDraft}
+            filtered={filtered}
+            activeFilterChips={activeFilterChips}
+          />
         }
-        contentContainerStyle={[
-          styles.listContent,
-          isWeb && styles.listContentWeb,
-          { paddingBottom: 24 + insets.bottom },
-        ]}
+        emptyTitle={emptyTitle}
+        emptyDescription={emptyDescription}
       />
 
-      {!isWeb && showScrollTop ? (
-        <Animated.View
-          entering={FadeIn.duration(180)}
-          exiting={FadeOut.duration(140)}
-          style={[styles.scrollTopFab, { bottom: 20 + insets.bottom }]}
-        >
-          <Pressable
-            onPress={scrollToTop}
-            accessibilityRole="button"
-            accessibilityLabel="Volver arriba"
-            style={styles.scrollTopPressable}
-          >
-            <Ionicons name="chevron-up" size={20} color="#7A6555" />
-          </Pressable>
-        </Animated.View>
-      ) : null}
+      <LibraryScrollToTopFab
+        visible={showScrollTop}
+        bottom={20 + insets.bottom}
+        onPress={scrollToTop}
+      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  listContent: {
-    flexGrow: 1,
-    paddingHorizontal: 0,
-  },
-  listContentWeb: {
-    paddingHorizontal: 18,
-  },
-  gridColumn: {
-    gap: 10,
-  },
-  gridItemWrap: {
-    flex: 1,
-    minWidth: 0,
-    marginBottom: 12,
-  },
-  gridCard: {
-    overflow: "visible",
-    height: 356,
-    paddingHorizontal: 2,
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  gridCardMobile: {
-    overflow: "visible",
-    paddingHorizontal: 2,
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  scrollTopFab: {
-    position: "absolute",
-    right: 16,
-    zIndex: 20,
-  },
-  scrollTopPressable: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 252, 245, 0.94)",
-    borderWidth: 1,
-    borderColor: "#E5D9C2",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#2D1F15",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-});
