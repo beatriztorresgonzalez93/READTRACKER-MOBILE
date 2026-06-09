@@ -5,6 +5,7 @@ import { Platform } from "react-native";
 import { useAuth } from "@/features/auth/use-auth";
 import { DailyReminderBootstrap } from "@/features/notifications/daily-reminder-bootstrap";
 import { PushNotificationsBootstrap } from "@/features/notifications/push-notifications-bootstrap";
+import { SubscriptionRequiredBootstrap } from "@/features/billing/subscription-required-bootstrap";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import { APP_CREAM_BG, scriptoriumNativeHeader } from "@/shared/ui/app-colors";
 import { AppLoader } from "@/shared/ui/app-loader";
@@ -44,6 +45,7 @@ export default function ProtectedLayout() {
 
   return (
     <>
+      <SubscriptionRequiredBootstrap />
       <PushNotificationsBootstrap />
       <DailyReminderBootstrap />
       <Stack screenOptions={scriptoriumNativeHeader}>

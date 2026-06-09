@@ -1,6 +1,9 @@
 // Utilidad HTTP base para llamadas autenticadas a la API.
 import { env } from "@/shared/config/env";
 
+import { ApiError, SUBSCRIPTION_REQUIRED_CODE } from "@/shared/api/api-error";
+import { notifySubscriptionRequired } from "@/shared/api/subscription-required";
+
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 type RequestOptions = {
@@ -10,8 +13,9 @@ type RequestOptions = {
 };
 
 type ApiErrorBody = {
-  error?: string;
+  code?: string;
   message?: string;
+  error?: string;
 };
 
 function normalizePath(path: string): string {
@@ -40,8 +44,14 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     } catch {
       /* cuerpo no JSON */
     }
+    const code = typeof parsed?.code === "string" ? parsed.code : "";
     const message = parsed?.message ?? parsed?.error ?? (raw.trim() ? raw.slice(0, 500) : fallback);
-    throw new Error(message || fallback);
+
+    if (response.status === 402 && code === SUBSCRIPTION_REQUIRED_CODE) {
+      notifySubscriptionRequired(message || "Activa Scriptorium Pro para continuar.");
+    }
+
+    throw new ApiError(message || fallback, response.status, code);
   }
 
   if (response.status === 204) {
@@ -50,4 +60,3 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return (await response.json()) as T;
 }
-
