@@ -1,7 +1,10 @@
 import { randomUUID } from "crypto";
 // Acceso a datos de sesiones de lectura con reglas de dedupe y recálculo.
+import type { PoolClient } from "pg";
 import { pool } from "../config/db";
 import { CreateReadingSessionDto, ReadingSession } from "../types/readingSession";
+
+type QueryExecutor = Pick<PoolClient, "query">;
 
 interface ReadingSessionRow {
   id: string;
@@ -14,6 +17,53 @@ interface ReadingSessionRow {
   pages_read: number;
   recorded_at: Date;
   created_at: Date;
+}
+
+async function syncBookProgressForBook(
+  executor: QueryExecutor,
+  userId: string,
+  bookId: string,
+): Promise<void> {
+  const latestResult = await executor.query<{
+    current_page: number;
+    recorded_at: Date;
+  }>(
+    `SELECT current_page, recorded_at
+     FROM reading_sessions
+     WHERE user_id = $1 AND book_id = $2
+     ORDER BY recorded_at DESC, created_at DESC
+     LIMIT 1`,
+    [userId, bookId],
+  );
+  const latest = latestResult.rows[0];
+
+  const bookResult = await executor.query<{ pages: number | null }>(
+    "SELECT pages FROM books WHERE id = $1 AND user_id = $2 LIMIT 1",
+    [bookId, userId],
+  );
+  const pages = bookResult.rows[0]?.pages ?? null;
+
+  let progress = 0;
+  let currentPage: number | null = null;
+  let lastPageMarkedAt: Date | null = null;
+
+  if (latest) {
+    currentPage = latest.current_page;
+    lastPageMarkedAt = latest.recorded_at;
+    if (typeof pages === "number" && pages > 0) {
+      progress = Math.round(Math.max(0, Math.min(100, (currentPage / pages) * 100)));
+    }
+  }
+
+  await executor.query(
+    `UPDATE books
+     SET current_page = $1,
+         progress = $2,
+         last_page_marked_at = $3,
+         updated_at = $4
+     WHERE id = $5 AND user_id = $6`,
+    [currentPage, progress, lastPageMarkedAt, new Date(), bookId, userId],
+  );
 }
 
 const mapRow = (row: ReadingSessionRow): ReadingSession => ({
@@ -74,6 +124,8 @@ export class ReadingSessionsRepository {
     }
     if (!session) return null;
 
+    await syncBookProgressForBook(pool, userId, data.bookId);
+
     const bookMeta = await pool.query<{ title: string; author: string }>(
       "SELECT title, author FROM books WHERE id = $1 LIMIT 1",
       [session.book_id]
@@ -109,46 +161,7 @@ export class ReadingSessionsRepository {
         userId
       ]);
 
-      const latestResult = await client.query<{
-        current_page: number;
-        recorded_at: Date;
-      }>(
-        `SELECT current_page, recorded_at
-         FROM reading_sessions
-         WHERE user_id = $1 AND book_id = $2
-         ORDER BY recorded_at DESC, created_at DESC
-         LIMIT 1`,
-        [userId, session.book_id]
-      );
-      const latest = latestResult.rows[0];
-
-      const bookResult = await client.query<{ pages: number | null }>(
-        "SELECT pages FROM books WHERE id = $1 AND user_id = $2 LIMIT 1",
-        [session.book_id, userId]
-      );
-      const pages = bookResult.rows[0]?.pages ?? null;
-
-      let progress = 0;
-      let currentPage: number | null = null;
-      let lastPageMarkedAt: Date | null = null;
-
-      if (latest) {
-        currentPage = latest.current_page;
-        lastPageMarkedAt = latest.recorded_at;
-        if (typeof pages === "number" && pages > 0) {
-          progress = Math.round(Math.max(0, Math.min(100, (currentPage / pages) * 100)));
-        }
-      }
-
-      await client.query(
-        `UPDATE books
-         SET current_page = $1,
-             progress = $2,
-             last_page_marked_at = $3,
-             updated_at = $4
-         WHERE id = $5 AND user_id = $6`,
-        [currentPage, progress, lastPageMarkedAt, new Date(), session.book_id, userId]
-      );
+      await syncBookProgressForBook(client, userId, session.book_id);
 
       await client.query("COMMIT");
       return true;

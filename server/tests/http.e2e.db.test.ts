@@ -44,6 +44,62 @@ describeDb("HTTP E2E with real database", () => {
     await pool.end();
   });
 
+  it("marking a page creates a session and updates book progress in the database", async () => {
+    const createBookResponse = await request(app)
+      .post("/api/v1/books")
+      .set("Authorization", E2E_BEARER)
+      .send({
+        title: "E2E Mark Page",
+        author: "Test Author",
+        publisher: "Test",
+        genre: "Fiction",
+        status: "leyendo",
+        pages: 200,
+      });
+    expect(createBookResponse.status).toBe(201);
+    const bookId = createBookResponse.body?.data?.id as string;
+    expect(bookId).toBeTruthy();
+
+    const beforeMark = await pool.query<{
+      current_page: number | null;
+      progress: number | null;
+      last_page_marked_at: Date | null;
+    }>("SELECT current_page, progress, last_page_marked_at FROM books WHERE id = $1", [bookId]);
+    expect(beforeMark.rows[0]?.current_page).toBeNull();
+    expect(beforeMark.rows[0]?.progress).toBeNull();
+    expect(beforeMark.rows[0]?.last_page_marked_at).toBeNull();
+
+    const markPageResponse = await request(app)
+      .post("/api/v1/reading-sessions")
+      .set("Authorization", E2E_BEARER)
+      .send({
+        bookId,
+        previousPage: 0,
+        currentPage: 75,
+        recordedAt: "2026-05-10T18:30:00.000Z",
+      });
+    expect(markPageResponse.status).toBe(201);
+    expect(markPageResponse.body?.data?.currentPage).toBe(75);
+    expect(markPageResponse.body?.data?.previousPage).toBe(0);
+
+    const afterMark = await pool.query<{
+      current_page: number | null;
+      progress: number | null;
+      last_page_marked_at: Date | null;
+    }>("SELECT current_page, progress, last_page_marked_at FROM books WHERE id = $1", [bookId]);
+    expect(afterMark.rows[0]?.current_page).toBe(75);
+    expect(afterMark.rows[0]?.progress).toBe(38);
+    expect(afterMark.rows[0]?.last_page_marked_at?.toISOString()).toBe("2026-05-10T18:30:00.000Z");
+
+    const getBookResponse = await request(app)
+      .get(`/api/v1/books/${bookId}`)
+      .set("Authorization", E2E_BEARER);
+    expect(getBookResponse.status).toBe(200);
+    expect(getBookResponse.body?.data?.currentPage).toBe(75);
+    expect(getBookResponse.body?.data?.progress).toBe(38);
+    expect(getBookResponse.body?.data?.lastPageMarkedAt).toBe("2026-05-10T18:30:00.000Z");
+  });
+
   it("creates and deletes sessions recalculating book progress", async () => {
     const createBookResponse = await request(app)
       .post("/api/v1/books")

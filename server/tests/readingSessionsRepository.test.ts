@@ -42,6 +42,11 @@ describe("ReadingSessionsRepository", () => {
           }
         ]
       })
+      .mockResolvedValueOnce({
+        rows: [{ current_page: 40, recorded_at: new Date(recordedAt) }]
+      })
+      .mockResolvedValueOnce({ rows: [{ pages: 200 }] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ title: "Dune", author: "Frank Herbert" }] });
 
     const session = await repository.create("user-1", {
@@ -61,8 +66,52 @@ describe("ReadingSessionsRepository", () => {
       title: "Dune",
       author: "Frank Herbert"
     });
-    expect(queryMock).toHaveBeenCalledTimes(4);
+    expect(queryMock).toHaveBeenCalledTimes(7);
     expect(String(queryMock.mock.calls[1]?.[0])).toContain("ON CONFLICT (user_id, book_id, current_page, recorded_at) DO NOTHING");
+    const updateCall = queryMock.mock.calls.find((call) => String(call[0]).includes("UPDATE books"));
+    expect(updateCall?.[1][0]).toBe(40);
+    expect(updateCall?.[1][1]).toBe(20);
+  });
+
+  it("syncs book progress after creating a new session", async () => {
+    const repository = new ReadingSessionsRepository();
+    const recordedAt = "2026-05-01T12:00:00.000Z";
+
+    queryMock
+      .mockResolvedValueOnce({ rows: [{ id: "book-1" }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: "session-new",
+            user_id: "user-1",
+            book_id: "book-1",
+            previous_page: 0,
+            current_page: 75,
+            pages_read: 75,
+            recorded_at: new Date(recordedAt),
+            created_at: new Date("2026-05-01T12:01:00.000Z")
+          }
+        ]
+      })
+      .mockResolvedValueOnce({
+        rows: [{ current_page: 75, recorded_at: new Date(recordedAt) }]
+      })
+      .mockResolvedValueOnce({ rows: [{ pages: 200 }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ title: "Dune", author: "Frank Herbert" }] });
+
+    const session = await repository.create("user-1", {
+      bookId: "book-1",
+      previousPage: 0,
+      currentPage: 75,
+      recordedAt
+    });
+
+    expect(session?.currentPage).toBe(75);
+    const updateCall = queryMock.mock.calls.find((call) => String(call[0]).includes("UPDATE books"));
+    expect(updateCall?.[1][0]).toBe(75);
+    expect(updateCall?.[1][1]).toBe(38);
+    expect(updateCall?.[1][2]).toEqual(new Date(recordedAt));
   });
 
   it("does not create a session for a book that does not belong to the user", async () => {
