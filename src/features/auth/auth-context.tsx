@@ -13,6 +13,7 @@ import { Platform } from "react-native";
 
 import { getFirebaseAuth } from "@/shared/config/firebase";
 import { getMe as apiGetMe, updateMe as apiUpdateMe } from "@/shared/api/auth-api";
+import { formatApiError } from "@/shared/lib/format-api-error";
 import type { LoginPayload, RegisterPayload, User } from "@/shared/types/auth";
 
 const TOKEN_KEY = "readtracker_auth_token";
@@ -83,9 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(me);
           setSyncError(null);
         } catch (err) {
-          const message =
-            err instanceof Error ? err.message : "No se pudo sincronizar tu cuenta con el servidor.";
-          setSyncError(message);
+          setSyncError(formatApiError(err));
           try {
             await signOut(auth);
           } catch {

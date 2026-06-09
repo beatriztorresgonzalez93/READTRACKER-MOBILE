@@ -18,6 +18,7 @@ import {
   useReadingStats,
 } from "@/features/readingSessions/use-history";
 import { usePurchases } from "@/features/wishlist/use-wishlist";
+import { formatApiError } from "@/shared/lib/format-api-error";
 import { defaultLibraryBooksQuery } from "@/shared/types/books";
 import { AppLoader } from "@/shared/ui/app-loader";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -183,10 +184,7 @@ export default function StatsScreen() {
   }
 
   if (billing.status === "error") {
-    const hint =
-      billing.error instanceof Error
-        ? billing.error.message
-        : "Revisa la conexión e inténtalo de nuevo.";
+    const hint = formatApiError(billing.error);
     return (
       <Screen backgroundColor="#F6F1E7" webBackgroundColor="#F6F1E7">
         <EmptyState title="No se pudo cargar tu plan" description={hint} />

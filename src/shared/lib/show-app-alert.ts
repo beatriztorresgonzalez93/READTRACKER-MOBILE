@@ -1,6 +1,8 @@
 // Alertas que funcionan en web (RN Alert es poco fiable en navegador).
 import { Alert, Platform } from "react-native";
 
+import { formatApiError } from "@/shared/lib/format-api-error";
+
 export function showAppAlert(title: string, message?: string): void {
   if (Platform.OS === "web") {
     const text = message?.trim() ? `${title}\n\n${message}` : title;
@@ -12,4 +14,8 @@ export function showAppAlert(title: string, message?: string): void {
   } else {
     Alert.alert(title);
   }
+}
+
+export function showApiError(title: string, error: unknown): void {
+  showAppAlert(title, formatApiError(error));
 }

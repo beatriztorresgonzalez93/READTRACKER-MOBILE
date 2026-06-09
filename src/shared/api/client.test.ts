@@ -53,4 +53,37 @@ describe("apiRequest", () => {
       message: "Fallo interno",
     });
   });
+
+  it("maps 503 to a friendly waking-up message", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => JSON.stringify({ code: "SERVICE_UNAVAILABLE", message: "Service Unavailable" }),
+    }) as typeof fetch;
+
+    await expect(apiRequest("/books")).rejects.toMatchObject({
+      status: 503,
+      message: expect.stringContaining("despertando"),
+    });
+  });
+
+  it("maps network failures to a friendly offline message", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new TypeError("Network request failed")) as typeof fetch;
+
+    await expect(apiRequest("/books")).rejects.toMatchObject({
+      status: 0,
+      code: "NETWORK_ERROR",
+      message: expect.stringContaining("conexion"),
+    });
+  });
+
+  it("maps request timeout to a friendly message", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new DOMException("Aborted", "AbortError")) as typeof fetch;
+
+    await expect(apiRequest("/books")).rejects.toMatchObject({
+      status: 0,
+      code: "TIMEOUT",
+      message: expect.stringContaining("tarda en responder"),
+    });
+  });
 });

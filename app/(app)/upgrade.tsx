@@ -17,6 +17,7 @@ import { subscriptionCopy } from "@/features/billing/subscription-copy";
 import { useBillingStatus } from "@/features/billing/use-billing";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppLoader } from "@/shared/ui/app-loader";
+import { formatApiError } from "@/shared/lib/format-api-error";
 import { showLegalDocsComingSoonAlert } from "@/shared/ui/placeholder-alerts";
 import { Screen } from "@/shared/ui/screen";
 
@@ -40,7 +41,7 @@ export default function UpgradeScreen() {
     return (
       <Screen backgroundColor={BOOK_SHEET_BG} webBackgroundColor={BOOK_SHEET_BG} style={{ padding: 16 }}>
         <Text size="md" color="$error600">
-          {billing.error instanceof Error ? billing.error.message : "No se pudo cargar tu plan."}
+          {formatApiError(billing.error)}
         </Text>
       </Screen>
     );
