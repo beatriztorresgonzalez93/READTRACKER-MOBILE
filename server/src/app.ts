@@ -17,6 +17,7 @@ import { UploadsController } from "./controllers/uploadsController";
 import { NotificationsController } from "./controllers/notificationsController";
 import { errorHandler } from "./middlewares/errorHandler";
 import { createRequireAuth } from "./middlewares/requireAuth";
+import { createRequireProOrTrial } from "./middlewares/requireProOrTrial";
 import { BooksRepository } from "./repositories/booksRepository";
 import { UsersRepository } from "./repositories/usersRepository";
 import { WishlistRepository } from "./repositories/wishlistRepository";
@@ -142,6 +143,7 @@ export const createApp = () => {
   );
   const readingSessionsController = new ReadingSessionsController(readingSessionsService);
   const billingService = new BillingService(usersRepository);
+  const requireProOrTrialMw = createRequireProOrTrial(billingService);
   const billingController = new BillingController(billingService);
   const notificationsService = new NotificationsService(pushTokensRepository, engagementPushRepository);
   const notificationsController = new NotificationsController(notificationsService);
@@ -165,17 +167,39 @@ export const createApp = () => {
   });
 
   app.use("/api/v1/covers", createCoversRouter(coversController));
-  app.use("/api/v1/uploads", createUploadsRouter(uploadsController, requireAuthMw));
+  app.use(
+    "/api/v1/uploads",
+    createUploadsRouter(uploadsController, requireAuthMw, requireProOrTrialMw),
+  );
   app.use("/api/v1/auth", createAuthRouter(authController, requireAuthMw));
-  app.use("/api/v1/books", createBooksRouter(booksController, bookMetadataController, requireAuthMw));
-  app.use("/api/v1/wishlist", createWishlistRouter(wishlistController, requireAuthMw));
-  app.use("/api/v1/reading-sessions", createReadingSessionsRouter(readingSessionsController, requireAuthMw));
+  app.use(
+    "/api/v1/books",
+    createBooksRouter(
+      booksController,
+      bookMetadataController,
+      requireAuthMw,
+      requireProOrTrialMw,
+    ),
+  );
+  app.use(
+    "/api/v1/wishlist",
+    createWishlistRouter(wishlistController, requireAuthMw, requireProOrTrialMw),
+  );
+  app.use(
+    "/api/v1/reading-sessions",
+    createReadingSessionsRouter(readingSessionsController, requireAuthMw, requireProOrTrialMw),
+  );
   app.use("/api/v1/billing", createBillingRouter(billingController, requireAuthMw));
   app.use(
     "/api/v1/notifications",
     createNotificationsRouter(notificationsController, requireAuthMw),
   );
-  app.get("/api/v1/acquisitions", requireAuthMw, wishlistController.listAcquisitions);
+  app.get(
+    "/api/v1/acquisitions",
+    requireAuthMw,
+    requireProOrTrialMw,
+    wishlistController.listAcquisitions,
+  );
 
   app.use((_req, res) => {
     sendApiError(res, 404, "NOT_FOUND", "Ruta no encontrada");

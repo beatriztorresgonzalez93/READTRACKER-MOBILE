@@ -4,9 +4,14 @@ import type { RequestHandler } from "express";
 import { WishlistController } from "../controllers/wishlistController";
 import { validateCreateWishlistItem } from "../middlewares/validateWishlistPayload";
 
-export const createWishlistRouter = (controller: WishlistController, requireAuth: RequestHandler) => {
+export const createWishlistRouter = (
+  controller: WishlistController,
+  requireAuth: RequestHandler,
+  requireProOrTrial: RequestHandler,
+) => {
   const router = Router();
   router.use(requireAuth);
+  router.use(requireProOrTrial);
 
   router.get("/", controller.list);
   router.get("/acquisitions", controller.listAcquisitions);

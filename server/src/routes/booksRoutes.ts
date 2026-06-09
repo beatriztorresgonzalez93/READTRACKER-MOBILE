@@ -9,9 +9,11 @@ export const createBooksRouter = (
   controller: BooksController,
   metadataController: BookMetadataController,
   requireAuth: RequestHandler,
+  requireProOrTrial: RequestHandler,
 ) => {
   const router = Router();
   router.use(requireAuth);
+  router.use(requireProOrTrial);
 
   router.post("/metadata/enrich", metadataController.enrich);
   router.post("/metadata/discover-isbn", metadataController.discoverFromIsbn);

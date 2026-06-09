@@ -6,10 +6,12 @@ import { validateCreateReadingSession } from "../middlewares/validateReadingSess
 
 export const createReadingSessionsRouter = (
   controller: ReadingSessionsController,
-  requireAuth: RequestHandler
+  requireAuth: RequestHandler,
+  requireProOrTrial: RequestHandler,
 ) => {
   const router = Router();
   router.use(requireAuth);
+  router.use(requireProOrTrial);
   router.get("/", controller.listSessions);
   router.post("/", validateCreateReadingSession, controller.createSession);
   router.delete("/:id", controller.deleteSession);

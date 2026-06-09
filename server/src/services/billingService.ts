@@ -15,16 +15,30 @@ export class BillingService {
     if (!user) {
       throw new Error("Usuario no encontrado");
     }
-    const trialEndsAt = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
-    const trialActive = Boolean(trialEndsAt && trialEndsAt.getTime() > Date.now());
+    const trialActive = BillingService.isTrialActive(user.trialEndsAt);
 
     return {
       isPro: user.isPro,
       trialEndsAt: user.trialEndsAt,
       proActivatedAt: user.proActivatedAt,
       trialActive,
-      needsPayment: !user.isPro && !trialActive
+      needsPayment: !user.isPro && !trialActive,
     };
+  }
+
+  /** Pro activo o prueba gratuita vigente. */
+  async hasAppAccess(userId: string): Promise<boolean> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      return false;
+    }
+    return user.isPro || BillingService.isTrialActive(user.trialEndsAt);
+  }
+
+  static isTrialActive(trialEndsAt: string | null | undefined): boolean {
+    if (!trialEndsAt) return false;
+    const ends = new Date(trialEndsAt);
+    return !Number.isNaN(ends.getTime()) && ends.getTime() > Date.now();
   }
 
   async createPaymentIntent(userId: string): Promise<PaymentIntentResult> {

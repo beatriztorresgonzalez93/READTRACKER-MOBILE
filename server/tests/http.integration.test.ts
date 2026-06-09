@@ -29,6 +29,10 @@ const stubRequireAuth: RequestHandler = (_req, res, next) => {
   next();
 };
 
+const stubRequireProOrTrial: RequestHandler = (_req, res, next) => {
+  next();
+};
+
 const AUTH = "Bearer integration-test-token";
 
 describe("HTTP integration: contract + auth + errors", () => {
@@ -74,15 +78,24 @@ describe("HTTP integration: contract + auth + errors", () => {
       new BooksController(booksServiceMock as never),
       bookMetadataController,
       stubRequireAuth,
+      stubRequireProOrTrial,
     ),
   );
   app.use(
     "/api/v1/wishlist",
-    createWishlistRouter(new WishlistController(wishlistServiceMock as never), stubRequireAuth)
+    createWishlistRouter(
+      new WishlistController(wishlistServiceMock as never),
+      stubRequireAuth,
+      stubRequireProOrTrial,
+    ),
   );
   app.use(
     "/api/v1/reading-sessions",
-    createReadingSessionsRouter(new ReadingSessionsController(readingSessionsServiceMock as never), stubRequireAuth)
+    createReadingSessionsRouter(
+      new ReadingSessionsController(readingSessionsServiceMock as never),
+      stubRequireAuth,
+      stubRequireProOrTrial,
+    ),
   );
   app.use("/api/v1/billing", createBillingRouter(new BillingController(billingServiceMock as never), stubRequireAuth));
   app.use((_req, res) => {

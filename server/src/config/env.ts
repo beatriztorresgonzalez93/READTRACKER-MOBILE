@@ -89,6 +89,8 @@ export const env = {
   stripeCurrency: (process.env.STRIPE_CURRENCY ?? "eur").toLowerCase(),
   proOneTimePriceCents: parseNumber(process.env.PRO_ONE_TIME_PRICE_CENTS, 1999),
   proTrialDays: parseNumber(process.env.PRO_TRIAL_DAYS, 30),
+  /** Si true, libros/sesiones/wishlist exigen Pro o trial (desactivar solo en tests locales). */
+  billingEnforceAccess: parseBoolean(process.env.BILLING_ENFORCE_ACCESS, true),
   /** S3: subida de portadas (presign). Opcional; si falta, POST /uploads/cover responde 503. */
   awsRegion: (process.env.AWS_REGION ?? "").trim(),
   s3Bucket: (process.env.S3_BUCKET ?? process.env.AWS_S3_BUCKET ?? "").trim(),
