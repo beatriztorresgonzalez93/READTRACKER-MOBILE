@@ -21,7 +21,7 @@ import { getFirebaseAuth } from "@/shared/config/firebase";
 import {
   avatarUriNeedsPrepare,
   compressAvatarPickerAsset,
-  prepareAvatarUrlForFirestore,
+  prepareAvatarUrl,
 } from "@/shared/lib/upload-profile-avatar";
 import { AppButton } from "@/shared/ui/app-button";
 import { AppInput } from "@/shared/ui/app-input";
@@ -124,7 +124,7 @@ export default function ProfileScreen() {
           throw new Error("Sesión no disponible para guardar la foto.");
         }
         const uploadToken = token ?? (await firebaseUser.getIdToken());
-        avatarUrlToSave = await prepareAvatarUrlForFirestore(
+        avatarUrlToSave = await prepareAvatarUrl(
           uploadToken,
           avatarUrlToSave,
           avatarMimeDraft,

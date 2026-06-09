@@ -1,4 +1,4 @@
-// Gestiona sesión Firebase Auth y perfil de usuario desde la API.
+// Sesión Firebase Auth + perfil de usuario en la API (PostgreSQL).
 import * as SecureStore from "expo-secure-store";
 import {
   createUserWithEmailAndPassword,

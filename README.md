@@ -25,10 +25,9 @@ Funcionalidades para la persona lectora:
 | UI | **Gluestack UI** + componentes compartidos (`AppButton`, `AppInput`, `Screen`, etc.) |
 | Estado | React Query (remoto), Zustand (local / borrador de formularios) |
 | Auth cliente | Firebase Auth (email/contraseña) |
-| Perfil | Firestore (`users`) |
 | API | Express 5 + TypeScript en `server/` |
 | Auth API | Firebase Admin (ID token en rutas protegidas) |
-| Datos | PostgreSQL (p. ej. Neon): libros, sesiones, wishlist, facturación |
+| Datos | PostgreSQL (p. ej. Neon): usuarios, perfil, libros, sesiones, wishlist, facturación |
 | Pagos | Stripe (Payment Intent + webhook) → **Scriptorium Pro** |
 | Portadas (opc.) | AWS S3 con URL firmada (`POST /uploads/cover`) |
 | Metadatos ISBN (opc.) | Groq / OpenAI / Gemini en servidor; fallback local MyMemory en cliente |

@@ -1,4 +1,4 @@
-// Prepara la foto de perfil para guardarla en Firestore (data URL comprimida, sin Storage ni API).
+// Prepara la foto de perfil para guardarla en la API (S3 o data URL comprimida).
 import * as ImageManipulator from "expo-image-manipulator";
 import { Platform } from "react-native";
 
@@ -11,10 +11,7 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/gif": "gif",
 };
 
-/**
- * Firestore permite ~1 MiB por documento. Tras comprimir (~256–400 px JPEG)
- * solemos quedar en 30–120 KiB; este tope evita desbordar el documento entero.
- */
+/** Tope de tamaño para data URL en PostgreSQL (la API acepta hasta ~200 KB). */
 export const MAX_AVATAR_DATA_URL_CHARS = 280_000;
 
 function guessMimeFromUri(uri: string): string {
@@ -36,7 +33,7 @@ function dataUrlFromBase64(base64: string): string {
   return `data:image/jpeg;base64,${clean}`;
 }
 
-/** URL lista para el campo `avatarUrl` en Firestore (https o data URL). */
+/** URL lista para `avatarUrl` en la API (https o data URL). */
 export function avatarUrlIsPersistable(url: string | null): boolean {
   if (!url?.trim()) return false;
   const t = url.trim();
@@ -53,9 +50,6 @@ export function avatarUriNeedsPrepare(url: string | null): url is string {
   if (!url?.trim()) return false;
   return !avatarUrlIsPersistable(url);
 }
-
-/** @deprecated Usar `avatarUriNeedsPrepare`. */
-export const avatarUriNeedsS3Upload = avatarUriNeedsPrepare;
 
 async function compressUriToJpegDataUrlNative(uri: string): Promise<string> {
   const widths = [480, 400, 320, 256, 200];
@@ -144,33 +138,12 @@ async function localAvatarUriToJpegDataUrlWeb(localUri: string): Promise<string>
   }
 }
 
-/**
- * Comprime la imagen elegida en la galería y devuelve una data URL para Firestore.
- * Llamar justo después del ImagePicker (con `uri` del asset).
- */
+/** Comprime la imagen del picker y devuelve una data URL JPEG. */
 export async function compressAvatarPickerAsset(uri: string): Promise<string> {
   if (Platform.OS === "web") {
     return localAvatarUriToJpegDataUrlWeb(uri);
   }
   return compressUriToJpegDataUrlNative(uri);
-}
-
-/** @deprecated Usar `compressAvatarPickerAsset`. */
-export function avatarDataUrlFromPickerBase64(
-  base64: string,
-  _mimeHint?: string | null,
-): string {
-  const dataUrl = dataUrlFromBase64(base64);
-  if (dataUrl.length > MAX_AVATAR_DATA_URL_CHARS) {
-    throw new Error(
-      "La imagen es demasiado grande. Se comprimirá al guardar; si persiste, elige otra foto.",
-    );
-  }
-  return dataUrl;
-}
-
-async function localAvatarUriToDataUrl(localUri: string): Promise<string> {
-  return compressAvatarPickerAsset(localUri);
 }
 
 function apiUploadOptional(error: unknown): boolean {
@@ -203,10 +176,8 @@ async function tryUploadViaApiS3(
   }
 }
 
-/**
- * Devuelve una URL persistible en Firestore (data URL JPEG comprimida o https).
- */
-export async function prepareAvatarUrlForFirestore(
+/** URL persistible para PATCH /auth/me (S3 https o data URL comprimida). */
+export async function prepareAvatarUrl(
   token: string,
   localUri: string,
   mimeHint?: string | null,
@@ -232,6 +203,3 @@ export async function prepareAvatarUrlForFirestore(
 
   return compressAvatarPickerAsset(localUri);
 }
-
-/** @deprecated Usar `prepareAvatarUrlForFirestore`. */
-export const uploadLocalAvatarUriToS3 = prepareAvatarUrlForFirestore;

@@ -1,7 +1,6 @@
-// Cliente Firebase: Auth (login/registro) y Firestore (perfil de usuario).
+// Cliente Firebase: Auth (login/registro). El perfil vive en la API (PostgreSQL).
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
 
 import { env } from "@/shared/config/env";
 
@@ -36,8 +35,4 @@ export function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseAuth() {
   return getAuth(getFirebaseApp());
-}
-
-export function getFirebaseFirestore() {
-  return getFirestore(getFirebaseApp());
 }

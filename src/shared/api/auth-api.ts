@@ -1,38 +1,50 @@
-// Perfil de usuario almacenado en Firestore (colección "users").
-// Se mantiene la interfaz pública para no romper los consumidores.
-import {
-  createFirestoreProfile,
-  getFirestoreProfile,
-  updateFirestoreProfile,
-} from "@/shared/api/firestore-profile";
-import { getFirebaseAuth } from "@/shared/config/firebase";
+// Perfil de usuario vía API (PostgreSQL). Firebase Auth solo para el token.
+import { apiRequest } from "@/shared/api/client";
 import type { User } from "@/shared/types/auth";
 
-/**
- * Obtiene el perfil del usuario actual desde Firestore.
- * Si el documento aún no existe (primer login), lo crea con los datos de Firebase Auth.
- */
-export async function getMe(_token: string): Promise<User> {
-  const firebaseUser = getFirebaseAuth().currentUser;
-  console.log("[Firestore profile] getMe llamado, uid:", firebaseUser?.uid ?? "SIN USER");
-  if (!firebaseUser) throw new Error("Sesión de Firebase no disponible.");
+type ApiAuthUser = {
+  id: string;
+  name: string;
+  lastName: string;
+  email: string;
+  avatarUrl: string | null;
+  createdAt: string;
+  trialEndsAt: string | null;
+  isPro: boolean;
+  proActivatedAt: string | null;
+};
 
-  try {
-    const existing = await getFirestoreProfile(firebaseUser.uid);
-    console.log("[Firestore profile] perfil existente:", existing ? "SI" : "NO");
-    if (existing) return existing;
+type ApiMeResponse = { data: ApiAuthUser };
 
-    console.log("[Firestore profile] creando perfil nuevo...");
-    const created = await createFirestoreProfile(firebaseUser.uid, {
-      name: firebaseUser.displayName ?? "",
-      email: firebaseUser.email ?? "",
-    });
-    console.log("[Firestore profile] perfil creado OK");
-    return created;
-  } catch (err) {
-    console.error("[Firestore profile] ERROR en getMe:", err);
-    throw err;
+function mapApiUserToClientUser(api: ApiAuthUser): User {
+  const lastName = api.lastName?.trim() || undefined;
+  const fullName = api.name?.trim() || "";
+  let firstName: string | undefined;
+
+  if (lastName && fullName.toLowerCase().endsWith(lastName.toLowerCase())) {
+    firstName = fullName.slice(0, fullName.length - lastName.length).trim() || undefined;
+  } else if (fullName) {
+    firstName = fullName.split(/\s+/)[0];
   }
+
+  return {
+    id: api.id,
+    name: fullName || undefined,
+    firstName,
+    lastName,
+    email: api.email,
+    avatarUrl: api.avatarUrl,
+    createdAt: api.createdAt,
+    trialEndsAt: api.trialEndsAt,
+    isPro: api.isPro,
+    proActivatedAt: api.proActivatedAt,
+  };
+}
+
+/** Obtiene el perfil del usuario actual desde la API (crea el usuario local en el primer login). */
+export async function getMe(token: string): Promise<User> {
+  const response = await apiRequest<ApiMeResponse>("/auth/me", { token });
+  return mapApiUserToClientUser(response.data);
 }
 
 type UpdateMePayload = {
@@ -42,13 +54,26 @@ type UpdateMePayload = {
   avatarUrl?: string | null;
 };
 
-export async function updateMe(_token: string, payload: UpdateMePayload): Promise<User> {
-  const firebaseUser = getFirebaseAuth().currentUser;
-  if (!firebaseUser) throw new Error("Sesión de Firebase no disponible.");
+export async function updateMe(token: string, payload: UpdateMePayload): Promise<User> {
+  const body: Record<string, string | null> = {};
 
-  await updateFirestoreProfile(firebaseUser.uid, payload);
+  const fullName =
+    payload.name?.trim() ||
+    [payload.firstName, payload.lastName].filter(Boolean).join(" ").trim();
+  if (fullName) {
+    body.name = fullName;
+  }
+  if (payload.lastName !== undefined) {
+    body.lastName = payload.lastName.trim();
+  }
+  if (payload.avatarUrl !== undefined) {
+    body.avatarUrl = payload.avatarUrl;
+  }
 
-  const updated = await getFirestoreProfile(firebaseUser.uid);
-  if (!updated) throw new Error("No se pudo leer el perfil tras actualizarlo.");
-  return updated;
+  const response = await apiRequest<ApiMeResponse>("/auth/me", {
+    method: "PATCH",
+    token,
+    body,
+  });
+  return mapApiUserToClientUser(response.data);
 }
