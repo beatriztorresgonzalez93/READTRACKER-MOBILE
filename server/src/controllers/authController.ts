@@ -38,17 +38,33 @@ export class AuthController {
     const body = req.body as Record<string, unknown>;
     const patch: UpdateProfileDto = {};
 
+    if ("firstName" in body) {
+      if (typeof body.firstName !== "string") {
+        sendApiError(res, 400, "INVALID_PROFILE_FIRSTNAME", "El nombre no es válido");
+        return;
+      }
+      if (!body.firstName.trim()) {
+        sendApiError(res, 400, "INVALID_PROFILE_FIRSTNAME", "El nombre no puede estar vacío");
+        return;
+      }
+      if (body.firstName.length > 160) {
+        sendApiError(res, 400, "INVALID_PROFILE_FIRSTNAME", "El nombre es demasiado largo");
+        return;
+      }
+      patch.firstName = body.firstName;
+    }
+
     if ("name" in body) {
       if (typeof body.name !== "string") {
-        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre no es válido");
+        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre completo no es válido");
         return;
       }
       if (!body.name.trim()) {
-        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre no puede estar vacío");
+        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre completo no puede estar vacío");
         return;
       }
       if (body.name.length > 160) {
-        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre es demasiado largo");
+        sendApiError(res, 400, "INVALID_PROFILE_NAME", "El nombre completo es demasiado largo");
         return;
       }
       patch.name = body.name;

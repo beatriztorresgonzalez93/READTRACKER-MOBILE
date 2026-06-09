@@ -110,7 +110,8 @@ describe("HTTP integration: contract + auth + errors", () => {
   it("PATCH /auth/me returns 200 when authorized", async () => {
     authServiceMock.updateProfile.mockResolvedValueOnce({
       id: "user-1",
-      name: "Ana",
+      firstName: "Ana",
+      name: "Ana López",
       lastName: "López",
       email: "user@test.com",
       avatarUrl: null,
@@ -120,13 +121,17 @@ describe("HTTP integration: contract + auth + errors", () => {
     const response = await request(app)
       .patch("/api/v1/auth/me")
       .set("Authorization", AUTH)
-      .send({ name: "Ana", lastName: "López" });
+      .send({ firstName: "Ana", name: "Ana López", lastName: "López" });
 
     expect(response.status).toBe(200);
-    expect(response.body.data).toMatchObject({ name: "Ana", lastName: "López" });
+    expect(response.body.data).toMatchObject({
+      firstName: "Ana",
+      name: "Ana López",
+      lastName: "López",
+    });
     expect(authServiceMock.updateProfile).toHaveBeenCalledWith(
       "user-1",
-      expect.objectContaining({ name: "Ana", lastName: "López" })
+      expect.objectContaining({ firstName: "Ana", name: "Ana López", lastName: "López" })
     );
   });
 

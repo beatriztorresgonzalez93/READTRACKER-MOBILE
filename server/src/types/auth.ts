@@ -1,6 +1,7 @@
 // Tipos compartidos del dominio de autenticación.
 export interface AuthUser {
   id: string;
+  firstName: string;
   name: string;
   lastName: string;
   email: string;
@@ -13,6 +14,7 @@ export interface AuthUser {
 
 /** Cuerpo de `PATCH /auth/me` (campos opcionales; solo se actualizan los enviados). */
 export interface UpdateProfileDto {
+  firstName?: string;
   name?: string;
   lastName?: string;
   avatarUrl?: string | null;

@@ -49,8 +49,12 @@ export class AuthService {
     const current = await this.usersRepository.findById(userId);
     if (!current) return null;
 
-    const name = patch.name !== undefined ? patch.name.trim() : current.name;
+    const firstName = patch.firstName !== undefined ? patch.firstName.trim() : current.firstName;
     const lastName = patch.lastName !== undefined ? patch.lastName.trim() : current.lastName;
+    const name =
+      patch.name !== undefined
+        ? patch.name.trim()
+        : [firstName, lastName].filter(Boolean).join(" ").trim() || current.name;
     let avatarUrl = current.avatarUrl;
     if (patch.avatarUrl !== undefined) {
       if (patch.avatarUrl === null || patch.avatarUrl === "") {
@@ -61,6 +65,6 @@ export class AuthService {
       }
     }
 
-    return this.usersRepository.updateProfile(userId, { name, lastName, avatarUrl });
+    return this.usersRepository.updateProfile(userId, { firstName, name, lastName, avatarUrl });
   }
 }

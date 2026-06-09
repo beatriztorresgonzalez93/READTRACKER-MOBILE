@@ -8,6 +8,7 @@ import { migration004UserProfileFields } from "./004_user_profile_fields";
 import { migration005BillingFields } from "./005_billing_fields";
 import { migration006FirebaseUid } from "./006_firebase_uid";
 import { migration007PushNotifications } from "./007_push_notifications";
+import { migration008UserFirstName } from "./008_user_first_name";
 import { Migration } from "./types";
 
 const migrations: Migration[] = [
@@ -18,6 +19,7 @@ const migrations: Migration[] = [
   migration005BillingFields,
   migration006FirebaseUid,
   migration007PushNotifications,
+  migration008UserFirstName,
 ];
 
 export const runMigrations = async (pool: Pool) => {

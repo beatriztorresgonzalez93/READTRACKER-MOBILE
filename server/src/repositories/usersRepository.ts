@@ -5,6 +5,7 @@ import { AuthUser } from "../types/auth";
 
 interface UserRow {
   id: string;
+  first_name: string;
   name: string;
   last_name: string;
   email: string;
@@ -18,11 +19,12 @@ interface UserRow {
   firebase_uid: string | null;
 }
 
-const userSelect = `id, name, last_name, email, password_hash, created_at, avatar_url,
+const userSelect = `id, first_name, name, last_name, email, password_hash, created_at, avatar_url,
               trial_ends_at, is_pro, pro_activated_at, stripe_customer_id, firebase_uid`;
 
 const mapUser = (row: UserRow): AuthUser => ({
   id: row.id,
+  firstName: (row.first_name ?? "").trim(),
   name: row.name,
   lastName: (row.last_name ?? "").trim(),
   email: row.email,
@@ -101,16 +103,18 @@ export class UsersRepository {
     name: string;
     trialEndsAt: Date;
   }): Promise<AuthUser> {
+    const displayName = params.name.trim();
     const result = await pool.query<UserRow>(
-      `INSERT INTO users (id, name, email, password_hash, firebase_uid, trial_ends_at, is_pro, last_name)
-       VALUES ($1, $2, $3, NULL, $4, $5, FALSE, '')
+      `INSERT INTO users (id, first_name, name, email, password_hash, firebase_uid, trial_ends_at, is_pro, last_name)
+       VALUES ($1, $2, $3, $4, NULL, $5, $6, FALSE, '')
        RETURNING ${userSelect}`,
       [
         randomUUID(),
-        params.name.trim(),
+        displayName,
+        displayName,
         params.email,
         params.firebaseUid,
-        params.trialEndsAt.toISOString()
+        params.trialEndsAt.toISOString(),
       ]
     );
     return mapUser(result.rows[0]);
@@ -118,14 +122,14 @@ export class UsersRepository {
 
   async updateProfile(
     id: string,
-    updates: { name: string; lastName: string; avatarUrl: string | null }
+    updates: { firstName: string; name: string; lastName: string; avatarUrl: string | null },
   ): Promise<AuthUser | null> {
     const result = await pool.query<UserRow>(
       `UPDATE users
-       SET name = $2, last_name = $3, avatar_url = $4
+       SET first_name = $2, name = $3, last_name = $4, avatar_url = $5
        WHERE id = $1
        RETURNING ${userSelect}`,
-      [id, updates.name, updates.lastName, updates.avatarUrl]
+      [id, updates.firstName, updates.name, updates.lastName, updates.avatarUrl],
     );
     const row = result.rows[0];
     return row ? mapUser(row) : null;

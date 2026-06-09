@@ -4,6 +4,7 @@ import type { User } from "@/shared/types/auth";
 
 type ApiAuthUser = {
   id: string;
+  firstName: string;
   name: string;
   lastName: string;
   email: string;
@@ -17,15 +18,9 @@ type ApiAuthUser = {
 type ApiMeResponse = { data: ApiAuthUser };
 
 function mapApiUserToClientUser(api: ApiAuthUser): User {
+  const firstName = api.firstName?.trim() || undefined;
   const lastName = api.lastName?.trim() || undefined;
-  const fullName = api.name?.trim() || "";
-  let firstName: string | undefined;
-
-  if (lastName && fullName.toLowerCase().endsWith(lastName.toLowerCase())) {
-    firstName = fullName.slice(0, fullName.length - lastName.length).trim() || undefined;
-  } else if (fullName) {
-    firstName = fullName.split(/\s+/)[0];
-  }
+  const fullName = api.name?.trim() || [firstName, lastName].filter(Boolean).join(" ").trim();
 
   return {
     id: api.id,
@@ -57,14 +52,17 @@ type UpdateMePayload = {
 export async function updateMe(token: string, payload: UpdateMePayload): Promise<User> {
   const body: Record<string, string | null> = {};
 
+  if (payload.firstName !== undefined) {
+    body.firstName = payload.firstName.trim();
+  }
+  if (payload.lastName !== undefined) {
+    body.lastName = payload.lastName.trim();
+  }
   const fullName =
     payload.name?.trim() ||
     [payload.firstName, payload.lastName].filter(Boolean).join(" ").trim();
   if (fullName) {
     body.name = fullName;
-  }
-  if (payload.lastName !== undefined) {
-    body.lastName = payload.lastName.trim();
   }
   if (payload.avatarUrl !== undefined) {
     body.avatarUrl = payload.avatarUrl;
