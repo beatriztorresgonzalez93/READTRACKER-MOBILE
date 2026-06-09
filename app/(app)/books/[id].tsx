@@ -1,9 +1,9 @@
 // Detalle de libro con progreso, reseña, etiquetas y acciones (gluestack-ui).
 import { Ionicons } from "@expo/vector-icons";
-import { Box, HStack, Pressable, Text, VStack } from "@gluestack-ui/themed";
+import { HStack, Pressable, Text } from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
-import { Link, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Alert,
   Platform,
@@ -15,23 +15,18 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
+import { BookDetailBottomBar } from "@/features/books/book-detail-bottom-bar";
+import { BookDetailHeader } from "@/features/books/book-detail-header";
+import { BookDetailSimilarBooks } from "@/features/books/book-detail-similar-books";
 import {
   DetailCard,
   DetailChip,
   DetailLabel,
-  DetailTabBar,
-  StarRow,
 } from "@/features/books/book-detail-ui";
-import {
-  useBookDetail,
-  useBooksFeed,
-  useUpdateBook,
-} from "@/features/books/use-books";
-import { defaultLibraryBooksQuery } from "@/shared/types/books";
+import { useBookDetail, useUpdateBook } from "@/features/books/use-books";
+import { useSimilarBooks } from "@/features/books/use-similar-books";
 import { AppLoader } from "@/shared/ui/app-loader";
-import { BookCover } from "@/shared/ui/book-cover";
 import { Screen } from "@/shared/ui/screen";
-import { APP_CREAM_BG, scriptoriumColors } from "@/shared/ui/app-colors";
 
 const DETAIL_TABS = ["Información", "Mi reseña", "Similares"] as const;
 type DetailTab = (typeof DETAIL_TABS)[number];
@@ -51,54 +46,7 @@ export default function BookDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const book = detailQuery.data;
 
-  const similarByGenreFeed = useBooksFeed(
-    useMemo(
-      () => ({
-        ...defaultLibraryBooksQuery,
-        genre: book?.genre?.trim() ? book.genre : null,
-        sort: "recientes" as const,
-      }),
-      [book?.genre],
-    ),
-  );
-
-  const similarByTagsFeed = useBooksFeed(
-    useMemo(
-      () => ({
-        ...defaultLibraryBooksQuery,
-        genre: null,
-        sort: "recientes" as const,
-      }),
-      [],
-    ),
-  );
-
-  const similarBooks = useMemo(() => {
-    const targetGenre = book?.genre?.toLowerCase().trim();
-    const baseTags = new Set(
-      (book?.tags ?? []).map((t) => t.toLowerCase().trim()).filter(Boolean),
-    );
-
-    const genreCandidates = (similarByGenreFeed.data?.pages.flatMap((p) => p.items) ?? [])
-      .filter((candidate) => candidate.id !== bookId)
-      .filter((candidate) =>
-        targetGenre && candidate.genre
-          ? candidate.genre.toLowerCase().trim() === targetGenre
-          : false,
-      )
-      .map((candidate) => ({ book: candidate, reason: "Mismo género" as const }));
-
-    const alreadyIncluded = new Set(genreCandidates.map((entry) => entry.book.id));
-
-    const tagCandidates = (similarByTagsFeed.data?.pages.flatMap((p) => p.items) ?? [])
-      .filter((candidate) => candidate.id !== bookId && !alreadyIncluded.has(candidate.id))
-      .filter((candidate) =>
-        (candidate.tags ?? []).some((tag) => baseTags.has(tag.toLowerCase().trim())),
-      )
-      .map((candidate) => ({ book: candidate, reason: "Misma etiqueta" as const }));
-
-    return [...genreCandidates, ...tagCandidates].slice(0, 6);
-  }, [book?.genre, book?.tags, bookId, similarByGenreFeed.data?.pages, similarByTagsFeed.data?.pages]);
+  const similarBooks = useSimilarBooks(bookId, book?.genre, book?.tags);
 
   const year = book?.publishedYear ? String(book.publishedYear) : "—";
   const reviewText =
@@ -172,38 +120,16 @@ export default function BookDetailScreen() {
       webBackgroundColor="#F6F1E7"
       style={{ paddingHorizontal: 0, paddingTop: 0 }}
     >
-      <Box px="$4" pt="$3" pb="$2" bg="$backgroundLight50" borderBottomWidth={1} borderBottomColor="$primary200">
-        <HStack space="md" alignItems="flex-start">
-          <BookCover
-            uri={book?.coverUrl}
-            title={book?.title}
-            width={82}
-            aspectRatio={1.45}
-            borderRadius={4}
-            accessibilityLabel={`Portada: ${book?.title}`}
-          />
-          <VStack flex={1} space="xs" minWidth={0}>
-            <Text size="2xl" fontWeight="$bold" color="$primary800" lineHeight={30}>
-              {book?.title}
-            </Text>
-            <Text size="sm" fontStyle="italic" fontWeight="$bold" color="$primary500">
-              {book?.author ?? "Autor desconocido"}
-            </Text>
-            <HStack alignItems="center" space="sm" mt="$1">
-              <StarRow rating={book?.rating} />
-              {isFavorite ? (
-                <HStack alignItems="center" space="xs">
-                  <Ionicons name="heart" size={12} color="#D14E72" />
-                  <Text size="xs" fontWeight="$bold" color="#D14E72">
-                    Favorito
-                  </Text>
-                </HStack>
-              ) : null}
-            </HStack>
-          </VStack>
-        </HStack>
-        <DetailTabBar tabs={DETAIL_TABS} activeTab={activeTab} onSelect={(tab) => moveToTab(tab as DetailTab)} />
-      </Box>
+      <BookDetailHeader
+        title={book?.title}
+        author={book?.author}
+        coverUrl={book?.coverUrl}
+        rating={book?.rating}
+        isFavorite={isFavorite}
+        tabs={DETAIL_TABS}
+        activeTab={activeTab}
+        onSelectTab={(tab) => moveToTab(tab as DetailTab)}
+      />
 
       <ScrollView
         ref={pagerRef}
@@ -358,165 +284,49 @@ export default function BookDetailScreen() {
           contentContainerStyle={styles.tabContent}
           showsVerticalScrollIndicator={false}
         >
-          <DetailCard>
-            <Text
-              size="xs"
-              fontWeight="$bold"
-              color="$textLight500"
-              textTransform="uppercase"
-              letterSpacing={1.2}
-              mb="$1"
-            >
-              Similares
-            </Text>
-            <Text size="sm" color="$textLight500" mb="$3">
-              Libros que podrían interesarte por género o etiquetas en común.
-            </Text>
-            <View style={styles.similarGrid}>
-              {similarBooks.map(({ book: item, reason }) => (
-                <Link key={item.id} href={`/(app)/books/${item.id}` as never} asChild>
-                  <Pressable style={styles.similarCard}>
-                    <BookCover
-                      uri={item.coverUrl}
-                      title={item.title}
-                      width={102}
-                      aspectRatio={1.45}
-                      borderRadius={6}
-                      accessibilityLabel={`Portada: ${item.title}`}
-                    />
-                    <Text size="sm" fontWeight="$bold" color="$primary800" numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    <Text size="xs" color="$textLight500" fontStyle="italic" numberOfLines={1}>
-                      {reason}
-                    </Text>
-                  </Pressable>
-                </Link>
-              ))}
-            </View>
-            {similarBooks.length === 0 ? (
-              <Text size="sm" color="$textLight500" fontStyle="italic">
-                Aún no hay suficientes coincidencias por género o etiquetas.
-              </Text>
-            ) : null}
-          </DetailCard>
+          <BookDetailSimilarBooks similarBooks={similarBooks} />
         </ScrollView>
       </ScrollView>
 
-      <View style={Platform.OS === "web" ? styles.bottomMenu : styles.bottomMenuNative}>
-        <Pressable
-          style={[
-            Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative,
-            styles.menuBtnPrimary,
-          ]}
-          onPress={() => {
-            if (activeTab === "Mi reseña") {
-              router.push({
-                pathname: "/(app)/books/review",
-                params: { id: bookId },
-              } as never);
-              return;
-            }
+      <BookDetailBottomBar
+        activeTab={activeTab}
+        canMarkPage={canMarkPage}
+        isFavorite={isFavorite}
+        onEditOrReview={() => {
+          if (activeTab === "Mi reseña") {
             router.push({
-              pathname: "/(app)/books/edit",
+              pathname: "/(app)/books/review",
               params: { id: bookId },
             } as never);
-          }}
-          accessibilityLabel={
-            activeTab === "Mi reseña" ? "Escribir reseña" : "Editar información del libro"
+            return;
           }
-        >
-          <Ionicons
-            name={activeTab === "Mi reseña" ? "create" : "create-outline"}
-            size={Platform.OS === "web" ? 17 : 22}
-            color={Platform.OS === "web" ? scriptoriumColors.webAccent : scriptoriumColors.primary}
-          />
-          {Platform.OS !== "web" ? (
-            <Text size="2xs" fontWeight="$bold" color="$textLight500">
-              {activeTab === "Mi reseña" ? "Reseña" : "Editar"}
-            </Text>
-          ) : null}
-        </Pressable>
-
-        <Pressable
-          style={[
-            Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative,
-            !canMarkPage && styles.menuBtnDisabled,
-          ]}
-          disabled={!canMarkPage}
-          onPress={() =>
-            router.push({
-              pathname: "/(app)/books/mark-page",
-              params: { id: bookId },
-            } as never)
+          router.push({
+            pathname: "/(app)/books/edit",
+            params: { id: bookId },
+          } as never);
+        }}
+        onMarkPage={() =>
+          router.push({
+            pathname: "/(app)/books/mark-page",
+            params: { id: bookId },
+          } as never)
+        }
+        onToggleFavorite={async () => {
+          const previous = isFavorite;
+          const next = !previous;
+          setIsFavorite(next);
+          try {
+            await updateBook.mutateAsync({
+              isFavorite: next,
+              status: selectedStatus,
+            });
+          } catch (error) {
+            setIsFavorite(previous);
+            Alert.alert("No se pudo actualizar", (error as Error).message);
           }
-          accessibilityLabel="Marcar página"
-        >
-          <Ionicons
-            name="bookmark-outline"
-            size={Platform.OS === "web" ? 17 : 22}
-            color={
-              canMarkPage
-                ? Platform.OS === "web"
-                  ? scriptoriumColors.webAccent
-                  : scriptoriumColors.primary
-                : scriptoriumColors.textMuted
-            }
-          />
-          {Platform.OS !== "web" ? (
-            <Text size="2xs" fontWeight="$bold" color="$textLight500">
-              Página
-            </Text>
-          ) : null}
-        </Pressable>
-
-        <Pressable
-          style={Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative}
-          onPress={async () => {
-            const previous = isFavorite;
-            const next = !previous;
-            setIsFavorite(next);
-            try {
-              await updateBook.mutateAsync({
-                isFavorite: next,
-                status: selectedStatus,
-              });
-            } catch (error) {
-              setIsFavorite(previous);
-              Alert.alert("No se pudo actualizar", (error as Error).message);
-            }
-          }}
-          accessibilityLabel={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
-        >
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={Platform.OS === "web" ? 17 : 22}
-            color={Platform.OS === "web" ? scriptoriumColors.webAccent : scriptoriumColors.primary}
-          />
-          {Platform.OS !== "web" ? (
-            <Text size="2xs" fontWeight="$bold" color="$textLight500">
-              Favorito
-            </Text>
-          ) : null}
-        </Pressable>
-
-        <Pressable
-          style={Platform.OS === "web" ? styles.menuBtn : styles.menuCellNative}
-          onPress={onDeletePress}
-          accessibilityLabel="Eliminar libro"
-        >
-          <Ionicons
-            name="trash-outline"
-            size={Platform.OS === "web" ? 17 : 22}
-            color={Platform.OS === "web" ? scriptoriumColors.webAccent : scriptoriumColors.danger}
-          />
-          {Platform.OS !== "web" ? (
-            <Text size="2xs" fontWeight="$bold" color="$error600">
-              Eliminar
-            </Text>
-          ) : null}
-        </Pressable>
-      </View>
+        }}
+        onDelete={onDeletePress}
+      />
     </Screen>
   );
 }
@@ -542,69 +352,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#D8C9AE",
     paddingBottom: 8,
-  },
-  similarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  similarCard: {
-    width: 108,
-    gap: 4,
-  },
-  bottomMenu: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#D8C9AE",
-    backgroundColor: "#FFFCF5",
-  },
-  menuBtn: {
-    flex: 1,
-    minHeight: 52,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#D8C9AE",
-    backgroundColor: "#FFFCF5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuBtnPrimary: {},
-  menuBtnDisabled: {
-    opacity: 0.5,
-  },
-  bottomMenuNative: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#D8C9AE",
-    backgroundColor: "#F6F1E7",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: -2 },
-      },
-      android: { elevation: 12 },
-      default: {},
-    }),
-  },
-  menuCellNative: {
-    flex: 1,
-    minHeight: 64,
-    borderRadius: 14,
-    backgroundColor: "#FFFCF5",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#D8C9AE",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingVertical: 6,
   },
 });
